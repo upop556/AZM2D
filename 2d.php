@@ -1,4 +1,29 @@
 <?php  
+// Get the time parameter from URL
+$time = $_GET['time'] ?? '11:00:00';
+
+// Validate time is one of the allowed values
+$allowed_times = ['11:00:00', '12:01:00', '15:00:00', '16:30:00'];
+if (!in_array($time, $allowed_times)) {
+    $time = '11:00:00'; // Default to first time slot if invalid
+}
+
+// Format time for display
+$time_formats = [
+    '11:00:00' => '11:00 AM',
+    '12:01:00' => '12:01 PM',
+    '15:00:00' => '03:00 PM',
+    '16:30:00' => '04:30 PM'
+];
+$display_time = $time_formats[$time];
+
+// Check if this time slot is already closed
+$current_time = date('H:i:s');
+$is_time_closed = $time <= $current_time;
+
+// Get return page (defaults to index)
+$returnPage = $_GET['return'] ?? 'index';
+
 // Create an array of numbers from 0 to 99 with leading zeros  
 $numbers = [];  
 for ($i = 0; $i < 100; $i++) {  
@@ -10,40 +35,122 @@ $bottoms = range(0,9); // For bottom digit quick pick
 $apuArr = ['00','11','22','33','44','55','66','77','88','99'];
 $pawaArr = ['05','50','16','61','27','72','38','83','49','94'];
 $nakhaArr = ['18','81','24','42','35','53','69','96','70','07'];
+
+// Simulate bet percentages (in a real app, fetch from database)
+// This would be replaced with actual data from your database
+function getBetPercentages() {
+    $percentages = [];
+    for ($i = 0; $i < 100; $i++) {
+        $num = str_pad($i, 2, '0', STR_PAD_LEFT);
+        
+        // Randomly assign bet percentages for demonstration
+        if ($i % 23 === 0) {
+            $percentages[$num] = 100; // Some numbers are fully bet (100%)
+        } elseif ($i % 11 === 0) {
+            $percentages[$num] = rand(90, 99); // Some are almost full (90-99%)
+        } elseif ($i % 7 === 0) {
+            $percentages[$num] = rand(50, 89); // Medium betting (50-89%)
+        } else {
+            $percentages[$num] = rand(1, 49); // Light betting (1-49%)
+        }
+    }
+    
+    // Set specific examples to match screenshot
+    $percentages['22'] = 95; // Orange bar in screenshot
+    $percentages['09'] = 60;
+    $percentages['15'] = 60;
+    $percentages['19'] = 60;
+    $percentages['41'] = 60;
+    $percentages['16'] = 80;
+    
+    return $percentages;
+}
+
+$betPercentages = getBetPercentages();
 ?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Phone Number Pad UI (20x5) Fast Pick + R + Combination</title>
+    <title>2D ထိုးရန် - <?= htmlspecialchars($display_time) ?></title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     <style>
-        body { font-family: Arial, sans-serif; background: #f8f8f8; margin: 0; padding: 0; }
-        .container { max-width: 340px; margin: 18px auto 0 auto; background: #fff; border-radius: 18px; box-shadow: 0 2px 12px rgba(0,0,0,0.06), 0 1.5px 6px rgba(0,0,0,0.03); padding: 18px 8px 18px 8px; }
-        h2 { text-align:center; margin-top:6px; margin-bottom:10px; font-size: 1.2em; letter-spacing: 1px; color: #222; }
-        .balance-bar { margin: 0 auto 14px auto; max-width: 280px; display: flex; justify-content: flex-end; align-items: center; background: none; border-radius: 0; border: none; padding: 0; font-size: 1.06em; color: #bb2222; font-weight: bold; }
-        .balance-text { color: #bb2222; font-weight: bold; letter-spacing: 0.02em; }
+        body { font-family: 'Segoe UI', Arial, sans-serif; background: #3e2d66; margin: 0; padding: 0; color: #fff; }
+        .container { max-width: 340px; margin: 18px auto 0 auto; background: #3e2d66; border-radius: 18px; padding: 18px 8px 18px 8px; }
+        h2 { text-align:center; margin-top:6px; margin-bottom:10px; font-size: 1.2em; letter-spacing: 1px; color: #fff; }
+        .time-display { text-align:center; color: #ffc107; font-weight: bold; margin: 4px 0 10px 0; font-size: 1.1em; }
+        .warning { background:#ffe0e0; color:#c00; padding:8px; text-align:center; margin:0 auto 12px auto; border-radius:8px; max-width:90%; font-weight:bold; }
+        .back-btn { display: inline-block; margin-bottom: 15px; color: #fff; text-decoration: none; padding: 6px 12px; border-radius: 4px; transition: background 0.2s; }
+        .back-btn:hover { background: rgba(255,255,255,0.1); }
+        .back-btn i { margin-right: 5px; }
+        .balance-bar { margin: 0 auto 14px auto; max-width: 280px; display: flex; justify-content: flex-end; align-items: center; background: none; border-radius: 0; border: none; padding: 0; font-size: 1.03em; }
+        .balance-text { color: #ffc107; font-weight: bold; letter-spacing: 0.02em; }
         .fastpick-bar { margin: 0 auto 10px auto; max-width: 300px; display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; }
-        .fastpick-btn { min-width: 70px; padding: 5px 14px; border: none; border-radius: 8px; background: #e0e7ef; color: #244; font-size: 1em; font-weight: bold; cursor: pointer; transition: background 0.13s, color 0.13s; outline: none; }
+        .fastpick-btn { min-width: 70px; padding: 5px 14px; border: none; border-radius: 8px; background: #e0e7ef; color: #244; font-size: 1em; font-weight: bold; cursor: pointer; transition: background 0.13s, color 0.13s; }
         .fastpick-btn.selected, .fastpick-btn:active { background: #4da8ff; color: #fff; }
         .bet-controls { display: flex; align-items: center; gap: 8px; }
         .amount-input { font-size: 1.02em; width: 70px; padding: 5px 8px; border-radius: 6px; border: 1px solid #b7b7b7; outline: none; background: #f2f5fa; }
         .amount-input:focus { border-color: #4da8ff; background: #fff; }
-        .bet-btn { background: #0bc66b; color: #fff; border: none; border-radius: 7px; font-size: 1em; font-weight: bold; padding: 5px 14px; cursor: pointer; transition: background 0.13s, color 0.13s; }
-        .bet-btn:active, .bet-btn:hover { background: #089e58; }
-        .legend-box { margin: 10px auto 18px auto; background: #f8f8f8; border-radius: 10px; border: 1px solid #e3e7ef; padding: 10px 6px 10px 6px; max-width: 300px; font-size: 0.98em; display: flex; justify-content: space-around; align-items: center; gap: 6px; }
-        .legend-color { width: 28px; height: 28px; border-radius: 8px; display: inline-block; border: 2px solid #b6b6b6; font-weight: bold; font-size: 1.07em; text-align: center; line-height: 28px; }
-        .legend-low { background: #ffda92; color: #ffda92; border-color: #ffda92;}
-        .legend-medium { background: #ffe66d; color: #ffe66d; border-color: #ffe66d;}
-        .legend-high { background: #0bc66b; color: #0bc66b; border-color: #0bc66b;}
-        .legend-r { background: #1b263b; color: #fff; border-color: #1b263b; font-family: Arial, sans-serif; font-size: 0.98em; text-decoration: none; font-weight: bold; letter-spacing: 0.1em; text-align: center; line-height: 28px; cursor: pointer; transition: background 0.12s, color 0.12s, border 0.12s; display: flex; align-items: center; justify-content: center; }
-        .legend-r:hover, .legend-r:active { background: #274472; border-color: #274472; color: #fff; }
-        .popup-mask { position: fixed; left:0; top:0; right:0; bottom:0; background: rgba(0,0,0,0.16); z-index: 9999; display: none; }
-        .popup-dialog { position: fixed; left: 0; right: 0; top: 60px; margin: auto; background: #fff; border-radius: 14px; box-shadow: 0 6px 36px rgba(60,60,80,0.13); max-width: 340px; width: 98vw; z-index: 10000; display: none; padding: 24px 12px 16px 12px; }
+        .bet-btn { background: linear-gradient(to right, #ff9a44, #ff5e62); color: #fff; border: none; border-radius: 25px; font-size: 1em; font-weight: bold; padding: 10px 20px; cursor: pointer; transition: background 0.13s; width: 100%; max-width: 200px; margin: 0 auto; display: block; }
+        .bet-btn:active, .bet-btn:hover { background: linear-gradient(to right, #ff7f00, #e94a36); }
+        
+        /* New legend box styling - modeled after screenshot */
+        .legend-box { margin: 25px auto 25px auto; background: #fff; border-radius: 15px; padding: 15px; max-width: 300px; font-size: 1em; color: #333; }
+        .legend-title { text-align: center; font-weight: bold; margin-bottom: 15px; color: #333; }
+        .legend-item { display: flex; align-items: center; margin-bottom: 10px; }
+        .legend-color { width: 25px; height: 15px; border-radius: 3px; margin-right: 10px; }
+        .legend-low { background: linear-gradient(to right, #4CAF50, #8BC34A); }
+        .legend-medium { background: linear-gradient(to right, #FFEB3B, #FFC107); }
+        .legend-high { background: linear-gradient(to right, #FF9800, #FF5722); }
+        .legend-full { background: #444; }
+        .legend-text { font-size: 0.9em; }
+        
+        .control-panel {
+            background: #fff;
+            border-radius: 15px;
+            padding: 15px;
+            margin-bottom: 20px;
+            color: #333;
+        }
+        
+        .panel-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        
+        .panel-label {
+            font-weight: bold;
+            color: #333;
+        }
+        
+        .panel-time {
+            color: #ffc107;
+            font-size: 1.2em;
+            font-weight: bold;
+        }
+        
+        .panel-wallet {
+            display: flex;
+            align-items: center;
+        }
+        
+        .wallet-icon {
+            background: linear-gradient(to right, #ff9a44, #ff5e62);
+            padding: 8px 12px;
+            border-radius: 10px;
+            margin-right: 10px;
+            color: white;
+        }
+        
+        .popup-mask { position: fixed; left:0; top:0; right:0; bottom:0; background: rgba(0,0,0,0.5); z-index: 9999; display: none; }
+        .popup-dialog { position: fixed; left: 0; right: 0; top: 60px; margin: auto; background: #fff; border-radius: 14px; box-shadow: 0 6px 36px rgba(60,60,80,0.13); max-width: 340px; width: 98vw; z-index: 10000; padding: 22px 10px 14px 10px; display: none; }
         .popup-dialog h3 { margin-top: 0; margin-bottom: 12px; font-size: 1.09em; color: #274472; letter-spacing: 0.02em; }
         .popup-dialog .popup-content { font-size: 1.05em; margin-bottom: 12px; word-break: break-all; }
         .quickpick-row { display: flex; gap: 7px; justify-content: center; margin-bottom: 10px; margin-top: -4px; flex-wrap: wrap; }
-        .quickpick-btn { padding: 3px 9px; border-radius: 7px; border: none; background: #e0e7ef; color: #23395d; font-weight: bold; cursor: pointer; transition: background 0.13s, color 0.13s; font-size: 1em; }
+        .quickpick-btn { padding: 3px 9px; border-radius: 7px; border: none; background: #e0e7ef; color: #23395d; font-weight: bold; cursor: pointer; transition: background 0.13s, color 0.13s; font-size: 0.97em; }
         .quickpick-btn:hover, .quickpick-btn:active { background: #4da8ff; color: #fff; }
 
         .quickpick-section-label { font-weight:bold; font-size:1em; margin: 14px 0 2px 0; display:block; }
@@ -52,13 +159,13 @@ $nakhaArr = ['18','81','24','42','35','53','69','96','70','07'];
         .quickpick-btn.selected { background: #4da8ff; color: #fff; }
 
         .top-pick-row, .bottom-pick-row { display: flex; gap: 6px; justify-content: center; margin-bottom: 12px; flex-wrap: wrap;}
-        .top-pick-btn, .bottom-pick-btn { min-width: 27px; padding: 4px 0; font-size: 1.08em; font-weight: bold; background: #f1f6ff; color: #23395d; border: 1px solid #bcd2f7; border-radius: 7px; cursor: pointer; transition: background 0.13s, color 0.13s; }
+        .top-pick-btn, .bottom-pick-btn { min-width: 27px; padding: 4px 0; font-size: 1.08em; font-weight: bold; background: #f1f6ff; color: #23395d; border: 1px solid #bcd2f7; border-radius: 7px; cursor: pointer; transition: background 0.13s, color 0.13s, border-color 0.13s; }
         .top-pick-btn.selected, .top-pick-btn:active,
         .bottom-pick-btn.selected, .bottom-pick-btn:active { background: #4da8ff; color: #fff; border-color: #2666a3; }
-        .popup-dialog .popup-close { display: inline-block; margin-top: 6px; padding: 4px 18px; background: #eee; color: #222; border: none; border-radius: 7px; font-size: 1em; font-weight: bold; cursor: pointer; transition: background 0.12s; }
+        .popup-dialog .popup-close { display: inline-block; margin-top: 6px; padding: 4px 18px; background: #eee; color: #222; border: none; border-radius: 7px; font-size: 1em; font-weight: bold; cursor: pointer; transition: background 0.13s; }
         .popup-dialog .popup-close:hover, .popup-dialog .popup-close:active { background: #e0e7ef; }
         .popup-actions-row { display: flex; gap: 10px; justify-content: center; margin-top: 3px; margin-bottom: 8px; }
-        .popup-action-btn { padding: 3px 14px; border-radius: 7px; border: none; background: #e0e7ef; color: #23395d; font-weight: bold; cursor: pointer; transition: background 0.13s, color 0.13s; font-size: 1em; }
+        .popup-action-btn { padding: 3px 14px; border-radius: 7px; border: none; background: #e0e7ef; color: #23395d; font-weight: bold; cursor: pointer; transition: background 0.13s, color 0.13s; font-size: 1.02em; }
         .popup-action-btn:hover, .popup-action-btn:active { background: #4da8ff; color: #fff; }
         .bet-list-table { width: 100%; border-collapse: separate; border-spacing: 0 7px; margin-bottom: 18px;}
         .bet-list-table th, .bet-list-table td { text-align: center; font-size: 1.04em; padding: 5px 5px; }
@@ -67,87 +174,154 @@ $nakhaArr = ['18','81','24','42','35','53','69','96','70','07'];
         .bet-list-table td .del-btn { color: #bb2222; background: #fff0f0; border: 1px solid #fdc0c0; border-radius: 5px; padding: 2px 8px; font-size: 0.98em; cursor: pointer;}
         .bet-list-table td .del-btn:hover { background: #ffecec; }
         .bet-summary-row { font-weight:bold; background: #f8f8f8;}
-        table { width: 100%; border-collapse: separate; border-spacing: 8px 8px; }
-        td { border-radius: 12px; border: none; padding: 0; text-align: center; font-size: 1.25em; font-weight: 600; color: #23395d; box-shadow: 0 1px 2px rgba(80,80,80,0.04); transition: background 0.15s, color 0.15s; user-select: none; cursor: pointer; position: relative; height: 44px; }
-        .cell-btn { width: 100%; height: 44px; border: none; outline: none; background: none; padding: 0; margin: 0; font-size: inherit; font-weight: inherit; border-radius: 12px; cursor: pointer; transition: background 0.15s, color 0.15s; display: flex; align-items: center; justify-content: center; }
-        .color-low { background: #ffda92; color: #543600;}
-        .color-medium { background: #ffe66d; color: #473f00;}
-        .color-high { background: #0bc66b; color: #fff;}
-        .color-full { background: #1b263b; color: #fff; text-decoration: line-through;}
-        .color-default { background: #e0e7ef; color: #23395d;}
-        .cell-btn.selected.color-low { box-shadow: 0 0 0 2.5px #ffb900; }
-        .cell-btn.selected.color-medium { box-shadow: 0 0 0 2.5px #e8c600; }
-        .cell-btn.selected.color-high { box-shadow: 0 0 0 2.5px #04ae5a; }
-        .cell-btn.selected.color-full { box-shadow: 0 0 0 2.5px #14202c; }
-        .cell-btn.selected.color-default { box-shadow: 0 0 0 2.5px #a5b0be; }
+        
+        /* New number grid styling */
+        .numbers-grid {
+            display: grid;
+            grid-template-columns: repeat(6, 1fr);
+            gap: 10px;
+            margin: 0 auto;
+            max-width: 350px;
+        }
+        
+        .number-cell {
+            position: relative;
+            background: rgba(79, 70, 112, 0.7);
+            border-radius: 15px;
+            aspect-ratio: 1/1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 1.3em;
+            font-weight: bold;
+            color: white;
+            cursor: pointer;
+            overflow: hidden;
+        }
+        
+        .number-cell.selected {
+            box-shadow: 0 0 0 2px #fff;
+        }
+        
+        /* Progress indicators */
+        .progress-indicator {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            height: 4px;
+            border-radius: 0 0 0 15px;
+        }
+        
+        /* Low betting (under 50%) */
+        .progress-low {
+            background: linear-gradient(to right, #4CAF50, #8BC34A);
+        }
+        
+        /* Medium betting (50-90%) */
+        .progress-medium {
+            background: linear-gradient(to right, #FFEB3B, #FFC107);
+        }
+        
+        /* High betting (above 90%) */
+        .progress-high {
+            background: linear-gradient(to right, #FF9800, #FF5722);
+        }
+        
+        /* Closed (100% full) */
+        .number-cell.closed {
+            background: rgba(50, 50, 50, 0.8);
+            color: rgba(255, 255, 255, 0.5);
+            cursor: not-allowed;
+        }
+        
         @media (max-width: 500px) {  
             .container { max-width: 99vw;}
-            table td { font-size:1em; padding: 0;}
-            h2 { font-size: 1em; }
-            .balance-bar { font-size: 0.99em; }
-            .legend-box { font-size:0.93em; padding: 7px 2px;}
-            .legend-color { width:21px; height:21px; line-height:21px; font-size:0.92em;}
-            .legend-r { width:21px; height:21px; line-height:21px; font-size:0.92em;}
-            .fastpick-btn { min-width: 0; padding: 3px 10px; font-size: 0.96em;}
-            .bet-btn { padding: 3px 8px; font-size: 0.96em; }
-            .amount-input { width: 55px; font-size: 0.96em; padding: 3px 5px; }
-            .cell-btn { height:32px; }
-            td { height:32px; }
-            .popup-dialog { top: 18px; max-width: 99vw; padding: 18px 6px 12px 6px; }
-            .top-pick-row, .bottom-pick-row, .quickpick-row, .quickpick-inline-row { gap: 3px; }
-            .top-pick-btn, .bottom-pick-btn { min-width: 17px; padding: 2px 0; font-size: 1em; }
-            .popup-action-btn { padding: 2px 8px; font-size: 0.95em;}
+            .numbers-grid { gap: 6px; }
+            .number-cell { font-size: 1.1em; }
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <h2>2d ထိုးရန်</h2>
-        <!-- Balance Bar -->
-        <div class="balance-bar">
-            <span class="balance-text">လက်ကျန်ငွေ 0 ကျပ်</span>
-        </div>
-        <!-- Modified Fastpick bar with amount input and bet button -->
-        <div class="fastpick-bar">
-            <button type="button" class="fastpick-btn" id="fastpick-quick">အမြန်ရွေး</button>
-            <div class="bet-controls">
-                <input type="number" min="100" step="100" value="100" id="amount-input" class="amount-input" />
-                <span style="font-size:0.97em;color:#555;">ကျပ်</span>
+        <!-- Back Button -->
+        <a href="2d_live_api.php?page=<?= htmlspecialchars($returnPage) ?>" class="back-btn">
+            <i class="bi bi-arrow-left"></i> ပင်မစာမျက်နှာသို့
+        </a>
+        
+        <!-- Control Panel -->
+        <div class="control-panel">
+            <div class="panel-row">
+                <button class="fastpick-btn" id="fastpick-quick">အမြန်ရွေး</button>
+                <span class="panel-label">R</span>
+                <input type="number" min="100" step="100" value="100" id="amount-input" class="amount-input" placeholder="ကျပ် 100" />
+            </div>
+            
+            <div class="panel-row">
+                <div class="panel-label">ထိုးချိန်</div>
+                <div class="panel-time"><?= htmlspecialchars($display_time) ?></div>
+            </div>
+            
+            <div class="panel-row">
+                <div class="panel-wallet">
+                    <div class="wallet-icon">
+                        <i class="bi bi-wallet2"></i>
+                    </div>
+                    <div>0 ကျပ်</div>
+                </div>
                 <button class="bet-btn" id="bet-btn">ထိုးမည်</button>
             </div>
         </div>
         
+        <!-- Legend Box -->
         <div class="legend-box">
-            <span class="legend-color legend-low"></span>
-            <span class="legend-color legend-medium"></span>
-            <span class="legend-color legend-high"></span>
-            <span class="legend-color legend-r" id="legend-r-btn" title="Reverse Auto Select">R</span>
+            <div class="legend-title">ရှင်းလင်းချက်</div>
+            <div class="legend-item">
+                <div class="legend-color legend-low"></div>
+                <div class="legend-text">၅၀% အောက်</div>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color legend-medium"></div>
+                <div class="legend-text">၅၀% မှ ၉၀% ကြား</div>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color legend-high"></div>
+                <div class="legend-text">၉၀% အထက်</div>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color legend-full"></div>
+                <div class="legend-text">ထိုးငွေပြည့်သွားပါပြီ</div>
+            </div>
         </div>
-        <table id="numberPadTable">
-            <?php foreach ($rows as $rowIdx => $row): ?>
-                <tr>
-                    <?php foreach ($row as $colIdx => $num):  
-                        $n = intval($num);
-                        $colorClass = "color-default";
-                        if ($n < 50) $colorClass = "color-low";
-                        elseif ($n < 90) $colorClass = "color-medium";
-                        elseif ($n < 99) $colorClass = "color-high";
-                        else $colorClass = "color-full";
-                        $btnId = "btn_{$rowIdx}_{$colIdx}";
-                    ?>
-                    <td>
-                        <button 
-                            type="button"
-                            class="cell-btn <?= $colorClass ?>" 
-                            id="<?= $btnId ?>" 
-                            data-num="<?= $num ?>"
-                        ><?= $num ?></button>
-                    </td>
-                    <?php endforeach; ?>
-                </tr>
+        
+        <!-- Number Grid - New Design -->
+        <div class="numbers-grid">
+            <?php foreach (range(0, 99) as $i): 
+                $num = str_pad($i, 2, '0', STR_PAD_LEFT);
+                $percentage = $betPercentages[$num];
+                $isClosed = $percentage >= 100;
+                
+                // Determine progress class and width
+                $progressClass = '';
+                if ($isClosed) {
+                    // Closed - no progress bar needed
+                } else if ($percentage > 90) {
+                    $progressClass = 'progress-high';
+                } else if ($percentage >= 50) {
+                    $progressClass = 'progress-medium';
+                } else {
+                    $progressClass = 'progress-low';
+                }
+                ?>
+                <div class="number-cell <?= $isClosed ? 'closed' : '' ?>" data-num="<?= $num ?>">
+                    <?= $num ?>
+                    <?php if (!$isClosed): ?>
+                        <div class="progress-indicator <?= $progressClass ?>" style="width: <?= $percentage ?>%"></div>
+                    <?php endif; ?>
+                </div>
             <?php endforeach; ?>
-        </table>
+        </div>
     </div>
+    
     <!-- Fastpick Popup -->
     <div class="popup-mask" id="popup-mask"></div>
     <div class="popup-dialog" id="popup-dialog">
@@ -237,11 +411,13 @@ $nakhaArr = ['18','81','24','42','35','53','69','96','70','07'];
     </div>
 
     <script>
-    // Number pad button logic
-    const btns = document.querySelectorAll('.cell-btn');
-    btns.forEach(btn => {
-        btn.addEventListener('click', function() {
-            btn.classList.toggle('selected');
+    // Updated number cell selection logic
+    const numberCells = document.querySelectorAll('.number-cell:not(.closed)');
+    numberCells.forEach(cell => {
+        cell.addEventListener('click', function() {
+            if (!cell.classList.contains('closed')) {
+                cell.classList.toggle('selected');
+            }
         });
     });
 
@@ -273,6 +449,7 @@ $nakhaArr = ['18','81','24','42','35','53','69','96','70','07'];
     const apuArr = <?= json_encode($apuArr) ?>;
     const pawaArr = <?= json_encode($pawaArr) ?>;
     const nakhaArr = <?= json_encode($nakhaArr) ?>;
+    const betPercentages = <?= json_encode($betPercentages) ?>;
 
     let selectedBottomPopup = [];
     let selectedBkPopup = [];
@@ -305,14 +482,20 @@ $nakhaArr = ['18','81','24','42','35','53','69','96','70','07'];
                 pairs.push(selectedBottomPopup[i] + selectedBottomPopup[j]);
             }
         }
-        btns.forEach(b => {
-            const num = b.getAttribute('data-num');
-            if (pairs.includes(num)) {
-                b.classList.add('selected');
-            } else {
-                b.classList.remove('selected');
+        
+        // Clear all selections first
+        numberCells.forEach(cell => {
+            cell.classList.remove('selected');
+        });
+        
+        // Apply new selections
+        pairs.forEach(num => {
+            const cell = document.querySelector(`.number-cell[data-num="${num}"]:not(.closed)`);
+            if (cell) {
+                cell.classList.add('selected');
             }
         });
+        
         hidePopup();
     };
 
@@ -337,85 +520,73 @@ $nakhaArr = ['18','81','24','42','35','53','69','96','70','07'];
     });
     document.getElementById('quick-bk-apply').onclick = function() {
         if (selectedBkPopup.length === 0) return;
-        btns.forEach(b => {
-            const num = b.getAttribute('data-num');
+        
+        // Clear all selections first
+        numberCells.forEach(cell => {
+            cell.classList.remove('selected');
+        });
+        
+        // Apply new selections
+        numberCells.forEach(cell => {
+            if (cell.classList.contains('closed')) return;
+            
+            const num = cell.getAttribute('data-num');
             const sum = parseInt(num[0], 10) + parseInt(num[1], 10);
             if (selectedBkPopup.includes(String(sum))) {
-                b.classList.add('selected');
-            } else {
-                b.classList.remove('selected');
+                cell.classList.add('selected');
             }
         });
+        
         hidePopup();
     };
 
     // --- Quickpick types ---
     document.querySelectorAll('.quickpick-btn[data-quick]').forEach(btn => {
         btn.addEventListener('click', function() {
-            btns.forEach(b => b.classList.remove('selected'));
+            // Clear all selections first
+            numberCells.forEach(cell => {
+                cell.classList.remove('selected');
+            });
+            
             const type = btn.getAttribute('data-quick');
-            if (type === 'even-even') {
-                btns.forEach(b => {
-                    const num = b.getAttribute('data-num');
-                    if (parseInt(num[0], 10) % 2 === 0 && parseInt(num[1], 10) % 2 === 0) {
-                        b.classList.add('selected');
-                    }
-                });
-            } else if (type === 'odd-odd') {
-                btns.forEach(b => {
-                    const num = b.getAttribute('data-num');
-                    if (parseInt(num[0], 10) % 2 === 1 && parseInt(num[1], 10) % 2 === 1) {
-                        b.classList.add('selected');
-                    }
-                });
-            } else if (type === 'even-odd') {
-                btns.forEach(b => {
-                    const num = b.getAttribute('data-num');
-                    if (parseInt(num[0], 10) % 2 === 0 && parseInt(num[1], 10) % 2 === 1) {
-                        b.classList.add('selected');
-                    }
-                });
-            } else if (type === 'apu') {
-                btns.forEach(b => {
-                    const num = b.getAttribute('data-num');
-                    if (apuArr.includes(num)) {
-                        b.classList.add('selected');
-                    }
-                });
-            } else if (type === 'pawa') {
-                btns.forEach(b => {
-                    const num = b.getAttribute('data-num');
-                    if (pawaArr.includes(num)) {
-                        b.classList.add('selected');
-                    }
-                });
-            } else if (type === 'nakha') {
-                btns.forEach(b => {
-                    const num = b.getAttribute('data-num');
-                    if (nakhaArr.includes(num)) {
-                        b.classList.add('selected');
-                    }
-                });
-            } else if (type === 'even-top') {
-                btns.forEach(b => {
-                    const num = b.getAttribute('data-num');
-                    if (parseInt(num[0], 10) % 2 === 0) {
-                        b.classList.add('selected');
-                    }
-                });
-            } else if (type === 'odd-top') {
-                btns.forEach(b => {
-                    const num = b.getAttribute('data-num');
-                    if (parseInt(num[0], 10) % 2 === 1) {
-                        b.classList.add('selected');
-                    }
-                });
-            }
+            
+            // Apply different filters based on quickpick type
+            numberCells.forEach(cell => {
+                if (cell.classList.contains('closed')) return;
+                
+                const num = cell.getAttribute('data-num');
+                
+                if (type === 'even-even' && parseInt(num[0], 10) % 2 === 0 && parseInt(num[1], 10) % 2 === 0) {
+                    cell.classList.add('selected');
+                } 
+                else if (type === 'odd-odd' && parseInt(num[0], 10) % 2 === 1 && parseInt(num[1], 10) % 2 === 1) {
+                    cell.classList.add('selected');
+                }
+                else if (type === 'even-odd' && parseInt(num[0], 10) % 2 === 0 && parseInt(num[1], 10) % 2 === 1) {
+                    cell.classList.add('selected');
+                }
+                else if (type === 'apu' && apuArr.includes(num)) {
+                    cell.classList.add('selected');
+                }
+                else if (type === 'pawa' && pawaArr.includes(num)) {
+                    cell.classList.add('selected');
+                }
+                else if (type === 'nakha' && nakhaArr.includes(num)) {
+                    cell.classList.add('selected');
+                }
+                else if (type === 'even-top' && parseInt(num[0], 10) % 2 === 0) {
+                    cell.classList.add('selected');
+                }
+                else if (type === 'odd-top' && parseInt(num[0], 10) % 2 === 1) {
+                    cell.classList.add('selected');
+                }
+            });
+            
             hidePopup();
         });
     });
 
-    // --- Old Top/Bottom Pick logic (remains for completeness) ---
+    // --- Old Top/Bottom Pick logic (adjusted for new UI) ---
     const topPickBtns = document.querySelectorAll('.top-pick-btn');
     let selectedTops = [];
     topPickBtns.forEach(btn => {
@@ -457,17 +628,26 @@ $nakhaArr = ['18','81','24','42','35','53','69','96','70','07'];
 
     document.getElementById('top-pick-apply').onclick = function() {
         if (selectedTops.length === 0 && selectedBottoms.length === 0) return;
-        btns.forEach(b => {
-            const num = b.getAttribute('data-num');
+        
+        // Clear all selections first
+        numberCells.forEach(cell => {
+            cell.classList.remove('selected');
+        });
+        
+        // Apply new selections
+        numberCells.forEach(cell => {
+            if (cell.classList.contains('closed')) return;
+            
+            const num = cell.getAttribute('data-num');
+            
             if (
                 (num.length === 2 && selectedTops.includes(num[0])) ||
                 (num.length === 2 && selectedBottoms.includes(num[1]))
             ) {
-                b.classList.add('selected');
-            } else {
-                b.classList.remove('selected');
+                cell.classList.add('selected');
             }
         });
+        
         hidePopup();
     };
 
@@ -483,40 +663,26 @@ $nakhaArr = ['18','81','24','42','35','53','69','96','70','07'];
     }
     document.getElementById('fastpick-quick').addEventListener('click', resetPickPopup);
 
-    document.getElementById('legend-r-btn').addEventListener('click', function() {
-        const selected = [];
-        btns.forEach(btn => {
-            if (btn.classList.contains('selected')) {
-                selected.push(btn.getAttribute('data-num'));
-            }
-        });
-        btns.forEach(btn => btn.classList.remove('selected'));
-        selected.forEach(num => {
-            if (num.length === 2) {
-                const origBtn = document.querySelector('.cell-btn[data-num="' + num + '"]');
-                if (origBtn) origBtn.classList.add('selected');
-                const reversed = num[1] + num[0];
-                if (reversed !== num) {
-                    const reversedBtn = document.querySelector('.cell-btn[data-num="' + reversed + '"]');
-                    if (reversedBtn) reversedBtn.classList.add('selected');
-                }
-            }
-        });
-    });
-
     // --- BET POPUP LOGIC ---
     function showBetPopup() {
+        // Check if time has passed
+        const isTimeClosed = <?= $is_time_closed ? 'true' : 'false' ?>;
+        if (isTimeClosed) {
+            alert('သတိပေးချက် - <?= htmlspecialchars($display_time) ?> အချိန်အတွက် ထိုးချိန် ကုန်ဆုံးသွားပါပြီ။');
+            return;
+        }
+        
         // Collect selected numbers
-        const selBtns = Array.from(document.querySelectorAll('.cell-btn.selected'));
-        if (selBtns.length === 0) {
+        const selCells = Array.from(document.querySelectorAll('.number-cell.selected'));
+        if (selCells.length === 0) {
             alert('ထိုးရန် နံပါတ်ရွေးပါ။');
             return;
         }
         let defaultAmt = parseInt(document.getElementById('amount-input').value, 10);
         if (isNaN(defaultAmt) || defaultAmt < 0) defaultAmt = 100;
         // Build bet list data
-        window.betList = selBtns.map(btn => ({
-            num: btn.getAttribute('data-num'),
+        window.betList = selCells.map(cell => ({
+            num: cell.getAttribute('data-num'),
             amt: defaultAmt
         }));
         renderBetListTable();
@@ -576,8 +742,16 @@ $nakhaArr = ['18','81','24','42','35','53','69','96','70','07'];
     }
     // BET SUBMIT DUMMY
     document.getElementById('bet-popup-submit').onclick = function() {
-        alert('ထိုးခြင်း အတည်ပြုပါသည်!\n' + betList.length + ' ကွက်\n' + betList.reduce((a,b)=>a+parseInt(b.amt,10),0) + ' ကျပ်');
+        const timeDisplay = "<?= htmlspecialchars($display_time) ?>";
+        alert('ထိုးခြင်း အတည်ပြုပါသည်!\nအချိန်: ' + timeDisplay + '\n' + 
+             betList.length + ' ကွက်\n' + 
+             betList.reduce((a,b)=>a+parseInt(b.amt,10),0) + ' ကျပ်');
         hideBetPopup();
+        
+        // After successful bet, automatically return to main page after short delay
+        setTimeout(function() {
+            window.location.href = '2d_live_api.php?page=<?= htmlspecialchars($returnPage) ?>';
+        }, 1500);
     };
     </script>
 </body>
