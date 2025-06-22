@@ -1,0 +1,551 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Azm2d UI</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <!-- Font Awesome for download icon -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
+  <style>
+    body {
+      margin: 0;
+      font-family: 'Arial Rounded MT Bold', Arial, sans-serif;
+      background: linear-gradient(to top, #ffb566, #83e386);
+      min-height: 100vh;
+    }
+    .header {
+      background: #c92148;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 18px 14px 10px 14px;
+      border-radius: 0 0 24px 24px;
+    }
+    .header-title {
+      font-size: 2.3em;
+      font-weight: bold;
+      letter-spacing: 1px;
+    }
+    .header-icon {
+      width: 44px;
+      height: 44px;
+      background: linear-gradient(#8fe2ff, #3eb3c9);
+      border-radius: 9px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 2em;
+      box-shadow: 0 2px 4px #9994;
+      transition: background 0.18s;
+    }
+    .header-icon a {
+      color: #145b7d;
+      text-decoration: none;
+      width: 100%;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .header-icon a:active, .header-icon a:focus {
+      color: #fff;
+    }
+    .ad-banner {
+      background: none;
+      margin: 16px 0 6px 0;
+      padding: 0;
+      border-radius: 24px;
+      overflow: hidden;
+    }
+    .ad-banner img {
+      width: 300%;
+      max-width: 2000px;
+      min-width: 300px;
+      height: 120px;
+      object-fit: cover;
+      display: block;
+      border-radius: 24px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+    @media (max-width: 1000px) {
+      .ad-banner img {
+        height: 80px;
+        max-width: 100vw;
+      }
+    }
+    .ad-banner-title, .ad-banner-desc {
+      display: none !important;
+    }
+    .subtitle {
+      background: #24a7b6;
+      color: #fff;
+      text-align: center;
+      font-size: 2em;
+      padding: 10px 0;
+      margin: 0 0 18px 0;
+      border-radius: 0 0 16px 16px;
+      font-weight: 500;
+    }
+    .menu-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 18px;
+      padding: 0 14px;
+      margin-bottom: 14px;
+    }
+    .menu-btn {
+      background: #e34dfd;
+      color: #fff;
+      font-size: 2.6em;
+      border: none;
+      border-radius: 24px;
+      padding: 24px 0;
+      font-weight: bold;
+      box-shadow: 0 2px 8px #0002;
+      cursor: pointer;
+      transition: background 0.2s;
+      word-break: break-all;
+      white-space: pre-line;
+      letter-spacing: 0.5px;
+    }
+    .menu-btn:active {
+      background: #c92148;
+    }
+    .menu-btn a {
+      color: inherit;
+      text-decoration: none;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      height: 100%;
+    }
+    .navbar {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: #fff;
+      color: #111;
+      display: flex;
+      justify-content: space-around;
+      align-items: center;
+      padding: 30px 0 32px 0;
+      font-size: 2.7em;
+      font-family: monospace;
+      border-radius: 24px 24px 0 0;
+      box-shadow: 0 -2px 16px #0001;
+      z-index: 100;
+    }
+    .navbar a {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      text-decoration: none;
+      color: inherit;
+      font-size: inherit;
+      transition: color 0.18s;
+    }
+    .navbar a:active, .navbar a:focus {
+      color: #e34dfd;
+    }
+    @media (max-width: 600px) {
+      .ad-banner img {
+        height: 100px;
+      }
+      .form-wrapper { margin: 0 7px; }
+      .form-title { font-size: 1.4em; }
+      .tab-btn { font-size: 1em; padding: 8px 14px; }
+    }
+    @media (max-width: 400px) {
+      .ad-banner { font-size: 2.7em; }
+      .header-title { font-size: 1.4em; }
+      .menu-btn { font-size: 1.3em; padding: 12px 0; }
+      .navbar { font-size: 1.4em; padding: 18px 0 22px 0; }
+      .ad-banner img {
+        height: 70px;
+      }
+    }
+    /* Account/Login/Register styles from second file */
+    .tab-group {
+      display: flex;
+      justify-content: center;
+      margin: 30px 0 0 0;
+      gap: 10px;
+    }
+    .tab-btn {
+      background: #fff;
+      color: #c92148;
+      border: none;
+      border-radius: 12px 12px 0 0;
+      padding: 10px 30px;
+      font-size: 1.2em;
+      font-weight: bold;
+      cursor: pointer;
+      box-shadow: 0 2px 8px #0001;
+      transition: background 0.14s, color 0.14s;
+    }
+    .tab-btn.active, .tab-btn:focus {
+      background: #c92148;
+      color: #fff;
+      outline: none;
+    }
+    .form-wrapper {
+      max-width: 380px;
+      margin: 0 auto;
+      background: #fff9;
+      border-radius: 0 0 24px 24px;
+      box-shadow: 0 6px 24px #0002;
+      padding: 32px 18px 24px 18px;
+    }
+    .form-title {
+      color: #c92148;
+      font-size: 2em;
+      font-weight: bold;
+      text-align: center;
+      margin-bottom: 14px;
+      letter-spacing: 1px;
+    }
+    .form-label {
+      font-size: 1.07em;
+      color: #333;
+      margin-bottom: 3px;
+      font-weight: 500;
+    }
+    .form-input {
+      width: 100%;
+      padding: 10px 12px;
+      font-size: 1.1em;
+      border: 1px solid #bbb;
+      border-radius: 8px;
+      outline: none;
+      margin-bottom: 12px;
+      background: #f7f7ff;
+      transition: border 0.15s;
+    }
+    .form-input:focus {
+      border: 1.5px solid #c92148;
+    }
+    .form-btn {
+      background: #c92148;
+      color: #fff;
+      font-size: 1.2em;
+      font-weight: bold;
+      border: none;
+      border-radius: 12px;
+      padding: 13px 0;
+      margin-top: 8px;
+      cursor: pointer;
+      box-shadow: 0 2px 8px #0001;
+      transition: background 0.17s;
+      width: 100%;
+    }
+    .form-btn:active {
+      background: #a91738;
+    }
+    .optional-tip {
+      font-size: 0.93em;
+      color: #888;
+      margin-bottom: 6px;
+    }
+    .success-msg {
+      color: #209d3a;
+      background: #e6fde9;
+      border-radius: 8px;
+      padding: 9px 0;
+      text-align: center;
+      margin-bottom: 8px;
+      font-weight: 500;
+      display: none;
+    }
+    .error-msg {
+      color: #d7263d;
+      background: #fbeaea;
+      border-radius: 8px;
+      padding: 9px 0;
+      text-align: center;
+      margin-bottom: 8px;
+      font-weight: 500;
+      display: none;
+    }
+    /* Hide main UI when not logged in */
+    #main-ui { display: none; }
+  </style>
+  <script>
+  // ad_banner_api.php integration
+  document.addEventListener("DOMContentLoaded", function() {
+      fetch('https://amazemm.xyz/api/ad_banner_api.php')
+        .then(r => r.json())
+        .then(data => {
+          if(data.success && data.banner) {
+            document.getElementById('ad-banner-img').src = data.banner.image_url;
+            // Hide title/desc always, just in case
+            document.getElementById('ad-banner-title').style.display = "none";
+            document.getElementById('ad-banner-desc').style.display = "none";
+          }
+        });
+  });
+
+  // Account/Login/Register logic from second file
+  function showTab(tab) {
+    document.getElementById('register-form').style.display = tab === 'register' ? 'block' : 'none';
+    document.getElementById('login-form').style.display = tab === 'login' ? 'block' : 'none';
+    document.getElementById('tab-register').classList.toggle('active', tab === 'register');
+    document.getElementById('tab-login').classList.toggle('active', tab === 'login');
+    // Clear any messages when switching tab
+    document.querySelectorAll('.success-msg,.error-msg').forEach(e => e.style.display = 'none');
+  }
+
+  // Helper for login state (with API)
+  function setLogin(phone, token) {
+    localStorage.setItem('azm2d_phone', phone);
+    localStorage.setItem('azm2d_token', token);
+  }
+  function clearLogin() {
+    localStorage.removeItem('azm2d_phone');
+    localStorage.removeItem('azm2d_token');
+  }
+  function isLoggedIn() {
+    return !!localStorage.getItem('azm2d_token');
+  }
+
+  // Load user info API and update UI (example: update balance)
+  function fetchUserInfo() {
+    const phone = localStorage.getItem('azm2d_phone');
+    const token = localStorage.getItem('azm2d_token');
+    if (!phone || !token) return;
+
+    fetch('https://amazemm.xyz/api/user.php', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': token },
+      body: JSON.stringify({ phone: phone })
+    })
+    .then(r => r.json())
+    .then(data => {
+      if (data.success && data.user) {
+        // Example: update balance
+        document.getElementById('user-balance').textContent = 'လက်ကျန်ငွေ ' + (data.user.balance || 0) + 'ကျပ်';
+        // You can set user name, etc. here if you want
+      } else {
+        // Token expired or invalid, force logout
+        clearLogin();
+        showAccountUI();
+      }
+    })
+    .catch(() => {
+      // API fail, but keep UI as is
+    });
+  }
+
+  function handleRegister(e) {
+    e.preventDefault();
+    var name = document.getElementById('reg-name').value.trim();
+    var phone = document.getElementById('reg-phone').value.trim();
+    var password = document.getElementById('reg-password').value;
+    var agentCode = document.getElementById('reg-agent_code').value.trim();
+    var errorMsg = document.getElementById('reg-error-msg');
+    var successMsg = document.getElementById('reg-success-msg');
+    errorMsg.style.display = 'none';
+    successMsg.style.display = 'none';
+
+    if (name.length < 2) {
+      errorMsg.textContent = 'အမည် မှန်ကန်စွာ ထည့်ပါ။';
+      errorMsg.style.display = 'block';
+      return;
+    }
+    if (!phone.match(/^[0-9]{7,15}$/)) {
+      errorMsg.textContent = 'ဖုန်းနံပါတ် မှန်ကန်စွာ ထည့်ပါ။';
+      errorMsg.style.display = 'block';
+      return;
+    }
+    if (password.length < 6) {
+      errorMsg.textContent = 'စကားဝှက် အနည်းဆုံး ၆ လုံးရှိရပါမည်။';
+      errorMsg.style.display = 'block';
+      return;
+    }
+
+    fetch('https://amazemm.xyz/api/register.php', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        name: name,
+        phone: phone,
+        password: password,
+        agent_code: agentCode
+      })
+    })
+    .then(r => r.json())
+    .then(data => {
+      if(data.success) {
+        successMsg.textContent = 'အ​ကောင့်ဖွင့်ခြင်း အောင်မြင်ပါသည်။';
+        successMsg.style.display = 'block';
+        document.getElementById('register-form').reset();
+        // Optionally, auto-login
+        if(data.token) {
+          setLogin(phone, data.token);
+          showMainUI();
+          fetchUserInfo();
+        }
+      } else {
+        errorMsg.textContent = data.message || 'မှားယွင်းမှုတစ်ခု ဖြစ်ပွားခဲ့သည်။';
+        errorMsg.style.display = 'block';
+      }
+    })
+    .catch(() => {
+      errorMsg.textContent = 'Server သို့ ချိတ်ဆက်၍မရပါ။ နောက်မှ ပြန်လည်ကြိုးစားပါ။';
+      errorMsg.style.display = 'block';
+    });
+  }
+
+  function handleLogin(e) {
+    e.preventDefault();
+    var phone = document.getElementById('login-phone').value.trim();
+    var password = document.getElementById('login-password').value;
+    var errorMsg = document.getElementById('login-error-msg');
+    var successMsg = document.getElementById('login-success-msg');
+    errorMsg.style.display = 'none';
+    successMsg.style.display = 'none';
+
+    if (!phone.match(/^[0-9]{7,15}$/)) {
+      errorMsg.textContent = 'ဖုန်းနံပါတ် မှန်ကန်စွာ ထည့်ပါ။';
+      errorMsg.style.display = 'block';
+      return;
+    }
+    if (!password || password.length < 6) {
+      errorMsg.textContent = 'စကားဝှက် မှန်ကန်စွာ ထည့်ပါ။';
+      errorMsg.style.display = 'block';
+      return;
+    }
+
+    fetch('https://amazemm.xyz/api/login.php', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        phone: phone,
+        password: password
+      })
+    })
+    .then(r => r.json())
+    .then(data => {
+      if(data.success) {
+        successMsg.textContent = 'အ​ကောင့်ဝင်ခြင်း အောင်မြင်ပါသည်။';
+        successMsg.style.display = 'block';
+        if(data.token) {
+          setLogin(phone, data.token);
+          showMainUI();
+          fetchUserInfo();
+        }
+      } else {
+        errorMsg.textContent = data.message || 'မှားယွင်းမှုတစ်ခု ဖြစ်ပွားခဲ့သည်။';
+        errorMsg.style.display = 'block';
+      }
+    })
+    .catch(() => {
+      errorMsg.textContent = 'Server သို့ ချိတ်ဆက်၍မရပါ။ နောက်မှ ပြန်လည်ကြိုးစားပါ။';
+      errorMsg.style.display = 'block';
+    });
+  }
+
+  // UI visibility logic
+  function showMainUI() {
+    document.getElementById('account-ui').style.display = 'none';
+    document.getElementById('main-ui').style.display = 'block';
+    fetchUserInfo();
+  }
+  function showAccountUI() {
+    document.getElementById('account-ui').style.display = 'block';
+    document.getElementById('main-ui').style.display = 'none';
+  }
+
+  // Logout function (optional, you can add a button somewhere)
+  function logout() {
+    clearLogin();
+    showAccountUI();
+  }
+
+  window.onload = function() {
+    if(isLoggedIn()) {
+      showMainUI();
+    } else {
+      showAccountUI();
+      showTab('login');
+    }
+  };
+  </script>
+</head>
+<body>
+  <!-- Main UI (hidden if not logged in) -->
+  <div id="main-ui">
+    <div class="header">
+      <div class="header-title">Azm2d</div>
+      <!-- Download icon with link -->
+      <div class="header-icon">
+        <a href="https://your-app-download-link.com" title="Download App" target="_blank">
+          <i class="fa fa-download"></i>
+        </a>
+      </div>
+    </div>
+    <div class="ad-banner">
+      <img id="ad-banner-img" src="" alt="Ad Banner">
+      <div class="ad-banner-title" id="ad-banner-title"></div>
+      <div class="ad-banner-desc" id="ad-banner-desc"></div>
+    </div>
+    <div class="subtitle" id="user-balance">လက်ကျန်ငွေ 0ကျပ်</div>
+    <div class="menu-grid">
+      <button class="menu-btn"><a href="a/2d_live_api.php">2D</a></button>
+      <button class="menu-btn"><a href="a/3d.php">3D</a></button>
+      <button class="menu-btn"><a href="a/game.php">Game</a></button>
+      <button class="menu-btn"><a href="a/36.php">36<br>ကောင်</a></button>
+      <button class="menu-btn"><a href="a/maung.php">မောင်း</a></button>
+      <button class="menu-btn"><a href="a/boardi.php">​ဘော်<br>ဒီ</a></button>
+    </div>
+    <div class="navbar">
+      <a href="index.html"><span>🏠 Home</span></a>
+      <a href="wallet.html"><span>💰 Wallet</span></a>
+      <a href="help.html"><span>❓ Help</span></a>
+      <a href="profile.html"><span>👤 Profile</span></a>
+      <!--
+      <a href="#" onclick="logout()" style="font-size:0.7em;color:#c92148;">Logout</a>
+      -->
+    </div>
+  </div>
+  <!-- Login/Register UI (shown if not logged in) -->
+  <div id="account-ui" style="display:none">
+    <div class="tab-group">
+      <button type="button" class="tab-btn" id="tab-login" onclick="showTab('login')">အ​ကောင့်ဝင်ရန်</button>
+      <button type="button" class="tab-btn" id="tab-register" onclick="showTab('register')">အ​ကောင့်ဖွင့်ရန်</button>
+    </div>
+    <div class="form-wrapper">
+      <!-- Login Form -->
+      <form id="login-form" style="display:none" onsubmit="handleLogin(event)">
+        <div class="form-title">အ​ကောင့်ဝင်ရန်</div>
+        <div id="login-success-msg" class="success-msg"></div>
+        <div id="login-error-msg" class="error-msg"></div>
+        <label class="form-label" for="login-phone">ဖုန်းနံပါတ်</label>
+        <input class="form-input" type="tel" id="login-phone" name="phone" placeholder="ဖုန်းနံပါတ် (09xxxxxxx)" required pattern="[0-9]{7,15}">
+        <label class="form-label" for="login-password">စကားဝှက်</label>
+        <input class="form-input" type="password" id="login-password" name="password" placeholder="စကားဝှက်" required minlength="6">
+        <button class="form-btn" type="submit">အ​ကောင့်ဝင်မည်</button>
+      </form>
+      <!-- Register Form -->
+      <form id="register-form" style="display:none" onsubmit="handleRegister(event)">
+        <div class="form-title">အသစ်အ​ကောင့်ဖွင့်ရန်</div>
+        <div id="reg-success-msg" class="success-msg"></div>
+        <div id="reg-error-msg" class="error-msg"></div>
+        <label class="form-label" for="reg-name">အမည်</label>
+        <input class="form-input" type="text" id="reg-name" name="name" placeholder="အမည်" required minlength="2">
+        <label class="form-label" for="reg-phone">ဖုန်းနံပါတ်</label>
+        <input class="form-input" type="tel" id="reg-phone" name="phone" placeholder="ဖုန်းနံပါတ် (09xxxxxxx)" required pattern="[0-9]{7,15}">
+        <label class="form-label" for="reg-password">စကားဝှက်</label>
+        <input class="form-input" type="password" id="reg-password" name="password" placeholder="စကားဝှက်" required minlength="6">
+        <label class="form-label" for="reg-agent_code">Agent Code <span class="optional-tip">(ရှိပါကသာ ထည့်ပါ)</span></label>
+        <input class="form-input" type="text" id="reg-agent_code" name="agent_code" placeholder="Agent Code (မရှိရင်ကျော်ပါ)">
+        <button class="form-btn" type="submit">အ​ကောင့်ဖွင့်မည်</button>
+      </form>
+    </div>
+  </div>
+</body>
+</html>
