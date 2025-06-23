@@ -30,6 +30,7 @@
       --box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
       --border-radius: 12px;
       --transition: all 0.3s ease;
+      --header-height: 64px;
     }
     
     * {
@@ -45,6 +46,7 @@
       min-height: 100vh;
       line-height: 1.6;
       padding-bottom: 80px;
+      padding-top: var(--header-height);
     }
     
     .header {
@@ -53,10 +55,14 @@
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: 20px 16px;
+      padding: 0 16px;
       box-shadow: var(--box-shadow);
-      position: relative;
-      z-index: 10;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: var(--header-height);
+      z-index: 1000;
     }
     
     .header-title {
@@ -238,11 +244,42 @@
       transition: var(--transition);
       display: block;
       width: 100%;
+      position: relative;
     }
     
     .form-button:hover {
       background: var(--primary-dark);
       transform: translateY(-2px);
+    }
+    
+    .form-button.loading {
+      color: transparent;
+      pointer-events: none;
+    }
+    
+    .form-button.loading::after {
+      content: "";
+      position: absolute;
+      width: 20px;
+      height: 20px;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      margin: auto;
+      border: 3px solid transparent;
+      border-top-color: var(--white);
+      border-radius: 50%;
+      animation: button-loading-spinner 1s ease infinite;
+    }
+    
+    @keyframes button-loading-spinner {
+      from {
+        transform: rotate(0turn);
+      }
+      to {
+        transform: rotate(1turn);
+      }
     }
     
     .logout-button {
@@ -289,7 +326,7 @@
     
     .spinner {
       display: none;
-      margin: 0 auto;
+      margin: 20px auto;
       width: 40px;
       height: 40px;
       border: 4px solid rgba(63, 81, 181, 0.1);
@@ -305,6 +342,7 @@
     
     /* Debug panel for development */
     .debug-panel {
+      display: none;
       background: #f8f8f8;
       border: 1px solid #ddd;
       padding: 10px;
@@ -325,6 +363,32 @@
       padding: 8px;
       border-radius: 4px;
       font-size: 0.9rem;
+      max-height: 200px;
+      overflow-y: auto;
+    }
+    
+    /* Toggle Debug button */
+    .debug-toggle {
+      position: fixed;
+      bottom: 90px;
+      right: 20px;
+      background: var(--primary);
+      color: white;
+      border: none;
+      border-radius: 50%;
+      width: 36px;
+      height: 36px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: var(--box-shadow);
+      cursor: pointer;
+      z-index: 1000;
+      opacity: 0.7;
+    }
+    
+    .debug-toggle:hover {
+      opacity: 1;
     }
     
     /* Navbar */
@@ -412,7 +476,7 @@
   </style>
 </head>
 <body>
-  <!-- Header -->
+  <!-- Header - Fixed at top -->
   <div class="header">
     <div class="header-title">AZM2D</div>
   </div>
@@ -501,12 +565,12 @@
           <input class="form-input" type="password" id="confirm-password" required minlength="6">
         </div>
         
-        <button type="submit" class="form-button">စကားဝှက် ပြောင်းမည်</button>
+        <button type="submit" class="form-button" id="password-submit-btn">စကားဝှက် ပြောင်းမည်</button>
       </form>
     </div>
     
     <!-- Debug Panel - For development only -->
-    <div class="debug-panel" id="debug-panel" style="display: none;">
+    <div class="debug-panel" id="debug-panel">
       <div class="debug-title">Debug Information</div>
       <div class="debug-content" id="debug-content"></div>
     </div>
@@ -516,6 +580,11 @@
       <i class="fas fa-sign-out-alt"></i> အကောင့်မှ ထွက်မည်
     </button>
   </div>
+
+  <!-- Debug mode toggle button -->
+  <button class="debug-toggle" id="debug-toggle">
+    <i class="fas fa-bug"></i>
+  </button>
   
   <!-- Bottom Navigation -->
   <div class="navbar">
@@ -539,284 +608,331 @@
   
   <!-- JavaScript -->
   <script>
-    // Mock Data for Testing
-    const MOCK_USER_DATA = {
-      name: "ဦးupop556",
-      phone: "09123456789", 
-      balance: 250000,
-      agent_code: "AZM001"
-    };
+// Debug mode toggle
+let debugMode = false;
+
+// Helper functions for API and storage
+const AUTH = {
+  getToken: function() {
+    return localStorage.getItem('azm2d_token') || sessionStorage.getItem('azm2d_token');
+  },
+  
+  getPhone: function() {
+    return localStorage.getItem('azm2d_phone') || sessionStorage.getItem('azm2d_phone');
+  },
+  
+  clearLogin: function() {
+    localStorage.removeItem('azm2d_token');
+    localStorage.removeItem('azm2d_phone');
+    sessionStorage.removeItem('azm2d_token');
+    sessionStorage.removeItem('azm2d_phone');
+  },
+  
+  isLoggedIn: function() {
+    return !!this.getToken();
+  }
+};
+
+// Debug logging
+function debugLog(message, data) {
+  if (!debugMode) return;
+  
+  console.log(`[DEBUG] ${message}:`, data);
+  
+  const debugContent = document.getElementById('debug-content');
+  if (debugContent) {
+    const timestamp = new Date().toLocaleTimeString();
+    let dataText = '';
     
-    // Debugging Helpers
-    const DEBUG_MODE = true; // Set to false in production
-    
-    function debugLog(message, data) {
-      if (DEBUG_MODE) {
-        console.log(message, data);
-        
-        const debugPanel = document.getElementById('debug-panel');
-        const debugContent = document.getElementById('debug-content');
-        
-        debugPanel.style.display = 'block';
-        
-        const timestamp = new Date().toISOString();
-        const logMessage = typeof data === 'object' 
-          ? `[${timestamp}] ${message}: ${JSON.stringify(data, null, 2)}`
-          : `[${timestamp}] ${message}: ${data}`;
-        
-        debugContent.textContent += logMessage + '\n\n';
-      }
+    try {
+      dataText = typeof data === 'object' ? JSON.stringify(data, null, 2) : String(data);
+    } catch (e) {
+      dataText = '[Error displaying data]';
     }
     
-    // User authentication check
-    function isLoggedIn() {
-      // For testing purposes, we'll always return true
-      // In production, uncomment the line below
-      // return !!localStorage.getItem('azm2d_token');
-      return true;
-    }
-    
-    function redirectToLogin() {
-      window.location.href = 'index.html';
-    }
-    
-    // API Functions with Error Handling
-    async function fetchUserProfile() {
-      const phone = localStorage.getItem('azm2d_phone');
-      const token = localStorage.getItem('azm2d_token');
-      
-      document.getElementById('loading-spinner').style.display = 'block';
-      
-      try {
-        // For testing, use mock data if no auth data
-        if (!phone || !token) {
-          debugLog('No auth data found, using mock data', { phone, token });
-          
-          // In production, you would redirect to login here
-          // redirectToLogin();
-          // return;
-          
-          // For testing, wait a bit then use mock data
-          await new Promise(resolve => setTimeout(resolve, 1000));
-          updateProfileUI(MOCK_USER_DATA);
-          document.getElementById('loading-spinner').style.display = 'none';
-          return;
-        }
-        
-        debugLog('Fetching user profile', { phone, tokenExists: !!token });
-        
-        // CORS Issues Workaround: Direct API call may not work in development
-        // Use a fallback for testing purposes
-        try {
-          const response = await fetch('https://amazemm.xyz/api/user.php', {
-            method: 'POST',
-            headers: { 
-              'Content-Type': 'application/json', 
-              'Authorization': token 
-            },
-            body: JSON.stringify({ phone: phone })
-          });
-          
-          debugLog('API Response Status', response.status);
-          
-          if (!response.ok) {
-            throw new Error(`HTTP error: ${response.status}`);
-          }
-          
-          const data = await response.json();
-          debugLog('API Response Data', data);
-          
-          if (data.success && data.user) {
-            // Update profile information
-            updateProfileUI(data.user);
-          } else {
-            // Token expired or invalid
-            document.getElementById('api-error-message').style.display = 'block';
-            
-            // For testing, fallback to mock data after 3 seconds
-            setTimeout(() => {
-              updateProfileUI(MOCK_USER_DATA);
-              document.getElementById('api-error-message').style.display = 'none';
-            }, 3000);
-            
-            // In production, you would handle token expiration here
-            /*
-            setTimeout(() => {
-              localStorage.removeItem('azm2d_token');
-              localStorage.removeItem('azm2d_phone');
-              redirectToLogin();
-            }, 2000);
-            */
-          }
-        } catch (error) {
-          debugLog('API Error', error.message);
-          document.getElementById('api-error-message').style.display = 'block';
-          
-          // For testing, fallback to mock data after 3 seconds
-          setTimeout(() => {
-            updateProfileUI(MOCK_USER_DATA);
-            document.getElementById('api-error-message').style.display = 'none';
-          }, 3000);
-        }
-      } finally {
-        document.getElementById('loading-spinner').style.display = 'none';
-      }
-    }
-    
-    async function changePassword(currentPassword, newPassword) {
-      const phone = localStorage.getItem('azm2d_phone') || '09123456789';
-      const token = localStorage.getItem('azm2d_token') || 'dummy_token';
-      
-      debugLog('Change Password Request', {
-        phone: phone,
-        currentPasswordLength: currentPassword.length,
-        newPasswordLength: newPassword.length
-      });
-      
-      try {
-        // CORS Issues Workaround: Direct API call may not work in development
-        // Simulate response for testing purposes
-        
-        // In production, uncomment this section
-        /*
-        const response = await fetch('https://amazemm.xyz/api/change_password.php', {
-          method: 'POST',
-          headers: { 
-            'Content-Type': 'application/json', 
-            'Authorization': token 
-          },
-          body: JSON.stringify({
-            phone: phone,
-            current_password: currentPassword,
-            new_password: newPassword
-          })
-        });
-        
-        const data = await response.json();
-        */
-        
-        // For testing, simulate API response
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        
-        // Simulate a successful password change
-        const data = { 
-          success: true, 
-          message: 'Password changed successfully' 
-        };
-        
-        // Uncomment to simulate a failure
-        /*
-        const data = {
-          success: false,
-          message: 'Current password is incorrect'
-        };
-        */
-        
-        debugLog('Password Change Response', data);
-        
-        if (data.success) {
-          document.getElementById('password-success-message').style.display = 'block';
-          document.getElementById('password-error-message').style.display = 'none';
-          document.getElementById('change-password-form').reset();
-          
-          // Hide success message after a few seconds
-          setTimeout(() => {
-            document.getElementById('password-success-message').style.display = 'none';
-          }, 5000);
-          
-          return true;
-        } else {
-          document.getElementById('password-error-message').textContent = data.message || 'စကားဝှက် ပြောင်းရန် မအောင်မြင်ပါ။';
-          document.getElementById('password-error-message').style.display = 'block';
-          document.getElementById('password-success-message').style.display = 'none';
-          return false;
-        }
-      } catch (error) {
-        debugLog('Password Change Error', error.message);
-        document.getElementById('password-error-message').textContent = 'Server နှင့် ဆက်သွယ်၍မရပါ။';
-        document.getElementById('password-error-message').style.display = 'block';
-        document.getElementById('password-success-message').style.display = 'none';
-        return false;
-      }
-    }
-    
-    // UI Functions
-    function updateProfileUI(user) {
-      debugLog('Updating UI with user data', user);
-      
-      // Basic profile info
-      document.getElementById('profile-name').textContent = user.name || 'N/A';
-      document.getElementById('profile-phone').textContent = user.phone || 'N/A';
-      
-      // Profile avatar - first letter of name
-      const avatarElement = document.getElementById('profile-avatar');
-      if (user.name && user.name.length > 0) {
-        avatarElement.innerHTML = user.name.charAt(0).toUpperCase();
-      } else {
-        avatarElement.innerHTML = '<i class="fas fa-user"></i>';
-      }
-      
-      // Balance
-      document.getElementById('balance-amount').textContent = numberWithCommas(user.balance || 0);
-      
-      // Information list
-      document.getElementById('info-name').textContent = user.name || 'N/A';
-      document.getElementById('info-phone').textContent = user.phone || 'N/A';
-      document.getElementById('info-agent-code').textContent = user.agent_code || 'N/A';
-    }
-    
-    function numberWithCommas(x) {
-      return x.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
-    }
-    
-    // Event Handlers
-    document.getElementById('change-password-form').addEventListener('submit', async function(e) {
-      e.preventDefault();
-      
-      const currentPassword = document.getElementById('current-password').value;
-      const newPassword = document.getElementById('new-password').value;
-      const confirmPassword = document.getElementById('confirm-password').value;
-      
-      // Validate passwords
-      if (newPassword !== confirmPassword) {
-        document.getElementById('password-error-message').textContent = 'စကားဝှက် အသစ်နှင့် အတည်ပြုစကားဝှက်တို့ မတူညီပါ။';
-        document.getElementById('password-error-message').style.display = 'block';
-        return;
-      }
-      
-      if (newPassword.length < 6) {
-        document.getElementById('password-error-message').textContent = 'စကားဝှက်သည် အနည်းဆုံး ၆ လုံး ရှိရပါမည်။';
-        document.getElementById('password-error-message').style.display = 'block';
-        return;
-      }
-      
-      // Attempt to change password
-      await changePassword(currentPassword, newPassword);
+    debugContent.innerHTML += `<div><strong>${timestamp}</strong>: ${message}<br><span>${dataText}</span></div><hr>`;
+    debugContent.scrollTop = debugContent.scrollHeight;
+  }
+}
+
+// UI helper functions
+function showLoading() {
+  document.getElementById('loading-spinner').style.display = 'block';
+}
+
+function hideLoading() {
+  document.getElementById('loading-spinner').style.display = 'none';
+}
+
+function showApiError(show = true) {
+  document.getElementById('api-error-message').style.display = show ? 'block' : 'none';
+}
+
+function formatNumber(x) {
+  return x.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+}
+
+// User authentication check
+function redirectToLogin() {
+  window.location.href = 'index.html';
+}
+
+// API request helper
+async function callProfileApi(actionName, additionalData = {}) {
+  const phone = AUTH.getPhone();
+  const token = AUTH.getToken();
+  
+  if (!phone || !token) {
+    debugLog(`No auth data for ${actionName}`, { phone });
+    return null;
+  }
+  
+  // Prepare request data
+  const requestData = {
+    action: actionName,
+    ...additionalData
+  };
+  
+  debugLog(`API Request: ${actionName}`, requestData);
+  
+  try {
+    const response = await fetch('https://amazemm.xyz/api/profile.php', {
+      method: 'POST',
+      headers: { 
+        'Content-Type': 'application/json', 
+        'Authorization': token 
+      },
+      body: JSON.stringify(requestData)
     });
     
-    document.getElementById('logout-button').addEventListener('click', function() {
-      debugLog('Logout button clicked', {});
-      
-      // Clear auth data
-      localStorage.removeItem('azm2d_token');
-      localStorage.removeItem('azm2d_phone');
-      
-      // Redirect to login page
+    debugLog(`API Response Status: ${actionName}`, response.status);
+    
+    // Handle empty or invalid response
+    const responseText = await response.text();
+    if (!responseText) {
+      throw new Error('Empty response from server');
+    }
+    
+    // Try to parse JSON response
+    let data;
+    try {
+      data = JSON.parse(responseText);
+      debugLog(`API Response Data: ${actionName}`, data);
+      return data;
+    } catch (e) {
+      debugLog('JSON Parse Error', { responseText, error: e.message });
+      throw new Error('Invalid response format from server');
+    }
+  } catch (error) {
+    debugLog(`API Error: ${actionName}`, error.message);
+    throw error;
+  }
+}
+
+// API Functions with Error Handling
+async function fetchUserProfile() {
+  showLoading();
+  showApiError(false);
+  
+  try {
+    if (!AUTH.isLoggedIn()) {
+      debugLog('Not logged in', {});
       redirectToLogin();
+      return;
+    }
+    
+    debugLog('Fetching user profile', { phone: AUTH.getPhone() });
+    
+    const data = await callProfileApi('get_profile');
+    
+    if (data && data.success && data.user) {
+      // Update profile information
+      updateProfileUI(data.user);
+    } else {
+      // Token expired or invalid
+      showApiError(true);
+      debugLog('Invalid API response', data);
+      
+      // If unauthorized, logout after delay
+      setTimeout(() => {
+        AUTH.clearLogin();
+        redirectToLogin();
+      }, 2000);
+    }
+  } catch (error) {
+    debugLog('API Error', error.message);
+    showApiError(true);
+  } finally {
+    hideLoading();
+  }
+}
+
+async function changePassword(currentPassword, newPassword) {
+  if (!AUTH.isLoggedIn()) {
+    debugLog('No auth data for password change', {});
+    redirectToLogin();
+    return false;
+  }
+  
+  const submitBtn = document.getElementById('password-submit-btn');
+  submitBtn.classList.add('loading');
+  submitBtn.disabled = true;
+  
+  try {
+    debugLog('Changing password', {
+      currentPasswordLength: currentPassword.length,
+      newPasswordLength: newPassword.length
     });
     
-    // Initialize
-    document.addEventListener('DOMContentLoaded', function() {
-      debugLog('Page loaded', { isLoggedIn: isLoggedIn() });
-      
-      if (!isLoggedIn()) {
-        debugLog('Not logged in, redirecting to login page', {});
-        // redirectToLogin();
-        // return;
-      }
-      
-      fetchUserProfile();
+    const data = await callProfileApi('change_password', {
+      current_password: currentPassword,
+      new_password: newPassword
     });
+    
+    if (data && data.success) {
+      document.getElementById('password-success-message').style.display = 'block';
+      document.getElementById('password-error-message').style.display = 'none';
+      document.getElementById('change-password-form').reset();
+      
+      // Hide success message after a few seconds
+      setTimeout(() => {
+        document.getElementById('password-success-message').style.display = 'none';
+      }, 5000);
+      
+      return true;
+    } else {
+      document.getElementById('password-error-message').textContent = data?.message || 'စကားဝှက် ပြောင်းရန် မအောင်မြင်ပါ။';
+      document.getElementById('password-error-message').style.display = 'block';
+      document.getElementById('password-success-message').style.display = 'none';
+      return false;
+    }
+  } catch (error) {
+    debugLog('Password Change Error', error.message);
+    document.getElementById('password-error-message').textContent = 'Server နှင့် ဆက်သွယ်၍မရပါ။';
+    document.getElementById('password-error-message').style.display = 'block';
+    document.getElementById('password-success-message').style.display = 'none';
+    return false;
+  } finally {
+    submitBtn.classList.remove('loading');
+    submitBtn.disabled = false;
+  }
+}
+
+// Optionally add update profile function
+async function updateProfileName(newName) {
+  if (!AUTH.isLoggedIn()) {
+    debugLog('No auth data for profile update', {});
+    redirectToLogin();
+    return false;
+  }
+  
+  try {
+    debugLog('Updating profile name', { newName });
+    
+    const data = await callProfileApi('update_profile', {
+      name: newName
+    });
+    
+    if (data && data.success && data.user) {
+      // Update UI with new data
+      updateProfileUI(data.user);
+      return true;
+    } else {
+      return false;
+    }
+  } catch (error) {
+    debugLog('Profile Update Error', error.message);
+    return false;
+  }
+}
+
+// UI Functions
+function updateProfileUI(user) {
+  debugLog('Updating UI with user data', user);
+  
+  // Basic profile info
+  document.getElementById('profile-name').textContent = user.name || 'N/A';
+  document.getElementById('profile-phone').textContent = user.phone || 'N/A';
+  
+  // Profile avatar - first letter of name
+  const avatarElement = document.getElementById('profile-avatar');
+  if (user.name && user.name.length > 0) {
+    avatarElement.innerHTML = user.name.charAt(0).toUpperCase();
+  } else {
+    avatarElement.innerHTML = '<i class="fas fa-user"></i>';
+  }
+  
+  // Balance
+  document.getElementById('balance-amount').textContent = formatNumber(user.balance || 0);
+  
+  // Information list
+  document.getElementById('info-name').textContent = user.name || 'N/A';
+  document.getElementById('info-phone').textContent = user.phone || 'N/A';
+  document.getElementById('info-agent-code').textContent = user.agent_code || 'N/A';
+}
+
+// Event Handlers
+document.getElementById('change-password-form').addEventListener('submit', async function(e) {
+  e.preventDefault();
+  
+  const currentPassword = document.getElementById('current-password').value;
+  const newPassword = document.getElementById('new-password').value;
+  const confirmPassword = document.getElementById('confirm-password').value;
+  
+  // Validate passwords
+  if (newPassword !== confirmPassword) {
+    document.getElementById('password-error-message').textContent = 'စကားဝှက် အသစ်နှင့် အတည်ပြုစကားဝှက်တို့ မတူညီပါ။';
+    document.getElementById('password-error-message').style.display = 'block';
+    return;
+  }
+  
+  if (newPassword.length < 6) {
+    document.getElementById('password-error-message').textContent = 'စကားဝှက်သည် အနည်းဆုံး ၆ လုံး ရှိရပါမည်။';
+    document.getElementById('password-error-message').style.display = 'block';
+    return;
+  }
+  
+  // Attempt to change password
+  await changePassword(currentPassword, newPassword);
+});
+
+document.getElementById('logout-button').addEventListener('click', function() {
+  debugLog('Logout button clicked', {});
+  
+  // Clear auth data
+  AUTH.clearLogin();
+  
+  // Redirect to login page
+  redirectToLogin();
+});
+
+// Debug mode toggle
+document.getElementById('debug-toggle').addEventListener('click', function() {
+  debugMode = !debugMode;
+  document.getElementById('debug-panel').style.display = debugMode ? 'block' : 'none';
+  
+  if (debugMode) {
+    document.getElementById('debug-content').innerHTML = '<strong>Debug Mode Enabled</strong><br>';
+    debugLog('System info', {
+      userAgent: navigator.userAgent,
+      isLoggedIn: AUTH.isLoggedIn(),
+      phone: AUTH.getPhone()
+    });
+  }
+});
+
+// Initialize
+document.addEventListener('DOMContentLoaded', function() {
+  debugLog('Page loaded', { isLoggedIn: AUTH.isLoggedIn() });
+  
+  if (!AUTH.isLoggedIn()) {
+    debugLog('Not logged in, redirecting to login page', {});
+    redirectToLogin();
+    return;
+  }
+  
+  fetchUserProfile();
+});
   </script>
 </body>
 </html>
