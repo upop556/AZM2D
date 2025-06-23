@@ -9,11 +9,11 @@ const AUTH = {
   getToken: function() {
     return localStorage.getItem('azm2d_token') || sessionStorage.getItem('azm2d_token');
   },
-  
+
   getPhone: function() {
     return localStorage.getItem('azm2d_phone') || sessionStorage.getItem('azm2d_phone');
   },
-  
+
   setLogin: function(phone, token, remember = false) {
     if (remember) {
       localStorage.setItem('azm2d_phone', phone);
@@ -23,14 +23,14 @@ const AUTH = {
       sessionStorage.setItem('azm2d_token', token);
     }
   },
-  
+
   clearLogin: function() {
     localStorage.removeItem('azm2d_phone');
     localStorage.removeItem('azm2d_token');
     sessionStorage.removeItem('azm2d_phone');
     sessionStorage.removeItem('azm2d_token');
   },
-  
+
   isLoggedIn: function() {
     return !!(this.getToken());
   }
@@ -39,20 +39,20 @@ const AUTH = {
 // Debug logging
 function debugLog(message, data) {
   if (!debugMode) return;
-  
+
   console.log(`[DEBUG] ${message}:`, data);
-  
+
   const debugContent = document.getElementById('debug-content');
   if (debugContent) {
     const timestamp = new Date().toLocaleTimeString();
     let dataText = '';
-    
+
     try {
       dataText = typeof data === 'object' ? JSON.stringify(data, null, 2) : String(data);
     } catch (e) {
       dataText = '[Error displaying data]';
     }
-    
+
     debugContent.innerHTML += `<div><strong>${timestamp}</strong>: ${message}<br><span>${dataText}</span></div><hr>`;
     debugContent.scrollTop = debugContent.scrollHeight;
   }
@@ -81,17 +81,17 @@ function formatNumber(x) {
 // View management
 function showView(view) {
   currentView = view;
-  
+
   // Update navigation
   document.querySelectorAll('.navbar a').forEach(el => el.classList.remove('active'));
   const activeNav = document.getElementById(`nav-${view}`);
   if (activeNav) activeNav.classList.add('active');
-  
+
   // Hide all views
   document.getElementById('main-ui').style.display = 'none';
   document.getElementById('profile-ui').style.display = 'none';
   document.getElementById('account-ui').style.display = 'none';
-  
+
   // Show selected view
   if (view === 'home') {
     document.getElementById('main-ui').style.display = 'block';
@@ -103,7 +103,7 @@ function showView(view) {
     document.getElementById('account-ui').style.display = 'block';
     showTab('login');
   }
-  
+
   // Scroll to top
   window.scrollTo(0, 0);
 }
@@ -160,11 +160,11 @@ function loadProfilePage() {
 function loadUserBalance() {
   const token = AUTH.getToken();
   const phone = AUTH.getPhone();
-  
+
   if (!token || !phone) return;
-  
+
   debugLog('Loading user balance', {});
-  
+
   fetch('https://amazemm.xyz/api/user.php', {
     method: 'POST',
     headers: { 
@@ -181,7 +181,7 @@ function loadUserBalance() {
   })
   .then(data => {
     debugLog('User data received', data);
-    
+
     if (data.success && data.user) {
       // Update balance in home page
       document.getElementById('user-balance').textContent = formatNumber(data.user.balance || 0);
@@ -198,42 +198,74 @@ function loadUserBalance() {
   });
 }
 
-// Fetch user profile
-async function fetchUserProfile() {
-  showLoading();
-  showApiError(false);
-  
+// API request helper for profile
+async function callProfileApi(actionName, additionalData = {}) {
+  const phone = AUTH.getPhone();
+  const token = AUTH.getToken();
+
+  if (!phone || !token) {
+    debugLog(`No auth data for ${actionName}`, { phone });
+    return null;
+  }
+
+  // Prepare request data
+  const requestData = {
+    action: actionName,
+    ...additionalData
+  };
+
+  debugLog(`API Request: ${actionName}`, requestData);
+
   try {
-    if (!AUTH.isLoggedIn()) {
-      debugLog('Not logged in', {});
-      showView('login');
-      return;
-    }
-    
-    debugLog('Fetching user profile', { phone: AUTH.getPhone() });
-    
-    // Call the API directly without JSON.stringify/parse
-    const token = AUTH.getToken();
-    const phone = AUTH.getPhone();
-    
     const response = await fetch('https://amazemm.xyz/api/profile.php', {
       method: 'POST',
       headers: { 
         'Content-Type': 'application/json', 
         'Authorization': token 
       },
-      body: JSON.stringify({
-        action: 'get_profile',
-        phone: phone
-      })
+      body: JSON.stringify(requestData)
     });
-    
-    if (!response.ok) {
-      throw new Error('API request failed');
+
+    debugLog(`API Response Status: ${actionName}`, response.status);
+
+    // Handle empty or invalid response
+    const responseText = await response.text();
+    if (!responseText) {
+      throw new Error('Empty response from server');
     }
-    
-    const data = await response.json();
-    
+
+    // Try to parse JSON response
+    let data;
+    try {
+      data = JSON.parse(responseText);
+      debugLog(`API Response Data: ${actionName}`, data);
+      return data;
+    } catch (e) {
+      debugLog('JSON Parse Error', { responseText, error: e.message });
+      throw new Error('Invalid response format from server');
+    }
+  } catch (error) {
+    debugLog(`API Error: ${actionName}`, error.message);
+    throw error;
+  }
+}
+
+// Fetch user profile
+async function fetchUserProfile() {
+  showLoading();
+  showApiError(false);
+
+  try {
+    if (!AUTH.isLoggedIn()) {
+      debugLog('Not logged in', {});
+      showView('login');
+      return;
+    }
+
+    debugLog('Fetching user profile', { phone: AUTH.getPhone() });
+
+    const data = await callProfileApi('get_profile');
+
     if (data && data.success && data.user) {
       // Update profile information
       updateProfileUI(data.user);
@@ -241,7 +273,7 @@ async function fetchUserProfile() {
       // Token expired or invalid
       showApiError(true);
       debugLog('Invalid API response', data);
-      
+
       // If unauthorized, logout after delay
       setTimeout(() => {
         AUTH.clearLogin();
@@ -259,11 +291,11 @@ async function fetchUserProfile() {
 // Update profile UI
 function updateProfileUI(user) {
   debugLog('Updating UI with user data', user);
-  
+
   // Basic profile info
   document.getElementById('profile-name').textContent = user.name || 'N/A';
   document.getElementById('profile-phone').textContent = user.phone || 'N/A';
-  
+
   // Profile avatar - first letter of name
   const avatarElement = document.getElementById('profile-avatar');
   if (user.name && user.name.length > 0) {
@@ -271,130 +303,14 @@ function updateProfileUI(user) {
   } else {
     avatarElement.innerHTML = '<i class="fas fa-user"></i>';
   }
-  
+
   // Balance
   document.getElementById('balance-amount').textContent = formatNumber(user.balance || 0);
-  
+
   // Information list
   document.getElementById('info-name').textContent = user.name || 'N/A';
   document.getElementById('info-phone').textContent = user.phone || 'N/A';
-  
-  const agentCodeElement = document.getElementById('info-agent-code');
-  const agentCodeEditWrapper = document.getElementById('agent-code-edit-wrapper');
-  
-  // Check if agent code is set or not
-  if (user.agent_code) {
-    // Agent code is set, display it and make non-editable
-    agentCodeElement.textContent = user.agent_code;
-    agentCodeElement.classList.remove('editable');
-    agentCodeElement.onclick = null;
-    if (agentCodeEditWrapper) agentCodeEditWrapper.style.display = 'none';
-  } else {
-    // Agent code is not set, show N/A and make it editable
-    agentCodeElement.textContent = 'N/A';
-    agentCodeElement.classList.add('editable');
-    agentCodeElement.onclick = showAgentCodeEdit;
-    
-    // Initialize agent code input
-    const agentCodeInput = document.getElementById('agent-code-input');
-    if (agentCodeInput) {
-      agentCodeInput.value = '';
-    }
-  }
-}
-
-// Show agent code edit form
-function showAgentCodeEdit() {
-  const agentCodeElement = document.getElementById('info-agent-code');
-  const agentCodeEditWrapper = document.getElementById('agent-code-edit-wrapper');
-  
-  if (agentCodeEditWrapper) {
-    agentCodeEditWrapper.style.display = 'block';
-    document.getElementById('agent-code-input').focus();
-  }
-}
-
-// Hide agent code edit form
-function hideAgentCodeEdit() {
-  const agentCodeEditWrapper = document.getElementById('agent-code-edit-wrapper');
-  if (agentCodeEditWrapper) {
-    agentCodeEditWrapper.style.display = 'none';
-  }
-}
-
-// Update agent code
-async function updateAgentCode(agentCode) {
-  if (!AUTH.isLoggedIn()) {
-    debugLog('No auth data for agent code update', {});
-    showView('login');
-    return false;
-  }
-  
-  const saveBtn = document.getElementById('agent-code-save-btn');
-  if (saveBtn) {
-    saveBtn.disabled = true;
-    saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
-  }
-  
-  try {
-    debugLog('Updating agent code', { agentCode });
-    
-    const token = AUTH.getToken();
-    const phone = AUTH.getPhone();
-    
-    const response = await fetch('https://amazemm.xyz/api/profile.php', {
-      method: 'POST',
-      headers: { 
-        'Content-Type': 'application/json', 
-        'Authorization': token 
-      },
-      body: JSON.stringify({
-        action: 'update_agent_code',
-        agent_code: agentCode
-      })
-    });
-    
-    if (!response.ok) {
-      throw new Error('API request failed');
-    }
-    
-    const data = await response.json();
-    
-    if (data && data.success) {
-      // Hide edit form
-      hideAgentCodeEdit();
-      
-      // Update profile info
-      if (data.user) {
-        updateProfileUI(data.user);
-      } else {
-        // If user data wasn't returned, refetch profile
-        fetchUserProfile();
-      }
-      
-      return true;
-    } else {
-      const errorElement = document.getElementById('agent-code-error');
-      if (errorElement) {
-        errorElement.textContent = data?.message || 'Agent Code ထည့်သွင်းရန် မအောင်မြင်ပါ။';
-        errorElement.style.display = 'block';
-      }
-      return false;
-    }
-  } catch (error) {
-    debugLog('Agent Code Update Error', error.message);
-    const errorElement = document.getElementById('agent-code-error');
-    if (errorElement) {
-      errorElement.textContent = 'Server နှင့် ဆက်သွယ်၍မရပါ။';
-      errorElement.style.display = 'block';
-    }
-    return false;
-  } finally {
-    if (saveBtn) {
-      saveBtn.disabled = false;
-      saveBtn.innerHTML = 'သိမ်းဆည်းမည်';
-    }
-  }
+  document.getElementById('info-agent-code').textContent = user.agent_code || 'N/A';
 }
 
 // Change password
@@ -404,49 +320,32 @@ async function changePassword(currentPassword, newPassword) {
     showView('login');
     return false;
   }
-  
+
   const submitBtn = document.getElementById('password-submit-btn');
   submitBtn.classList.add('loading');
   submitBtn.disabled = true;
-  
+
   try {
     debugLog('Changing password', {
       currentPasswordLength: currentPassword.length,
       newPasswordLength: newPassword.length
     });
-    
-    const token = AUTH.getToken();
-    const phone = AUTH.getPhone();
-    
-    const response = await fetch('https://amazemm.xyz/api/profile.php', {
-      method: 'POST',
-      headers: { 
-        'Content-Type': 'application/json', 
-        'Authorization': token 
-      },
-      body: JSON.stringify({
-        action: 'change_password',
-        current_password: currentPassword,
-        new_password: newPassword
-      })
+
+    const data = await callProfileApi('change_password', {
+      current_password: currentPassword,
+      new_password: newPassword
     });
-    
-    if (!response.ok) {
-      throw new Error('API request failed');
-    }
-    
-    const data = await response.json();
-    
+
     if (data && data.success) {
       document.getElementById('password-success-message').style.display = 'block';
       document.getElementById('password-error-message').style.display = 'none';
       document.getElementById('change-password-form').reset();
-      
+
       // Hide success message after a few seconds
       setTimeout(() => {
         document.getElementById('password-success-message').style.display = 'none';
       }, 5000);
-      
+
       return true;
     } else {
       document.getElementById('password-error-message').textContent = data?.message || 'စကားဝှက် ပြောင်းရန် မအောင်မြင်ပါ။';
@@ -473,7 +372,7 @@ function checkPasswordStrength(password) {
     { regex: /[0-9]/, element: document.getElementById("number-req") },
     { regex: /[A-Z]/, element: document.getElementById("uppercase-req") }
   ];
-  
+
   let strength = 0;
   requirements.forEach(req => {
     if (req.element) {
@@ -489,7 +388,7 @@ function checkPasswordStrength(password) {
       }
     }
   });
-  
+
   return strength;
 }
 
@@ -498,7 +397,7 @@ function validateField(field, pattern, errorMessage) {
   const value = field.value.trim();
   const isValid = pattern.test(value);
   const errorElement = document.getElementById(`${field.id}-error`);
-  
+
   if (!isValid) {
     field.classList.add('error');
     if (errorElement) {
@@ -511,28 +410,28 @@ function validateField(field, pattern, errorMessage) {
       errorElement.style.display = 'none';
     }
   }
-  
+
   return isValid;
 }
 
 // Handle login
 function handleLogin(e) {
   e.preventDefault();
-  
+
   var phone = document.getElementById('login-phone').value.trim();
   var password = document.getElementById('login-password').value;
   var rememberMe = document.getElementById('remember-me').checked;
   var submitBtn = document.getElementById('login-submit-btn');
   var errorMsg = document.getElementById('login-error-msg');
   var successMsg = document.getElementById('login-success-msg');
-  
+
   // Clear previous messages
   errorMsg.style.display = 'none';
   successMsg.style.display = 'none';
 
   // Validate fields
   let isValid = true;
-  
+
   // Validate phone
   if (!phone.match(/^[0-9]{7,15}$/)) {
     document.getElementById('login-phone').classList.add('error');
@@ -543,7 +442,7 @@ function handleLogin(e) {
     document.getElementById('login-phone').classList.remove('error');
     document.getElementById('login-phone-error').style.display = 'none';
   }
-  
+
   // Validate password
   if (!password || password.length < 6) {
     document.getElementById('login-password').classList.add('error');
@@ -554,13 +453,13 @@ function handleLogin(e) {
     document.getElementById('login-password').classList.remove('error');
     document.getElementById('login-password-error').style.display = 'none';
   }
-  
+
   if (!isValid) return;
 
   // Show loading state
   submitBtn.classList.add('loading');
   submitBtn.disabled = true;
-  
+
   debugLog('Login request', { phone, passwordLength: password.length, rememberMe });
 
   fetch('https://amazemm.xyz/api/login.php', {
@@ -573,13 +472,13 @@ function handleLogin(e) {
   })
   .then(response => {
     debugLog('Login Response Status', response.status);
-    
+
     // Check if response is empty
     return response.text().then(text => {
       if (!text) {
         throw new Error('Server returned empty response');
       }
-      
+
       // Try to parse as JSON
       try {
         return JSON.parse(text);
@@ -591,14 +490,14 @@ function handleLogin(e) {
   })
   .then(data => {
     debugLog('Login Response Data', data);
-    
+
     if(data.success) {
-      successMsg.textContent = 'အ​ကောင့်ဝင်ခြင်း အောင်မြင်ပါသည်။';
+      successMsg.textContent = 'အကောင့်ဝင်ခြင်း အောင်မြင်ပါသည်။';
       successMsg.style.display = 'block';
-      
+
       if(data.token) {
         AUTH.setLogin(phone, data.token, rememberMe);
-        
+
         // Delay to show success message before redirecting
         setTimeout(() => {
           showView('home');
@@ -624,7 +523,7 @@ function handleLogin(e) {
 // Handle registration
 function handleRegister(e) {
   e.preventDefault();
-  
+
   var name = document.getElementById('reg-name').value.trim();
   var phone = document.getElementById('reg-phone').value.trim();
   var password = document.getElementById('reg-password').value;
@@ -632,14 +531,14 @@ function handleRegister(e) {
   var submitBtn = document.getElementById('reg-submit-btn');
   var errorMsg = document.getElementById('reg-error-msg');
   var successMsg = document.getElementById('reg-success-msg');
-  
+
   // Clear previous messages
   errorMsg.style.display = 'none';
   successMsg.style.display = 'none';
 
   // Validate fields
   let isValid = true;
-  
+
   // Validate name
   if (name.length < 2) {
     document.getElementById('reg-name').classList.add('error');
@@ -650,7 +549,7 @@ function handleRegister(e) {
     document.getElementById('reg-name').classList.remove('error');
     document.getElementById('reg-name-error').style.display = 'none';
   }
-  
+
   // Validate phone
   if (!phone.match(/^[0-9]{7,15}$/)) {
     document.getElementById('reg-phone').classList.add('error');
@@ -661,7 +560,7 @@ function handleRegister(e) {
     document.getElementById('reg-phone').classList.remove('error');
     document.getElementById('reg-phone-error').style.display = 'none';
   }
-  
+
   // Validate password
   if (password.length < 6) {
     document.getElementById('reg-password').classList.add('error');
@@ -672,13 +571,13 @@ function handleRegister(e) {
     document.getElementById('reg-password').classList.remove('error');
     document.getElementById('reg-password-error').style.display = 'none';
   }
-  
+
   if (!isValid) return;
 
   // Show loading state
   submitBtn.classList.add('loading');
   submitBtn.disabled = true;
-  
+
   debugLog('Registration request', { name, phone, passwordLength: password.length, agentCode });
 
   // Prepare registration data
@@ -696,13 +595,13 @@ function handleRegister(e) {
   })
   .then(response => {
     debugLog('Registration Response Status', response.status);
-    
+
     // Check if response is empty
     return response.text().then(text => {
       if (!text) {
         throw new Error('Server returned empty response');
       }
-      
+
       // Try to parse as JSON
       try {
         return JSON.parse(text);
@@ -714,16 +613,16 @@ function handleRegister(e) {
   })
   .then(data => {
     debugLog('Registration Response Data', data);
-    
+
     if(data.success) {
-      successMsg.textContent = 'အ​ကောင့်ဖွင့်ခြင်း အောင်မြင်ပါသည်။';
+      successMsg.textContent = 'အကောင့်ဖွင့်ခြင်း အောင်မြင်ပါသည်။';
       successMsg.style.display = 'block';
       document.getElementById('register-form').reset();
-      
+
       // Auto-login
       if(data.token) {
         AUTH.setLogin(phone, data.token, false); // Don't remember by default
-        
+
         // Delay to show success message before redirecting
         setTimeout(() => {
           showView('home');
@@ -755,24 +654,24 @@ function handlePasswordInput() {
 // Handle change password form submission
 async function handleChangePassword(e) {
   e.preventDefault();
-  
+
   const currentPassword = document.getElementById('current-password').value;
   const newPassword = document.getElementById('new-password').value;
   const confirmPassword = document.getElementById('confirm-password').value;
-  
+
   // Validate passwords
   if (newPassword !== confirmPassword) {
     document.getElementById('password-error-message').textContent = 'စကားဝှက် အသစ်နှင့် အတည်ပြုစကားဝှက်တို့ မတူညီပါ။';
     document.getElementById('password-error-message').style.display = 'block';
     return;
   }
-  
+
   if (newPassword.length < 6) {
     document.getElementById('password-error-message').textContent = 'စကားဝှက်သည် အနည်းဆုံး ၆ လုံး ရှိရပါမည်။';
     document.getElementById('password-error-message').style.display = 'block';
     return;
   }
-  
+
   // Attempt to change password
   await changePassword(currentPassword, newPassword);
 }
@@ -795,7 +694,7 @@ function initEventListeners() {
       showView('login');
     }
   });
-  
+
   document.getElementById('nav-profile').addEventListener('click', function(e) {
     e.preventDefault();
     if (AUTH.isLoggedIn()) {
@@ -804,49 +703,25 @@ function initEventListeners() {
       showView('login');
     }
   });
-  
+
   // Auth-related events
   if (document.getElementById('reg-password')) {
     document.getElementById('reg-password').addEventListener('input', handlePasswordInput);
   }
-  
+
   if (document.getElementById('logout-button')) {
     document.getElementById('logout-button').addEventListener('click', handleLogout);
   }
-  
+
   if (document.getElementById('change-password-form')) {
     document.getElementById('change-password-form').addEventListener('submit', handleChangePassword);
   }
-  
-  // Agent code form event listener
-  const agentCodeSaveBtn = document.getElementById('agent-code-save-btn');
-  if (agentCodeSaveBtn) {
-    agentCodeSaveBtn.addEventListener('click', async function() {
-      const agentCode = document.getElementById('agent-code-input').value.trim();
-      const errorElement = document.getElementById('agent-code-error');
-      
-      // Hide previous error
-      if (errorElement) errorElement.style.display = 'none';
-      
-      // Validate agent code
-      if (!agentCode) {
-        if (errorElement) {
-          errorElement.textContent = 'Agent Code ကို မဖြစ်မနေ ထည့်သွင်းပေးပါ။';
-          errorElement.style.display = 'block';
-        }
-        return;
-      }
-      
-      // Update agent code
-      await updateAgentCode(agentCode);
-    });
-  }
-  
+
   // Debug toggle
   document.getElementById('debug-toggle').addEventListener('click', function() {
     debugMode = !debugMode;
     document.getElementById('debug-panel').style.display = debugMode ? 'block' : 'none';
-    
+
     if (debugMode) {
       document.getElementById('debug-content').innerHTML = '<strong>Debug Mode Enabled</strong><br>';
       debugLog('System info', {
@@ -861,10 +736,10 @@ function initEventListeners() {
 // Initialize app
 function initApp() {
   debugLog('Initializing application', {});
-  
+
   // Set up event listeners
   initEventListeners();
-  
+
   // Check if user is logged in
   if (AUTH.isLoggedIn()) {
     showView('home');
@@ -882,7 +757,7 @@ document.addEventListener('DOMContentLoaded', function() {
     debugPanel.className = 'debug-panel';
     document.body.appendChild(debugPanel);
   }
-  
+
   // Initialize application
   initApp();
 });
