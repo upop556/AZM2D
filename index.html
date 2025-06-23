@@ -317,10 +317,42 @@
       cursor: pointer;
       width: 100%;
       transition: var(--transition);
+      position: relative;
     }
     
     .form-btn:hover {
       background: var(--primary-dark);
+    }
+    
+    /* Button spinner animation */
+    .form-btn.loading {
+      color: transparent;
+      pointer-events: none;
+    }
+    
+    .form-btn.loading::after {
+      content: "";
+      position: absolute;
+      width: 20px;
+      height: 20px;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      margin: auto;
+      border: 3px solid transparent;
+      border-top-color: var(--white);
+      border-radius: 50%;
+      animation: button-loading-spinner 1s ease infinite;
+    }
+    
+    @keyframes button-loading-spinner {
+      from {
+        transform: rotate(0turn);
+      }
+      to {
+        transform: rotate(1turn);
+      }
     }
     
     .optional-tip {
@@ -349,6 +381,92 @@
       margin-bottom: 16px;
       font-weight: 500;
       display: none;
+    }
+    
+    /* Field validation styles */
+    .form-input.error {
+      border-color: var(--error);
+      background-color: rgba(244, 67, 54, 0.05);
+    }
+    
+    .field-error {
+      color: var(--error);
+      font-size: 0.8rem;
+      margin-top: 4px;
+      display: none;
+    }
+    
+    /* Password requirements */
+    .password-requirements {
+      margin-top: 8px;
+      font-size: 0.85rem;
+      color: var(--text-secondary);
+    }
+    
+    .password-requirement {
+      display: flex;
+      align-items: center;
+      margin-bottom: 4px;
+    }
+    
+    .password-requirement i {
+      margin-right: 6px;
+      font-size: 0.9rem;
+    }
+    
+    .requirement-met {
+      color: var(--success);
+    }
+    
+    .requirement-unmet {
+      color: var(--text-secondary);
+    }
+    
+    /* Remember me checkbox */
+    .form-checkbox-group {
+      display: flex;
+      align-items: center;
+      margin-top: 12px;
+    }
+    
+    .form-checkbox {
+      margin-right: 8px;
+      width: 16px;
+      height: 16px;
+      accent-color: var(--primary);
+    }
+    
+    .form-checkbox-label {
+      font-size: 0.9rem;
+      color: var(--text-secondary);
+    }
+    
+    /* Forgot password link */
+    .forgot-password {
+      display: block;
+      text-align: right;
+      color: var(--primary);
+      font-size: 0.9rem;
+      margin-top: 8px;
+      text-decoration: none;
+    }
+    
+    .forgot-password:hover {
+      text-decoration: underline;
+    }
+    
+    /* Debug Panel */
+    .debug-panel {
+      display: none;
+      background: #f8f8f8;
+      border: 1px solid #ddd;
+      padding: 10px;
+      margin: 20px 0;
+      border-radius: 8px;
+      font-family: monospace;
+      font-size: 13px;
+      max-height: 200px;
+      overflow-y: auto;
     }
     
     /* Hide main UI when not logged in */
@@ -408,7 +526,12 @@
   // ad_banner_api.php integration
   document.addEventListener("DOMContentLoaded", function() {
       fetch('https://amazemm.xyz/api/ad_banner_api.php')
-        .then(r => r.json())
+        .then(response => {
+          if (!response.ok) {
+            throw new Error('Network response was not ok');
+          }
+          return response.json();
+        })
         .then(data => {
           if(data.success && data.banner) {
             document.getElementById('ad-banner-img').src = data.banner.image_url;
@@ -416,6 +539,11 @@
             document.getElementById('ad-banner-title').style.display = "none";
             document.getElementById('ad-banner-desc').style.display = "none";
           }
+        })
+        .catch(error => {
+          console.log('Ad banner error:', error);
+          // Use a fallback image or hide the banner
+          document.querySelector('.ad-banner').style.display = 'none';
         });
   });
 
@@ -427,128 +555,346 @@
     document.getElementById('tab-login').classList.toggle('active', tab === 'login');
     // Clear any messages when switching tab
     document.querySelectorAll('.success-msg,.error-msg').forEach(e => e.style.display = 'none');
+    document.querySelectorAll('.form-input').forEach(e => e.classList.remove('error'));
   }
 
   // Helper for login state (with API)
-  function setLogin(phone, token) {
-    localStorage.setItem('azm2d_phone', phone);
-    localStorage.setItem('azm2d_token', token);
+  function setLogin(phone, token, remember = false) {
+    if (remember) {
+      localStorage.setItem('azm2d_phone', phone);
+      localStorage.setItem('azm2d_token', token);
+    } else {
+      sessionStorage.setItem('azm2d_phone', phone);
+      sessionStorage.setItem('azm2d_token', token);
+    }
   }
+  
   function clearLogin() {
     localStorage.removeItem('azm2d_phone');
     localStorage.removeItem('azm2d_token');
+    sessionStorage.removeItem('azm2d_phone');
+    sessionStorage.removeItem('azm2d_token');
   }
+  
   function isLoggedIn() {
-    return !!localStorage.getItem('azm2d_token');
+    return !!(localStorage.getItem('azm2d_token') || sessionStorage.getItem('azm2d_token'));
+  }
+
+  // Get user info like phone number and token
+  function getPhone() {
+    return localStorage.getItem('azm2d_phone') || sessionStorage.getItem('azm2d_phone');
+  }
+  
+  function getToken() {
+    return localStorage.getItem('azm2d_token') || sessionStorage.getItem('azm2d_token');
   }
 
   // Load user info API and update UI (example: update balance)
   function fetchUserInfo() {
-    const phone = localStorage.getItem('azm2d_phone');
-    const token = localStorage.getItem('azm2d_token');
+    const phone = getPhone();
+    const token = getToken();
+    
     if (!phone || !token) return;
+
+    // Add to debugging log
+    logDebug('Fetching user data', { phone });
 
     fetch('https://amazemm.xyz/api/user.php', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Authorization': token },
+      headers: { 
+        'Content-Type': 'application/json', 
+        'Authorization': token 
+      },
       body: JSON.stringify({ phone: phone })
     })
-    .then(r => r.json())
+    .then(response => {
+      if (!response.ok) {
+        throw new Error('Network response was not ok');
+      }
+      return response.json();
+    })
     .then(data => {
+      logDebug('User data received', data);
+      
       if (data.success && data.user) {
         // Example: update balance
-        document.getElementById('user-balance').textContent = data.user.balance || 0;
-        // You can set user name, etc. here if you want
+        document.getElementById('user-balance').textContent = formatNumber(data.user.balance || 0);
       } else {
         // Token expired or invalid, force logout
+        logDebug('User data invalid, logging out', data);
         clearLogin();
         showAccountUI();
       }
     })
-    .catch(() => {
+    .catch(error => {
+      logDebug('Error fetching user data', error.message);
       // API fail, but keep UI as is
     });
   }
 
+  // Format number with commas
+  function formatNumber(num) {
+    return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+  }
+
+  // Validate form fields
+  function validateField(field, pattern, errorMessage) {
+    const value = field.value.trim();
+    const isValid = pattern.test(value);
+    const errorElement = document.getElementById(`${field.id}-error`);
+    
+    if (!isValid) {
+      field.classList.add('error');
+      if (errorElement) {
+        errorElement.textContent = errorMessage;
+        errorElement.style.display = 'block';
+      }
+    } else {
+      field.classList.remove('error');
+      if (errorElement) {
+        errorElement.style.display = 'none';
+      }
+    }
+    
+    return isValid;
+  }
+
+  // Check password strength
+  function checkPasswordStrength(password) {
+    const requirements = [
+      { regex: /.{6,}/, element: document.getElementById("length-req") },
+      { regex: /[0-9]/, element: document.getElementById("number-req") },
+      { regex: /[A-Z]/, element: document.getElementById("uppercase-req") }
+    ];
+    
+    let strength = 0;
+    requirements.forEach(req => {
+      if (req.element) {
+        if (req.regex.test(password)) {
+          strength++;
+          req.element.classList.add('requirement-met');
+          req.element.classList.remove('requirement-unmet');
+          req.element.querySelector('i').className = 'fas fa-check';
+        } else {
+          req.element.classList.remove('requirement-met');
+          req.element.classList.add('requirement-unmet');
+          req.element.querySelector('i').className = 'fas fa-circle';
+        }
+      }
+    });
+    
+    return strength;
+  }
+
+  // Debug logging
+  let debugMode = false;
+  function logDebug(title, data) {
+    if (!debugMode) return;
+    
+    console.log(`[DEBUG] ${title}:`, data);
+    
+    const debugPanel = document.getElementById('debug-panel');
+    if (debugPanel) {
+      const time = new Date().toISOString();
+      let dataText = '';
+      try {
+        dataText = typeof data === 'object' ? JSON.stringify(data) : String(data);
+      } catch (e) {
+        dataText = '[Error displaying data]';
+      }
+      
+      const logEntry = document.createElement('div');
+      logEntry.innerHTML = `<strong>${time}</strong>: ${title} - <span>${dataText}</span>`;
+      debugPanel.appendChild(logEntry);
+      debugPanel.scrollTop = debugPanel.scrollHeight;
+    }
+  }
+
+  // Toggle debug mode with keypress
+  document.addEventListener('keydown', function(e) {
+    // Ctrl+Shift+D to toggle debug mode
+    if (e.ctrlKey && e.shiftKey && e.key === 'D') {
+      debugMode = !debugMode;
+      const debugPanel = document.getElementById('debug-panel');
+      if (debugPanel) {
+        debugPanel.style.display = debugMode ? 'block' : 'none';
+        if (debugMode) {
+          debugPanel.innerHTML = '<div><strong>Debug Mode Enabled</strong></div>';
+        }
+      }
+    }
+  });
+
   function handleRegister(e) {
     e.preventDefault();
+    
     var name = document.getElementById('reg-name').value.trim();
     var phone = document.getElementById('reg-phone').value.trim();
     var password = document.getElementById('reg-password').value;
     var agentCode = document.getElementById('reg-agent_code').value.trim();
+    var submitBtn = document.getElementById('reg-submit-btn');
     var errorMsg = document.getElementById('reg-error-msg');
     var successMsg = document.getElementById('reg-success-msg');
+    
+    // Clear previous messages
     errorMsg.style.display = 'none';
     successMsg.style.display = 'none';
 
+    // Validate fields
+    let isValid = true;
+    
+    // Validate name
     if (name.length < 2) {
-      errorMsg.textContent = 'အမည် မှန်ကန်စွာ ထည့်ပါ။';
-      errorMsg.style.display = 'block';
-      return;
+      document.getElementById('reg-name').classList.add('error');
+      document.getElementById('reg-name-error').textContent = 'အမည် မှန်ကန်စွာ ထည့်ပါ။';
+      document.getElementById('reg-name-error').style.display = 'block';
+      isValid = false;
+    } else {
+      document.getElementById('reg-name').classList.remove('error');
+      document.getElementById('reg-name-error').style.display = 'none';
     }
+    
+    // Validate phone
     if (!phone.match(/^[0-9]{7,15}$/)) {
-      errorMsg.textContent = 'ဖုန်းနံပါတ် မှန်ကန်စွာ ထည့်ပါ။';
-      errorMsg.style.display = 'block';
-      return;
+      document.getElementById('reg-phone').classList.add('error');
+      document.getElementById('reg-phone-error').textContent = 'ဖုန်းနံပါတ် မှန်ကန်စွာ ထည့်ပါ။';
+      document.getElementById('reg-phone-error').style.display = 'block';
+      isValid = false;
+    } else {
+      document.getElementById('reg-phone').classList.remove('error');
+      document.getElementById('reg-phone-error').style.display = 'none';
     }
+    
+    // Validate password
     if (password.length < 6) {
-      errorMsg.textContent = 'စကားဝှက် အနည်းဆုံး ၆ လုံးရှိရပါမည်။';
-      errorMsg.style.display = 'block';
-      return;
+      document.getElementById('reg-password').classList.add('error');
+      document.getElementById('reg-password-error').textContent = 'စကားဝှက် အနည်းဆုံး ၆ လုံးရှိရပါမည်။';
+      document.getElementById('reg-password-error').style.display = 'block';
+      isValid = false;
+    } else {
+      document.getElementById('reg-password').classList.remove('error');
+      document.getElementById('reg-password-error').style.display = 'none';
     }
+    
+    if (!isValid) return;
+
+    // Show loading state
+    submitBtn.classList.add('loading');
+    submitBtn.disabled = true;
+    
+    logDebug('Registration request', { name, phone, passwordLength: password.length, agentCode });
+
+    // Prepare registration data
+    const registrationData = {
+      name: name,
+      phone: phone,
+      password: password,
+      agent_code: agentCode
+    };
 
     fetch('https://amazemm.xyz/api/register.php', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        name: name,
-        phone: phone,
-        password: password,
-        agent_code: agentCode
-      })
+      body: JSON.stringify(registrationData)
     })
-    .then(r => r.json())
+    .then(response => {
+      logDebug('Registration Response Status', response.status);
+      
+      // Check if response is empty
+      return response.text().then(text => {
+        if (!text) {
+          throw new Error('Server returned empty response');
+        }
+        
+        // Try to parse as JSON
+        try {
+          return JSON.parse(text);
+        } catch (e) {
+          logDebug('JSON Parse Error', { text, error: e.message });
+          throw new Error('Invalid response format from server');
+        }
+      });
+    })
     .then(data => {
+      logDebug('Registration Response Data', data);
+      
       if(data.success) {
         successMsg.textContent = 'အ​ကောင့်ဖွင့်ခြင်း အောင်မြင်ပါသည်။';
         successMsg.style.display = 'block';
         document.getElementById('register-form').reset();
+        
         // Optionally, auto-login
         if(data.token) {
-          setLogin(phone, data.token);
-          showMainUI();
-          fetchUserInfo();
+          setLogin(phone, data.token, false); // Don't remember by default
+          
+          // Delay to show success message before redirecting
+          setTimeout(() => {
+            showMainUI();
+          }, 1500);
         }
       } else {
         errorMsg.textContent = data.message || 'မှားယွင်းမှုတစ်ခု ဖြစ်ပွားခဲ့သည်။';
         errorMsg.style.display = 'block';
       }
     })
-    .catch(() => {
+    .catch(error => {
+      logDebug('Registration Error', error.message);
       errorMsg.textContent = 'Server သို့ ချိတ်ဆက်၍မရပါ။ နောက်မှ ပြန်လည်ကြိုးစားပါ။';
       errorMsg.style.display = 'block';
+    })
+    .finally(() => {
+      // Hide loading state
+      submitBtn.classList.remove('loading');
+      submitBtn.disabled = false;
     });
   }
 
   function handleLogin(e) {
     e.preventDefault();
+    
     var phone = document.getElementById('login-phone').value.trim();
     var password = document.getElementById('login-password').value;
+    var rememberMe = document.getElementById('remember-me').checked;
+    var submitBtn = document.getElementById('login-submit-btn');
     var errorMsg = document.getElementById('login-error-msg');
     var successMsg = document.getElementById('login-success-msg');
+    
+    // Clear previous messages
     errorMsg.style.display = 'none';
     successMsg.style.display = 'none';
 
+    // Validate fields
+    let isValid = true;
+    
+    // Validate phone
     if (!phone.match(/^[0-9]{7,15}$/)) {
-      errorMsg.textContent = 'ဖုန်းနံပါတ် မှန်ကန်စွာ ထည့်ပါ။';
-      errorMsg.style.display = 'block';
-      return;
+      document.getElementById('login-phone').classList.add('error');
+      document.getElementById('login-phone-error').textContent = 'ဖုန်းနံပါတ် မှန်ကန်စွာ ထည့်ပါ။';
+      document.getElementById('login-phone-error').style.display = 'block';
+      isValid = false;
+    } else {
+      document.getElementById('login-phone').classList.remove('error');
+      document.getElementById('login-phone-error').style.display = 'none';
     }
+    
+    // Validate password
     if (!password || password.length < 6) {
-      errorMsg.textContent = 'စကားဝှက် မှန်ကန်စွာ ထည့်ပါ။';
-      errorMsg.style.display = 'block';
-      return;
+      document.getElementById('login-password').classList.add('error');
+      document.getElementById('login-password-error').textContent = 'စကားဝှက် မှန်ကန်စွာ ထည့်ပါ။';
+      document.getElementById('login-password-error').style.display = 'block';
+      isValid = false;
+    } else {
+      document.getElementById('login-password').classList.remove('error');
+      document.getElementById('login-password-error').style.display = 'none';
     }
+    
+    if (!isValid) return;
+
+    // Show loading state
+    submitBtn.classList.add('loading');
+    submitBtn.disabled = true;
+    
+    logDebug('Login request', { phone, passwordLength: password.length, rememberMe });
 
     fetch('https://amazemm.xyz/api/login.php', {
       method: 'POST',
@@ -558,24 +904,53 @@
         password: password
       })
     })
-    .then(r => r.json())
+    .then(response => {
+      logDebug('Login Response Status', response.status);
+      
+      // Check if response is empty
+      return response.text().then(text => {
+        if (!text) {
+          throw new Error('Server returned empty response');
+        }
+        
+        // Try to parse as JSON
+        try {
+          return JSON.parse(text);
+        } catch (e) {
+          logDebug('JSON Parse Error', { text, error: e.message });
+          throw new Error('Invalid response format from server');
+        }
+      });
+    })
     .then(data => {
+      logDebug('Login Response Data', data);
+      
       if(data.success) {
         successMsg.textContent = 'အ​ကောင့်ဝင်ခြင်း အောင်မြင်ပါသည်။';
         successMsg.style.display = 'block';
+        
         if(data.token) {
-          setLogin(phone, data.token);
-          showMainUI();
-          fetchUserInfo();
+          setLogin(phone, data.token, rememberMe);
+          
+          // Delay to show success message before redirecting
+          setTimeout(() => {
+            showMainUI();
+          }, 1000);
         }
       } else {
         errorMsg.textContent = data.message || 'မှားယွင်းမှုတစ်ခု ဖြစ်ပွားခဲ့သည်။';
         errorMsg.style.display = 'block';
       }
     })
-    .catch(() => {
+    .catch(error => {
+      logDebug('Login Error', error.message);
       errorMsg.textContent = 'Server သို့ ချိတ်ဆက်၍မရပါ။ နောက်မှ ပြန်လည်ကြိုးစားပါ။';
       errorMsg.style.display = 'block';
+    })
+    .finally(() => {
+      // Hide loading state
+      submitBtn.classList.remove('loading');
+      submitBtn.disabled = false;
     });
   }
 
@@ -585,6 +960,7 @@
     document.getElementById('main-ui').style.display = 'block';
     fetchUserInfo();
   }
+  
   function showAccountUI() {
     document.getElementById('account-ui').style.display = 'block';
     document.getElementById('main-ui').style.display = 'none';
@@ -594,15 +970,42 @@
   function logout() {
     clearLogin();
     showAccountUI();
+    showTab('login');
   }
 
+  // Handle password input for strength checker
+  function handlePasswordInput() {
+    const password = document.getElementById('reg-password').value;
+    checkPasswordStrength(password);
+  }
+
+  // Initialize
   window.onload = function() {
+    // Add debug panel
+    const debugPanel = document.createElement('div');
+    debugPanel.id = 'debug-panel';
+    debugPanel.className = 'debug-panel';
+    document.body.appendChild(debugPanel);
+    
+    // Add event listeners
+    document.getElementById('reg-password').addEventListener('input', handlePasswordInput);
+    
+    // Check if user is logged in
     if(isLoggedIn()) {
       showMainUI();
     } else {
       showAccountUI();
       showTab('login');
+      
+      // Prefill stored phone if available
+      const savedPhone = getPhone();
+      if (savedPhone) {
+        document.getElementById('login-phone').value = savedPhone;
+        document.getElementById('remember-me').checked = true;
+      }
     }
+    
+    logDebug('Page initialized', { isLoggedIn: isLoggedIn() });
   };
   </script>
 </head>
@@ -711,15 +1114,26 @@
           
           <div class="form-group">
             <label class="form-label" for="login-phone">ဖုန်းနံပါတ်</label>
-            <input class="form-input" type="tel" id="login-phone" name="phone" placeholder="ဖုန်းနံပါတ် (09xxxxxxx)" required pattern="[0-9]{7,15}">
+            <input class="form-input" type="tel" id="login-phone" name="phone" placeholder="ဖုန်းနံပါတ် (09xxxxxxx)" required>
+            <div id="login-phone-error" class="field-error"></div>
           </div>
           
           <div class="form-group">
             <label class="form-label" for="login-password">စကားဝှက်</label>
-            <input class="form-input" type="password" id="login-password" name="password" placeholder="စကားဝှက်" required minlength="6">
+            <input class="form-input" type="password" id="login-password" name="password" placeholder="စကားဝှက်" required>
+            <div id="login-password-error" class="field-error"></div>
           </div>
           
-          <button class="form-btn" type="submit">အ​ကောင့်ဝင်မည်</button>
+          <!-- Remember me option -->
+          <div class="form-checkbox-group">
+            <input type="checkbox" id="remember-me" class="form-checkbox">
+            <label for="remember-me" class="form-checkbox-label">အကောင့်မှတ်ထားရန်</label>
+          </div>
+          
+          <button id="login-submit-btn" class="form-btn" type="submit">အ​ကောင့်ဝင်မည်</button>
+          
+          <!-- Forgot password link -->
+          <a href="#" onclick="alert('ဤလုပ်ဆောင်ချက်သည် လက်ရှိတွင် မရနိုင်သေးပါ။'); return false;" class="forgot-password">စကားဝှက်မေ့နေပါသလား?</a>
         </form>
         
         <!-- Register Form -->
@@ -730,17 +1144,33 @@
           
           <div class="form-group">
             <label class="form-label" for="reg-name">အမည်</label>
-            <input class="form-input" type="text" id="reg-name" name="name" placeholder="အမည်" required minlength="2">
+            <input class="form-input" type="text" id="reg-name" name="name" placeholder="အမည်" required>
+            <div id="reg-name-error" class="field-error"></div>
           </div>
           
           <div class="form-group">
             <label class="form-label" for="reg-phone">ဖုန်းနံပါတ်</label>
-            <input class="form-input" type="tel" id="reg-phone" name="phone" placeholder="ဖုန်းနံပါတ် (09xxxxxxx)" required pattern="[0-9]{7,15}">
+            <input class="form-input" type="tel" id="reg-phone" name="phone" placeholder="ဖုန်းနံပါတ် (09xxxxxxx)" required>
+            <div id="reg-phone-error" class="field-error"></div>
           </div>
           
           <div class="form-group">
             <label class="form-label" for="reg-password">စကားဝှက်</label>
-            <input class="form-input" type="password" id="reg-password" name="password" placeholder="စကားဝှက်" required minlength="6">
+            <input class="form-input" type="password" id="reg-password" name="password" placeholder="စကားဝှက်" required>
+            <div id="reg-password-error" class="field-error"></div>
+            
+            <!-- Password strength indicator -->
+            <div class="password-requirements">
+              <div id="length-req" class="password-requirement requirement-unmet">
+                <i class="fas fa-circle"></i> အနည်းဆုံး စာလုံး ၆ လုံး
+              </div>
+              <div id="number-req" class="password-requirement requirement-unmet">
+                <i class="fas fa-circle"></i> ဂဏန်းတစ်လုံး ပါဝင်ရမည်
+              </div>
+              <div id="uppercase-req" class="password-requirement requirement-unmet">
+                <i class="fas fa-circle"></i> အင်္ဂလိပ်စာ အကြီး တစ်လုံး ပါဝင်လျှင် ပိုကောင်းသည်
+              </div>
+            </div>
           </div>
           
           <div class="form-group">
@@ -748,7 +1178,7 @@
             <input class="form-input" type="text" id="reg-agent_code" name="agent_code" placeholder="Agent Code (မရှိရင်ကျော်ပါ)">
           </div>
           
-          <button class="form-btn" type="submit">အ​ကောင့်ဖွင့်မည်</button>
+          <button id="reg-submit-btn" class="form-btn" type="submit">အ​ကောင့်ဖွင့်မည်</button>
         </form>
       </div>
     </div>
