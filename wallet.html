@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Wallet</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <!-- FontAwesome for icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
+  <link rel="stylesheet" href="style.css">
+  <style>
+    .wallet-container {
+      max-width: 400px;
+      margin: 60px auto 0 auto;
+      background: #fff;
+      border-radius: 16px;
+      box-shadow: 0 2px 16px rgba(0,0,0,0.08);
+      padding: 28px 22px 22px 22px;
+    }
+    .wallet-title {
+      font-size: 1.7rem;
+      font-weight: 700;
+      color: #3f51b5;
+      margin-bottom: 8px;
+      text-align: center;
+    }
+    .balance-section {
+      background: #3f51b5;
+      color: #fff;
+      border-radius: 14px;
+      padding: 24px 16px;
+      text-align: center;
+      margin-bottom: 20px;
+      box-shadow: 0 6px 24px rgba(63,81,181,0.07);
+    }
+    .balance-label {
+      font-size: 1rem;
+      opacity: 0.85;
+    }
+    .balance-amount {
+      font-size: 2.3rem;
+      font-weight: 700;
+      letter-spacing: 1px;
+      margin: 12px 0 2px 0;
+    }
+    .balance-currency {
+      font-size: 1.1rem;
+      font-weight: 500;
+      opacity: 0.9;
+    }
+    .wallet-methods {
+      display: flex;
+      justify-content: space-around;
+      margin: 16px 0 20px 0;
+    }
+    .wallet-method {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      width: 100px;
+      background: #f7f8fc;
+      border-radius: 10px;
+      padding: 15px 0 10px 0;
+      box-shadow: 0 2px 8px rgba(63,81,181,0.04);
+      margin: 0 5px;
+      transition: box-shadow 0.2s;
+    }
+    .wallet-method:hover {
+      box-shadow: 0 6px 20px rgba(63,81,181,0.10);
+    }
+    .wallet-method img {
+      height: 36px;
+      margin-bottom: 7px;
+    }
+    .wallet-method-label {
+      font-size: 1.04rem;
+      font-weight: 500;
+      color: #212121;
+      letter-spacing: 0.5px;
+    }
+    .wallet-note-section {
+      margin-top: 15px;
+      background: #fffbe7;
+      border: 1px solid #ffe49c;
+      border-radius: 10px;
+      padding: 14px 14px 12px 14px;
+      color: #af8400;
+      font-size: 1.01rem;
+      box-shadow: 0 2px 8px rgba(255,193,7,0.06);
+    }
+    .wallet-note-section .fa-info-circle {
+      margin-right: 7px;
+      color: #ffc107;
+    }
+    @media (max-width: 480px) {
+      .wallet-container {
+        margin: 18px 5px 0 5px;
+        padding: 14px 5px;
+      }
+      .wallet-methods {
+        flex-direction: column;
+        gap: 12px;
+        align-items: center;
+      }
+      .wallet-method {
+        width: 90%;
+        margin: 0;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="wallet-container">
+    <div class="wallet-title">
+      <i class="fa fa-wallet"></i> Wallet
+    </div>
+    <div class="balance-section">
+      <div class="balance-label">လက်ကျန်ငွေ</div>
+      <div class="balance-amount" id="wallet-balance">...</div>
+      <div class="balance-currency">ကျပ်</div>
+    </div>
+    <div class="wallet-methods" id="wallet-methods">
+      <!-- Wallet logos will be loaded here -->
+    </div>
+    <div class="wallet-note-section" id="wallet-note-section">
+      <i class="fa fa-info-circle"></i>
+      <b>ဒိုင်မှတ်ချက်:</b>
+      <span id="wallet-note">...</span>
+    </div>
+  </div>
+  <script>
+    // Azm2d UI နှင့် ချိပ်ဆက်ရန် localStorage/sessionStorage မှတစ်ဆင့် အကောင့်ဝင်ထားသူ၏ဖုန်းနံပါတ်ကိုယူပါ
+    let phone = localStorage.getItem('azm2d_phone') || sessionStorage.getItem('azm2d_phone') || '';
+    if (!phone) {
+      document.getElementById('wallet-balance').textContent = '0';
+      document.getElementById('wallet-note').textContent = 'အကောင့်ဝင်ပါ။';
+      // Static logos as fallback
+      document.getElementById('wallet-methods').innerHTML = `
+        <div class="wallet-method">
+          <img src="https://upload.wikimedia.org/wikipedia/commons/2/21/KPay_Logo.png" alt="KBZPay Logo"/>
+          <div class="wallet-method-label">KBZPay</div>
+        </div>
+        <div class="wallet-method">
+          <img src="https://play-lh.googleusercontent.com/iKNnA4rW0wZQnY3FqL2gk1XQm-2S4jP4TuwFka9GnBd3LJ1kxzQ7oA9ZnFqRL7aA3g=w600-h300-rw" alt="WavePay Logo"/>
+          <div class="wallet-method-label">WavePay</div>
+        </div>
+      `;
+    } else {
+      fetch('https://amazemm.xyz/api/wallet_api.php', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+        body: 'phone=' + encodeURIComponent(phone)
+      })
+      .then(res => res.json())
+      .then(data => {
+        document.getElementById('wallet-balance').textContent =
+          (data.balance !== undefined && data.balance !== null)
+            ? Number(data.balance).toLocaleString() : '0';
+        document.getElementById('wallet-note').textContent = data.note || '';
+        // Dynamic logos from API
+        const methods = document.getElementById('wallet-methods');
+        methods.innerHTML = '';
+        if (Array.isArray(data.wallets)) {
+          data.wallets.forEach(w => {
+            const div = document.createElement('div');
+            div.className = 'wallet-method';
+            div.innerHTML = `
+              <img src="${w.logo}" alt="${w.name} Logo"/>
+              <div class="wallet-method-label">${w.name}</div>
+            `;
+            methods.appendChild(div);
+          });
+        }
+      })
+      .catch(() => {
+        document.getElementById('wallet-balance').textContent = 'Error';
+        document.getElementById('wallet-note').textContent = 'API Error!';
+        // Static logos as fallback
+        document.getElementById('wallet-methods').innerHTML = `
+          <div class="wallet-method">
+            <img src="https://upload.wikimedia.org/wikipedia/commons/2/21/KPay_Logo.png" alt="KBZPay Logo"/>
+            <div class="wallet-method-label">KBZPay</div>
+          </div>
+          <div class="wallet-method">
+            <img src="https://play-lh.googleusercontent.com/iKNnA4rW0wZQnY3FqL2gk1XQm-2S4jP4TuwFka9GnBd3LJ1kxzQ7oA9ZnFqRL7aA3g=w600-h300-rw" alt="WavePay Logo"/>
+            <div class="wallet-method-label">WavePay</div>
+          </div>
+        `;
+      });
+    }
+  </script>
+</body>
+</html>
