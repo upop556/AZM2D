@@ -91,6 +91,7 @@ function showView(view) {
   document.getElementById('main-ui').style.display = 'none';
   document.getElementById('profile-ui').style.display = 'none';
   document.getElementById('account-ui').style.display = 'none';
+  if (document.getElementById('help-container')) document.getElementById('help-container').style.display = 'none';
 
   // Show selected view
   if (view === 'home') {
@@ -99,9 +100,11 @@ function showView(view) {
   } else if (view === 'profile') {
     document.getElementById('profile-ui').style.display = 'block';
     loadProfilePage();
-  } else if (view === 'login') {
+  } else if (view === 'login' || view === 'register') {
     document.getElementById('account-ui').style.display = 'block';
-    showTab('login');
+    showTab(view === 'register' ? 'register' : 'login');
+  } else if (view === 'help') {
+    if (document.getElementById('help-container')) document.getElementById('help-container').style.display = 'block';
   }
 
   // Scroll to top
@@ -683,6 +686,119 @@ function handleLogout() {
   showView('login');
 }
 
+// -- GUEST HANDLING LOGIC START --
+
+// Helper to check if guest should be redirected to login
+function requireLoginHandler(e, tab = 'login') {
+  if (!AUTH.isLoggedIn()) {
+    if (e) e.preventDefault();
+    showView(tab);
+    return false;
+  }
+  return true;
+}
+
+function attachGuestHandlers() {
+  // Navbar: Wallet, Help, Profile all require login
+  ['nav-wallet', 'nav-help', 'nav-profile'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) {
+      el.addEventListener('click', function(e) {
+        requireLoginHandler(e, 'login');
+      });
+    }
+  });
+
+  // Menu grid buttons: require login
+  document.querySelectorAll('.menu-grid a').forEach(function(btn) {
+    btn.addEventListener('click', function(e) {
+      requireLoginHandler(e, 'login');
+    });
+  });
+}
+// -- GUEST HANDLING LOGIC END --
+
+// Help tab logic
+function helpTabHandler() {
+  const navHelp = document.getElementById('nav-help');
+  const helpContainer = document.getElementById('help-container');
+  if (navHelp && helpContainer) {
+    navHelp.addEventListener('click', function(e) {
+      e.preventDefault();
+      // Hide all main sections
+      document.getElementById('main-ui').style.display = 'none';
+      document.getElementById('profile-ui').style.display = 'none';
+      document.getElementById('account-ui').style.display = 'none';
+      helpContainer.style.display = 'block';
+      // Set navbar active state
+      document.querySelectorAll('.navbar a').forEach(el => el.classList.remove('active'));
+      navHelp.classList.add('active');
+      // Fetch contacts if not loaded
+      if (!helpContainer.dataset.loaded) {
+        fetch("https://amazemm.xyz/api/contact_api.php")
+          .then(res => res.json())
+          .then(data => {
+            const list = document.getElementById('contact-list');
+            list.innerHTML = "";
+            if(data.success && data.contacts && data.contacts.length) {
+              data.contacts.forEach(contact => {
+                let icon, label, link, linkText;
+                if (contact.type === "viber") {
+                  icon = '<i class="fab fa-viber"></i>';
+                  label = "Viber";
+                  link = "viber://chat?number=" + encodeURIComponent(contact.phone.replace(/[^0-9+]/g, ''));
+                  linkText = contact.phone;
+                } else if (contact.type === "telegram") {
+                  icon = '<i class="fab fa-telegram"></i>';
+                  label = "Telegram";
+                  if (contact.username) {
+                    link = "https://t.me/" + contact.username;
+                    linkText = "@" + contact.username;
+                  } else {
+                    link = "https://t.me/" + contact.phone.replace(/[^0-9+]/g, '');
+                    linkText = contact.phone;
+                  }
+                } else {
+                  return;
+                }
+                list.innerHTML += `
+                  <li class="contact-item">
+                    <span class="contact-icon">${icon}</span>
+                    <span class="contact-details">
+                      <span class="contact-label">${label}</span><br>
+                      <a class="contact-link" href="${link}" target="_blank">${linkText}</a>
+                    </span>
+                  </li>
+                `;
+              });
+            } else {
+              list.innerHTML = `<li class="contact-item"><span class="contact-details">ဆက်သွယ်ရန်အချက်အလက်များ ရယူ၍မရပါ။<br>ကျေးဇူးပြု၍ နောက်မှ ပြန်လည်ကြိုးစားပါ။</span></li>`;
+            }
+            helpContainer.dataset.loaded = "1";
+          })
+          .catch(() => {
+            const list = document.getElementById('contact-list');
+            list.innerHTML = `<li class="contact-item"><span class="contact-details">ဆက်သွယ်ရန်အချက်အလက်များ ရယူ၍မရပါ။<br>ကျေးဇူးပြု၍ နောက်မှ ပြန်လည်ကြိုးစားပါ။</span></li>`;
+          });
+      }
+    });
+  }
+
+  // Home nav restores main UI
+  var navHome = document.getElementById('nav-home');
+  if (navHome) {
+    navHome.addEventListener('click', function(e) {
+      e.preventDefault();
+      document.getElementById('main-ui').style.display = 'block';
+      document.getElementById('profile-ui').style.display = 'none';
+      document.getElementById('account-ui').style.display = 'none';
+      if (document.getElementById('help-container')) document.getElementById('help-container').style.display = 'none';
+      document.querySelectorAll('.navbar a').forEach(el => el.classList.remove('active'));
+      navHome.classList.add('active');
+    });
+  }
+}
+
 // Initialize event listeners
 function initEventListeners() {
   // Navigation links
@@ -731,6 +847,28 @@ function initEventListeners() {
       });
     }
   });
+
+  // Login/Register tab switching
+  document.getElementById('tab-login').addEventListener('click', function() {
+    showTab('login');
+  });
+  document.getElementById('tab-register').addEventListener('click', function() {
+    showTab('register');
+  });
+
+  // Login/Register form submit
+  if (document.getElementById('login-form')) {
+    document.getElementById('login-form').addEventListener('submit', handleLogin);
+  }
+  if (document.getElementById('register-form')) {
+    document.getElementById('register-form').addEventListener('submit', handleRegister);
+  }
+
+  // Attach guest logic for non-logged-in users
+  attachGuestHandlers();
+
+  // Help & Home nav logic
+  helpTabHandler();
 }
 
 // Initialize app
@@ -740,12 +878,12 @@ function initApp() {
   // Set up event listeners
   initEventListeners();
 
-  // Check if user is logged in
-  if (AUTH.isLoggedIn()) {
-    showView('home');
-  } else {
-    showView('login');
-  }
+  // Always show the main UI, hide login/register UI
+  document.getElementById('main-ui').style.display = 'block';
+  document.getElementById('account-ui').style.display = 'none';
+  document.getElementById('profile-ui').style.display = 'none';
+  if (document.getElementById('help-container')) document.getElementById('help-container').style.display = 'none';
+  loadHomePage();
 }
 
 // Start the app when DOM is loaded
