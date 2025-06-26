@@ -1,0 +1,2087 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Azm2d UI</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <!-- Font Awesome for icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <!-- CSS file -->
+  <link rel="stylesheet" href="style.css">
+  <style>
+    /* For hiding and showing wallet section */
+    .wallet-container { display: none; }
+    .wallet-container.active { display: block; }
+  </style>
+</head>
+<body>
+  <!-- Fixed Header -->
+  <div class="header">
+    <div class="header-title">AZM2D</div>
+    <div class="header-icon">
+      <a href="https://your-app-download-link.com" title="Download App" target="_blank">
+        <i class="fa fa-download"></i>
+      </a>
+    </div>
+  </div>
+
+  <!-- Debug mode toggle button -->
+  <button class="debug-toggle" id="debug-toggle">
+    <i class="fas fa-bug"></i>
+  </button>
+  <div class="debug-panel" id="debug-panel">
+    <div class="debug-title">Debug Information</div>
+    <div class="debug-content" id="debug-content"></div>
+  </div>
+
+  <!-- Main UI (always shown) -->
+  <div id="main-ui">
+    <div class="container">
+      <div class="ad-banner">
+        <img id="ad-banner-img" src="" alt="Ad Banner">
+        <div class="ad-banner-title" id="ad-banner-title"></div>
+        <div class="ad-banner-desc" id="ad-banner-desc"></div>
+      </div>
+      <div class="subtitle">
+        <i class="fas fa-wallet"></i> လက်ကျန်ငွေ <span id="user-balance">0</span> ကျပ်
+      </div>
+      <div class="menu-grid">
+        <a href="a/2d_live_api.php" class="menu-btn">
+          <img class="menu-icon-img" src="https://amazemm.xyz/images/2d.png" alt="2D">
+          2D
+        </a>
+        <a href="a/3dnumber.php" class="menu-btn">
+          <img class="menu-icon-img" src="https://amazemm.xyz/images/3d.png" alt="3D">
+          3D
+        </a>
+        <a href="a/game.php" class="menu-btn">
+          <img class="menu-icon-img" src="https://amazemm.xyz/images/game.png" alt="Game">
+          Game
+        </a>
+        <a href="a/36.php" class="menu-btn">
+          <img class="menu-icon-img" src="https://amazemm.xyz/images/36kaung.png" alt="36 ကောင်">
+          36 ကောင်
+        </a>
+        <a href="a/maung.php" class="menu-btn">
+          <img class="menu-icon-img" src="https://amazemm.xyz/images/maung.png" alt="မောင်း">
+          မောင်း
+        </a>
+        <a href="a/boardi.php" class="menu-btn">
+          <img class="menu-icon-img" src="https://amazemm.xyz/images/boardi.png" alt="ဘော်ဒီ">
+          ဘော်ဒီ
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Wallet Section (SPA-style, hidden by default) -->
+  <div class="wallet-container" id="wallet-section">
+    <a href="#" class="wallet-back" id="wallet-back" title="ပင်မစာမျက်နှာသို့">
+      <i class="fa fa-arrow-left"></i>
+      <span style="margin-left:4px;font-size:1em;">Back</span>
+    </a>
+    <div class="wallet-title">
+      <i class="fa fa-wallet"></i> Wallet
+    </div>
+    <div class="balance-section">
+      <div class="balance-label">လက်ကျန်ငွေ</div>
+      <div class="balance-amount" id="wallet-balance">0</div>
+      <div class="balance-currency">ကျပ်</div>
+    </div>
+    <div class="wallet-methods" id="wallet-methods"></div>
+    <div class="wallet-note-section" id="wallet-note-section">
+      <i class="fa fa-info-circle"></i>
+      <b>ဒိုင်မှတ်ချက်:</b>
+      <span id="wallet-note">-</span>
+    </div>
+  </div>
+
+  <!-- Profile UI (hidden by default) -->
+  <div id="profile-ui" style="display:none;">
+    <div class="container">
+      <!-- ... profile content ... -->
+    </div>
+  </div>
+  <!-- Login/Register UI (hidden by default) -->
+  <div id="account-ui" style="display:none;">
+    <div class="account-container">
+      <!-- ... login/register content ... -->
+    </div>
+  </div>
+  <!-- Help & Support Section (hidden by default) -->
+  <div class="help-container" id="help-container" style="display:none;">
+    <div class="help-title">
+      <i class="fas fa-question-circle"></i> Help & Support
+    </div>
+    <div class="help-desc">
+      မေးခွန်းများ၊ အကူအညီလိုအပ်ပါက အောက်ပါနည်းလမ်းများဖြင့် ဆက်သွယ်နိုင်ပါသည်။
+    </div>
+    <ul class="contact-list" id="contact-list"></ul>
+    <div class="help-footer">
+      AZM2D Support Team <br>
+      24/7 အချိန်မရွေး အကူအညီပေးပါသည်။
+    </div>
+  </div>
+
+  <!-- Bottom Navigation -->
+  <div class="navbar">
+    <a href="#" id="nav-home" class="active">
+      <i class="fas fa-home"></i>
+      <span>Home</span>
+    </a>
+    <a href="#" id="nav-wallet">
+      <i class="fas fa-wallet"></i>
+      <span>Wallet</span>
+    </a>
+    <a href="#" id="nav-help">
+      <i class="fas fa-question-circle"></i>
+      <span>Help</span>
+    </a>
+    <a href="#" id="nav-profile">
+      <i class="fas fa-user"></i>
+      <span>Profile</span>
+    </a>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
+
+
+
+:root {
+  --primary: #3f51b5;
+  --primary-dark: #303f9f;
+  --primary-light: #c5cae9;
+  --accent: #ff4081;
+  --accent-dark: #f50057;
+  --text-primary: #212121;
+  --text-secondary: #757575;
+  --divider: #bdbdbd;
+  --background: #f5f5f5;
+  --white: #ffffff;
+  --success: #4caf50;
+  --error: #f44336;
+  --orange: #ff9800;
+  --yellow: #ffeb3b;
+  --gradient: linear-gradient(135deg, #3f51b5, #673ab7);
+  --box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  --border-radius: 12px;
+  --transition: all 0.3s ease;
+  --header-height: 64px;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Poppins', sans-serif;
+  background: var(--background);
+  color: var(--text-primary);
+  min-height: 100vh;
+  line-height: 1.6;
+  padding-bottom: 80px;
+}
+
+.header {
+  background: var(--gradient);
+  color: var(--white);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 16px;
+  box-shadow: var(--box-shadow);
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: var(--header-height);
+  z-index: 1000;
+}
+
+.header-title {
+  font-size: 1.8rem;
+  font-weight: 700;
+  letter-spacing: 1px;
+}
+
+.header-icon {
+  width: 40px;
+  height: 40px;
+  background: var(--white);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: var(--box-shadow);
+  transition: var(--transition);
+}
+
+.header-icon a {
+  color: var(--primary);
+  text-decoration: none;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.header-icon:hover {
+  transform: scale(1.05);
+}
+
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 16px;
+  padding-top: calc(var(--header-height) + 10px); /* Add padding to account for fixed header */
+}
+
+.ad-banner {
+  margin: 16px 0;
+  border-radius: var(--border-radius);
+  overflow: hidden;
+  box-shadow: var(--box-shadow);
+}
+
+.ad-banner img {
+  width: 100%;
+  height: auto;
+  max-height: 120px;
+  object-fit: cover;
+  display: block;
+}
+
+.subtitle {
+  background: var(--primary);
+  color: var(--white);
+  text-align: center;
+  font-size: 1.2rem;
+  padding: 12px;
+  margin: 20px 0;
+  border-radius: var(--border-radius);
+  box-shadow: var(--box-shadow);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.subtitle i {
+  margin-right: 8px;
+}
+
+.menu-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  margin: 24px 0;
+}
+
+.menu-btn {
+  background: var(--white);
+  color: var(--primary);
+  border: none;
+  border-radius: var(--border-radius);
+  padding: 0;
+  font-weight: 600;
+  box-shadow: var(--box-shadow);
+  cursor: pointer;
+  transition: var(--transition);
+  overflow: hidden;
+  height: 320px;
+  position: relative;
+}
+
+.menu-btn::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 4px;
+  background: var(--primary);
+  transform: scaleX(0);
+  transition: var(--transition);
+  transform-origin: left;
+}
+
+.menu-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.menu-btn:hover::after {
+  transform: scaleX(1);
+}
+
+.menu-btn a {
+  color: inherit;
+  text-decoration: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  font-size: 1.5rem;
+  padding: 16px;
+}
+
+.menu-btn i {
+  font-size: 2rem;
+  margin-bottom: 8px;
+}
+
+.menu-icon-img {
+  width: 260px;
+  height: 260px;
+  margin-bottom: 6px;
+  display: block;
+  margin-left: auto;
+  margin-right: auto;
+  /* Ensures icon stays centered and large */
+  max-width: 95%;
+  max-height: 95%;
+  object-fit: contain;
+}
+
+/* Responsive design for huge icons */
+@media (max-width: 1200px) {
+  .menu-icon-img {
+    width: 200px;
+    height: 200px;
+  }
+  .menu-btn {
+    height: 250px;
+  }
+}
+@media (max-width: 900px) {
+  .menu-icon-img {
+    width: 140px;
+    height: 140px;
+  }
+  .menu-btn {
+    height: 180px;
+  }
+}
+@media (max-width: 600px) {
+  .menu-icon-img {
+    width: 90px;
+    height: 90px;
+  }
+  .menu-btn {
+    height: 110px;
+  }
+}
+
+.navbar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: var(--white);
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  padding: 12px 0;
+  box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
+  z-index: 100;
+}
+
+.navbar a {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-decoration: none;
+  color: var(--text-secondary);
+  transition: var(--transition);
+  padding: 8px 0;
+  font-size: 0.8rem;
+  width: 25%;
+}
+
+.navbar a i {
+  font-size: 1.5rem;
+  margin-bottom: 4px;
+}
+
+.navbar a.active,
+.navbar a:active,
+.navbar a:hover {
+  color: var(--primary);
+}
+
+/* Account/Login/Register styles */
+.account-container {
+  max-width: 450px;
+  margin: 40px auto;
+  padding: 0 16px;
+  padding-top: calc(var(--header-height) + 10px);
+}
+
+.tab-group {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 0;
+  border-radius: var(--border-radius) var(--border-radius) 0 0;
+  overflow: hidden;
+}
+
+.tab-btn {
+  background: var(--primary-light);
+  color: var(--text-secondary);
+  border: none;
+  padding: 14px 20px;
+  font-size: 1rem;
+  font-weight: 500;
+  cursor: pointer;
+  flex: 1;
+  transition: var(--transition);
+}
+
+.tab-btn.active {
+  background: var(--white);
+  color: var(--primary);
+  font-weight: 600;
+}
+
+.form-wrapper {
+  background: var(--white);
+  border-radius: 0 0 var(--border-radius) var(--border-radius);
+  box-shadow: var(--box-shadow);
+  padding: 24px;
+}
+
+.form-title {
+  color: var(--primary);
+  font-size: 1.5rem;
+  font-weight: 600;
+  text-align: center;
+  margin-bottom: 24px;
+}
+
+.form-group {
+  margin-bottom: 16px;
+}
+
+.form-label {
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+  margin-bottom: 6px;
+  display: block;
+  font-weight: 500;
+}
+
+.form-input {
+  width: 100%;
+  padding: 12px;
+  font-size: 1rem;
+  border: 1px solid var(--divider);
+  border-radius: var(--border-radius);
+  outline: none;
+  background: var(--background);
+  transition: var(--transition);
+}
+
+.form-input:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 2px var(--primary-light);
+}
+
+.form-btn {
+  background: var(--primary);
+  color: var(--white);
+  font-size: 1rem;
+  font-weight: 500;
+  border: none;
+  border-radius: var(--border-radius);
+  padding: 14px;
+  margin-top: 16px;
+  cursor: pointer;
+  width: 100%;
+  transition: var(--transition);
+  position: relative;
+}
+
+.form-btn:hover {
+  background: var(--primary-dark);
+}
+
+/* Button spinner animation */
+.form-btn.loading {
+  color: transparent;
+  pointer-events: none;
+}
+
+.form-btn.loading::after {
+  content: "";
+  position: absolute;
+  width: 20px;
+  height: 20px;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  margin: auto;
+  border: 3px solid transparent;
+  border-top-color: var(--white);
+  border-radius: 50%;
+  animation: button-loading-spinner 1s ease infinite;
+}
+
+@keyframes button-loading-spinner {
+  from {
+    transform: rotate(0turn);
+  }
+  to {
+    transform: rotate(1turn);
+  }
+}
+
+.optional-tip {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  margin-left: 4px;
+}
+
+.success-msg {
+  color: var(--success);
+  background: rgba(76, 175, 80, 0.1);
+  border-radius: var(--border-radius);
+  padding: 12px;
+  text-align: center;
+  margin-bottom: 16px;
+  font-weight: 500;
+  display: none;
+}
+
+.error-msg {
+  color: var(--error);
+  background: rgba(244, 67, 54, 0.1);
+  border-radius: var(--border-radius);
+  padding: 12px;
+  text-align: center;
+  margin-bottom: 16px;
+  font-weight: 500;
+  display: none;
+}
+
+/* Field validation styles */
+.form-input.error {
+  border-color: var(--error);
+  background-color: rgba(244, 67, 54, 0.05);
+}
+
+.field-error {
+  color: var(--error);
+  font-size: 0.8rem;
+  margin-top: 4px;
+  display: none;
+}
+
+/* Password requirements */
+.password-requirements {
+  margin-top: 8px;
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+}
+
+.password-requirement {
+  display: flex;
+  align-items: center;
+  margin-bottom: 4px;
+}
+
+.password-requirement i {
+  margin-right: 6px;
+  font-size: 0.9rem;
+}
+
+.requirement-met {
+  color: var(--success);
+}
+
+.requirement-unmet {
+  color: var(--text-secondary);
+}
+
+/* Remember me checkbox */
+.form-checkbox-group {
+  display: flex;
+  align-items: center;
+  margin-top: 12px;
+}
+
+.form-checkbox {
+  margin-right: 8px;
+  width: 16px;
+  height: 16px;
+  accent-color: var(--primary);
+}
+
+.form-checkbox-label {
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+}
+
+/* Forgot password link */
+.forgot-password {
+  display: block;
+  text-align: right;
+  color: var(--primary);
+  font-size: 0.9rem;
+  margin-top: 8px;
+  text-decoration: none;
+}
+
+.forgot-password:hover {
+  text-decoration: underline;
+}
+
+/* Profile Page Styles */
+.card {
+  background: var(--white);
+  border-radius: var(--border-radius);
+  box-shadow: var(--box-shadow);
+  padding: 24px;
+  margin-bottom: 24px;
+  transition: var(--transition);
+}
+
+.card:hover {
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+}
+
+.profile-header {
+  display: flex;
+  align-items: center;
+  margin-bottom: 24px;
+}
+
+.profile-avatar {
+  width: 80px;
+  height: 80px;
+  background: var(--primary-light);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 20px;
+  font-size: 2rem;
+  color: var(--primary);
+  box-shadow: var(--box-shadow);
+}
+
+.profile-title {
+  flex: 1;
+}
+
+.profile-name {
+  font-size: 1.8rem;
+  font-weight: 600;
+  color: var(--primary);
+  margin-bottom: 4px;
+}
+
+.profile-phone {
+  color: var(--text-secondary);
+  font-size: 1rem;
+}
+
+.balance-card {
+  background: var(--primary);
+  color: var(--white);
+  border-radius: var(--border-radius);
+  padding: 24px;
+  margin-bottom: 24px;
+  text-align: center;
+  box-shadow: 0 4px 15px rgba(63, 81, 181, 0.3);
+}
+
+.balance-label {
+  font-size: 1rem;
+  opacity: 0.9;
+}
+
+.balance-amount {
+  font-size: 2.5rem;
+  font-weight: 700;
+  letter-spacing: 1px;
+  margin: 10px 0;
+}
+
+.balance-currency {
+  font-weight: 500;
+  font-size: 1.2rem;
+  opacity: 0.9;
+}
+
+.info-list {
+  list-style-type: none;
+}
+
+.info-item {
+  display: flex;
+  padding: 16px 0;
+  border-bottom: 1px solid var(--divider);
+  align-items: center;
+}
+
+.info-item:last-child {
+  border-bottom: none;
+}
+
+.info-icon {
+  width: 40px;
+  height: 40px;
+  background: var(--primary-light);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--primary);
+  margin-right: 16px;
+  font-size: 1.2rem;
+}
+
+.info-content {
+  flex: 1;
+}
+
+.info-label {
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+  margin-bottom: 4px;
+}
+
+.info-value {
+  color: var(--text-primary);
+  font-weight: 500;
+}
+
+.section-title {
+  font-size: 1.3rem;
+  font-weight: 600;
+  color: var(--primary);
+  margin-bottom: 16px;
+  margin-top: 16px;
+}
+
+.logout-button {
+  background: var(--error);
+  color: var(--white);
+  border: none;
+  border-radius: var(--border-radius);
+  padding: 14px 24px;
+  font-size: 1rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: var(--transition);
+  display: block;
+  width: 100%;
+  margin-top: 24px;
+}
+
+.logout-button:hover {
+  background: #d32f2f;
+  transform: translateY(-2px);
+}
+
+.success-message {
+  background: rgba(76, 175, 80, 0.1);
+  color: var(--success);
+  border-radius: var(--border-radius);
+  padding: 12px;
+  margin-bottom: 16px;
+  font-weight: 500;
+  text-align: center;
+  display: none;
+}
+
+.error-message {
+  background: rgba(244, 67, 54, 0.1);
+  color: var(--error);
+  border-radius: var(--border-radius);
+  padding: 12px;
+  margin-bottom: 16px;
+  font-weight: 500;
+  text-align: center;
+  display: none;
+}
+
+.spinner {
+  display: none;
+  margin: 20px auto;
+  width: 40px;
+  height: 40px;
+  border: 4px solid rgba(63, 81, 181, 0.1);
+  border-radius: 50%;
+  border-top: 4px solid var(--primary);
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Debug Panel */
+.debug-panel {
+  display: none;
+  background: #f8f8f8;
+  border: 1px solid #ddd;
+  padding: 10px;
+  margin: 20px 0;
+  border-radius: 8px;
+  font-family: monospace;
+  font-size: 13px;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.debug-title {
+  font-weight: 600;
+  margin-bottom: 8px;
+  color: #333;
+}
+
+.debug-content {
+  font-family: monospace;
+  white-space: pre-wrap;
+  background: #eee;
+  padding: 8px;
+  border-radius: 4px;
+  font-size: 0.9rem;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+/* Toggle Debug button */
+.debug-toggle {
+  position: fixed;
+  bottom: 90px;
+  right: 20px;
+  background: var(--primary);
+  color: white;
+  border: none;
+  border-radius: 50%;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: var(--box-shadow);
+  cursor: pointer;
+  z-index: 1000;
+  opacity: 0.7;
+}
+
+.debug-toggle:hover {
+  opacity: 1;
+}
+
+/* Responsive design */
+@media (max-width: 1200px) {
+  .menu-icon-img {
+    width: 200px;
+    height: 200px;
+  }
+  .menu-btn {
+    height: 250px;
+  }
+}
+@media (max-width: 900px) {
+  .menu-icon-img {
+    width: 140px;
+    height: 140px;
+  }
+  .menu-btn {
+    height: 180px;
+  }
+}
+@media (max-width: 768px) {
+  .menu-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+  }
+
+  .menu-btn {
+    height: 100px;
+  }
+
+  .menu-btn a {
+    font-size: 1.2rem;
+  }
+
+  .profile-avatar {
+    width: 60px;
+    height: 60px;
+    font-size: 1.5rem;
+  }
+
+  .profile-name {
+    font-size: 1.5rem;
+  }
+
+  .balance-amount {
+    font-size: 2rem;
+  }
+}
+
+@media (max-width: 600px) {
+  .menu-icon-img {
+    width: 90px;
+    height: 90px;
+  }
+  .menu-btn {
+    height: 110px;
+  }
+  .help-container {
+    margin: 20px 4px 0 4px;
+    padding: 20px 6px;
+  }
+  .help-title { font-size: 1.3rem; }
+  .help-desc { font-size: 0.99rem; }
+  .contact-label, .contact-link { font-size: 0.95rem; }
+}
+
+@media (max-width: 480px) {
+  .header-title {
+    font-size: 1.5rem;
+  }
+
+  .subtitle {
+    font-size: 1rem;
+    padding: 10px;
+  }
+
+  .menu-btn {
+    height: 90px;
+  }
+
+  .menu-btn a {
+    font-size: 1rem;
+    padding: 12px 8px;
+  }
+
+  .menu-btn i {
+    font-size: 1.5rem;
+  }
+
+  .form-title {
+    font-size: 1.2rem;
+  }
+
+  .account-container {
+    margin: 20px auto;
+  }
+
+  .profile-avatar {
+    width: 50px;
+    height: 50px;
+    font-size: 1.2rem;
+  }
+
+  .profile-name {
+    font-size: 1.2rem;
+  }
+
+  .balance-amount {
+    font-size: 1.8rem;
+  }
+
+  .info-icon {
+    width: 32px;
+    height: 32px;
+    font-size: 1rem;
+  }
+}
+
+/* Help styles */
+.help-container {
+  max-width: 440px;
+  margin: 60px auto 0 auto;
+  padding: 32px 16px;
+  background: #fff;
+  border-radius: 18px;
+  box-shadow: 0 2px 16px rgba(0,0,0,0.08);
+  font-family: 'Poppins', sans-serif;
+}
+.help-title {
+  font-size: 1.8rem;
+  font-weight: 600;
+  margin-bottom: 12px;
+  text-align: center;
+}
+.help-desc {
+  font-size: 1.08rem;
+  color: #444;
+  margin-bottom: 24px;
+  text-align: center;
+}
+.contact-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.contact-item {
+  display: flex;
+  align-items: center;
+  background: #f5f7fa;
+  border-radius: 10px;
+  padding: 15px 14px;
+  margin-bottom: 18px;
+  transition: background 0.2s;
+}
+.contact-item:hover {
+  background: #eaf3fc;
+}
+.contact-icon {
+  font-size: 2.1rem;
+  color: #4f7cff;
+  margin-right: 18px;
+  width: 38px;
+  text-align: center;
+}
+.contact-details {
+  flex: 1;
+}
+.contact-label {
+  font-size: 1.11rem;
+  font-weight: 500;
+  color: #333;
+  margin-bottom: 2px;
+}
+.contact-link {
+  font-size: 1.05rem;
+  color: #0078ff;
+  text-decoration: none;
+  word-break: break-all;
+}
+.contact-link:hover {
+  text-decoration: underline;
+}
+.help-footer {
+  margin-top: 32px;
+  font-size: 0.97rem;
+  color: #868686;
+  text-align: center;
+}
+
+/* Wallet Section Styles */
+.wallet-container {
+  max-width: 400px;
+  margin: 60px auto 0 auto;
+  background: #fff;
+  border-radius: 16px;
+  box-shadow: 0 2px 16px rgba(0,0,0,0.08);
+  padding: 28px 22px 22px 22px;
+  position: relative;
+}
+.wallet-back {
+  position: absolute;
+  top: 14px;
+  left: 14px;
+  font-size: 1.25em;
+  color: #1976d2;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 6px 10px 6px 6px;
+  border-radius: 5px;
+  transition: background 0.16s;
+  text-decoration: none;
+  display: flex;
+  align-items: center;
+  z-index: 2;
+}
+.wallet-back:hover {
+  background: #e3f2fd;
+  color: #0d47a1;
+  text-decoration: none;
+}
+.wallet-title {
+  font-size: 1.7rem;
+  font-weight: 700;
+  color: #3f51b5;
+  margin-bottom: 8px;
+  text-align: center;
+}
+.balance-section {
+  background: #3f51b5;
+  color: #fff;
+  border-radius: 14px;
+  padding: 24px 16px;
+  text-align: center;
+  margin-bottom: 20px;
+  box-shadow: 0 6px 24px rgba(63,81,181,0.07);
+}
+.balance-label {
+  font-size: 1rem;
+  opacity: 0.85;
+}
+.balance-amount {
+  font-size: 2.3rem;
+  font-weight: 700;
+  letter-spacing: 1px;
+  margin: 12px 0 2px 0;
+}
+.balance-currency {
+  font-size: 1.1rem;
+  font-weight: 500;
+  opacity: 0.9;
+}
+.wallet-methods {
+  display: flex;
+  justify-content: space-around;
+  margin: 16px 0 20px 0;
+}
+.wallet-method {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100px;
+  background: #f7f8fc;
+  border-radius: 10px;
+  padding: 15px 0 10px 0;
+  box-shadow: 0 2px 8px rgba(63,81,181,0.04);
+  margin: 0 5px;
+  transition: box-shadow 0.2s;
+}
+.wallet-method:hover {
+  box-shadow: 0 6px 20px rgba(63,81,181,0.10);
+}
+.wallet-method img {
+  height: 36px;
+  margin-bottom: 7px;
+}
+.wallet-method-label {
+  font-size: 1.04rem;
+  font-weight: 500;
+  color: #212121;
+  letter-spacing: 0.5px;
+}
+.wallet-note-section {
+  margin-top: 15px;
+  background: #fffbe7;
+  border: 1px solid #ffe49c;
+  border-radius: 10px;
+  padding: 14px 14px 12px 14px;
+  color: #af8400;
+  font-size: 1.01rem;
+  box-shadow: 0 2px 8px rgba(255,193,7,0.06);
+}
+.wallet-note-section .fa-info-circle {
+  margin-right: 7px;
+  color: #ffc107;
+}
+@media (max-width: 480px) {
+  .wallet-container {
+    margin: 18px 5px 0 5px;
+    padding: 14px 5px;
+  }
+  .wallet-methods {
+    flex-direction: column;
+    gap: 12px;
+    align-items: center;
+  }
+  .wallet-method {
+    width: 90%;
+    margin: 0;
+  }
+  .wallet-back {
+    top: 7px;
+    left: 7px;
+    font-size: 1.1em;
+  }
+}
+
+
+// Debug mode toggle
+let debugMode = false;
+
+// Current view state
+let currentView = 'home';
+
+// Helper functions for API and storage
+const AUTH = {
+  getToken() {
+    return localStorage.getItem('azm2d_token') || sessionStorage.getItem('azm2d_token');
+  },
+  getPhone() {
+    return localStorage.getItem('azm2d_phone') || sessionStorage.getItem('azm2d_phone');
+  },
+  setLogin(phone, token, remember = false) {
+    if (remember) {
+      localStorage.setItem('azm2d_phone', phone);
+      localStorage.setItem('azm2d_token', token);
+    } else {
+      sessionStorage.setItem('azm2d_phone', phone);
+      sessionStorage.setItem('azm2d_token', token);
+    }
+  },
+  clearLogin() {
+    localStorage.removeItem('azm2d_phone');
+    localStorage.removeItem('azm2d_token');
+    sessionStorage.removeItem('azm2d_phone');
+    sessionStorage.removeItem('azm2d_token');
+  },
+  isLoggedIn() {
+    return !!this.getToken();
+  }
+};
+
+// Debug logging
+function debugLog(message, data) {
+  if (!debugMode) return;
+  console.log(`[DEBUG] ${message}:`, data);
+
+  const debugContent = document.getElementById('debug-content');
+  if (debugContent) {
+    const timestamp = new Date().toLocaleTimeString();
+    let dataText = '';
+    try {
+      dataText = typeof data === 'object' ? JSON.stringify(data, null, 2) : String(data);
+    } catch (e) {
+      dataText = '[Error displaying data]';
+    }
+    debugContent.innerHTML += `<div><strong>${timestamp}</strong>: ${message}<br><span>${dataText}</span></div><hr>`;
+    debugContent.scrollTop = debugContent.scrollHeight;
+  }
+}
+
+// UI helper functions
+function showLoading() {
+  const spinner = document.getElementById('loading-spinner');
+  if (spinner) spinner.style.display = 'block';
+}
+function hideLoading() {
+  const spinner = document.getElementById('loading-spinner');
+  if (spinner) spinner.style.display = 'none';
+}
+function showApiError(show = true) {
+  const errorMsg = document.getElementById('api-error-message');
+  if (errorMsg) errorMsg.style.display = show ? 'block' : 'none';
+}
+function formatNumber(x) {
+  if (!x && x !== 0) return "-";
+  return Number(x).toLocaleString();
+}
+
+// View management
+function showView(view) {
+  currentView = view;
+  document.querySelectorAll('.navbar a').forEach(el => el.classList.remove('active'));
+  const activeNav = document.getElementById(`nav-${view}`);
+  if (activeNav) activeNav.classList.add('active');
+  // Hide all main sections
+  if (document.getElementById('main-ui')) document.getElementById('main-ui').style.display = 'none';
+  if (document.getElementById('profile-ui')) document.getElementById('profile-ui').style.display = 'none';
+  if (document.getElementById('account-ui')) document.getElementById('account-ui').style.display = 'none';
+  if (document.getElementById('help-container')) document.getElementById('help-container').style.display = 'none';
+  if (document.getElementById('wallet-section')) document.getElementById('wallet-section').classList.remove('active');
+
+  if (view === 'home') {
+    if (document.getElementById('main-ui')) document.getElementById('main-ui').style.display = 'block';
+    loadHomePage();
+  } else if (view === 'profile') {
+    if (document.getElementById('profile-ui')) document.getElementById('profile-ui').style.display = 'block';
+    loadProfilePage();
+  } else if (view === 'login' || view === 'register') {
+    if (document.getElementById('account-ui')) document.getElementById('account-ui').style.display = 'block';
+    showTab(view === 'register' ? 'register' : 'login');
+  } else if (view === 'help') {
+    if (document.getElementById('help-container')) document.getElementById('help-container').style.display = 'block';
+  } else if (view === 'wallet') {
+    if (document.getElementById('wallet-section')) document.getElementById('wallet-section').classList.add('active');
+    mainWallet();
+  }
+  window.scrollTo(0, 0);
+}
+
+// Account/Login/Register logic
+function showTab(tab) {
+  if (document.getElementById('register-form')) document.getElementById('register-form').style.display = tab === 'register' ? 'block' : 'none';
+  if (document.getElementById('login-form')) document.getElementById('login-form').style.display = tab === 'login' ? 'block' : 'none';
+  if (document.getElementById('tab-register')) document.getElementById('tab-register').classList.toggle('active', tab === 'register');
+  if (document.getElementById('tab-login')) document.getElementById('tab-login').classList.toggle('active', tab === 'login');
+  document.querySelectorAll('.success-msg,.error-msg').forEach(e => e.style.display = 'none');
+  document.querySelectorAll('.form-input').forEach(e => e.classList.remove('error'));
+}
+
+// Load ad banner
+function loadAdBanner() {
+  fetch('https://amazemm.xyz/api/ad_banner_api.php')
+    .then(response => {
+      if (!response.ok) throw new Error('Network response was not ok');
+      return response.json();
+    })
+    .then(data => {
+      if (data.success && data.banner) {
+        if (document.getElementById('ad-banner-img')) document.getElementById('ad-banner-img').src = data.banner.image_url;
+        if (document.getElementById('ad-banner-title')) document.getElementById('ad-banner-title').style.display = "none";
+        if (document.getElementById('ad-banner-desc')) document.getElementById('ad-banner-desc').style.display = "none";
+      }
+    })
+    .catch(error => {
+      debugLog('Ad banner error:', error);
+      if (document.querySelector('.ad-banner')) document.querySelector('.ad-banner').style.display = 'none';
+    });
+}
+
+// Load menu icons dynamically from menu_icons.php
+function loadMenuIcons() {
+  fetch('https://amazemm.xyz/api/menu_icons.php')
+    .then(response => response.json())
+    .then(data => {
+      const grid = document.querySelector('.menu-grid');
+      if (!grid) return;
+      grid.innerHTML = '';
+      if (data && data.menus && Array.isArray(data.menus)) {
+        data.menus.forEach(menu => {
+          grid.innerHTML += `
+            <a href="${menu.url}" class="menu-btn">
+              <img src="${menu.icon_img}" alt="${menu.label}" class="menu-icon-img">
+              ${menu.label}
+            </a>
+          `;
+        });
+      }
+    })
+    .catch(error => {
+      debugLog('Menu icons error', error);
+    });
+}
+
+// Load home page data
+function loadHomePage() {
+  debugLog('Loading home page', {});
+  loadAdBanner();
+  loadMenuIcons();
+  loadUserBalance();
+}
+
+// Load profile page 
+function loadProfilePage() {
+  debugLog('Loading profile page', {});
+  fetchUserProfile();
+}
+
+// Load user balance
+function loadUserBalance() {
+  const token = AUTH.getToken();
+  const phone = AUTH.getPhone();
+  if (!token || !phone) return;
+  debugLog('Loading user balance', {});
+  fetch('https://amazemm.xyz/api/user.php', {
+    method: 'POST',
+    headers: { 
+      'Content-Type': 'application/json', 
+      'Authorization': token 
+    },
+    body: JSON.stringify({ phone: phone })
+  })
+  .then(response => {
+    if (!response.ok) throw new Error('Network response was not ok');
+    return response.json();
+  })
+  .then(data => {
+    debugLog('User data received', data);
+    if (data.success && data.user) {
+      if (document.getElementById('user-balance')) document.getElementById('user-balance').textContent = formatNumber(data.user.balance || 0);
+    } else {
+      debugLog('User data invalid, logging out', data);
+      AUTH.clearLogin();
+      showView('login');
+    }
+  })
+  .catch(error => {
+    debugLog('Error fetching user data', error.message);
+  });
+}
+
+// API request helper for profile
+async function callProfileApi(actionName, additionalData = {}) {
+  const phone = AUTH.getPhone();
+  const token = AUTH.getToken();
+  if (!phone || !token) {
+    debugLog(`No auth data for ${actionName}`, { phone });
+    return null;
+  }
+  const requestData = {
+    action: actionName,
+    ...additionalData
+  };
+  debugLog(`API Request: ${actionName}`, requestData);
+
+  try {
+    const response = await fetch('https://amazemm.xyz/api/profile.php', {
+      method: 'POST',
+      headers: { 
+        'Content-Type': 'application/json', 
+        'Authorization': token 
+      },
+      body: JSON.stringify(requestData)
+    });
+    debugLog(`API Response Status: ${actionName}`, response.status);
+    const responseText = await response.text();
+    if (!responseText) throw new Error('Empty response from server');
+    let data;
+    try {
+      data = JSON.parse(responseText);
+      debugLog(`API Response Data: ${actionName}`, data);
+      return data;
+    } catch (e) {
+      debugLog('JSON Parse Error', { responseText, error: e.message });
+      throw new Error('Invalid response format from server');
+    }
+  } catch (error) {
+    debugLog(`API Error: ${actionName}`, error.message);
+    throw error;
+  }
+}
+
+// Fetch user profile
+async function fetchUserProfile() {
+  showLoading();
+  showApiError(false);
+  try {
+    if (!AUTH.isLoggedIn()) {
+      debugLog('Not logged in', {});
+      showView('login');
+      return;
+    }
+    debugLog('Fetching user profile', { phone: AUTH.getPhone() });
+    const data = await callProfileApi('get_profile');
+    if (data && data.success && data.user) {
+      updateProfileUI(data.user);
+    } else {
+      showApiError(true);
+      debugLog('Invalid API response', data);
+      setTimeout(() => {
+        AUTH.clearLogin();
+        showView('login');
+      }, 2000);
+    }
+  } catch (error) {
+    debugLog('API Error', error.message);
+    showApiError(true);
+  } finally {
+    hideLoading();
+  }
+}
+
+// Update profile UI
+function updateProfileUI(user) {
+  debugLog('Updating UI with user data', user);
+  if (document.getElementById('profile-name')) document.getElementById('profile-name').textContent = user.name || 'N/A';
+  if (document.getElementById('profile-phone')) document.getElementById('profile-phone').textContent = user.phone || 'N/A';
+  const avatarElement = document.getElementById('profile-avatar');
+  if (avatarElement) {
+    if (user.name && user.name.length > 0) {
+      avatarElement.innerHTML = user.name.charAt(0).toUpperCase();
+    } else {
+      avatarElement.innerHTML = '<i class="fas fa-user"></i>';
+    }
+  }
+  if (document.getElementById('balance-amount')) document.getElementById('balance-amount').textContent = formatNumber(user.balance || 0);
+  if (document.getElementById('info-name')) document.getElementById('info-name').textContent = user.name || 'N/A';
+  if (document.getElementById('info-phone')) document.getElementById('info-phone').textContent = user.phone || 'N/A';
+  if (document.getElementById('info-agent-code')) document.getElementById('info-agent-code').textContent = user.agent_code || 'N/A';
+}
+
+// Change password
+async function changePassword(currentPassword, newPassword) {
+  if (!AUTH.isLoggedIn()) {
+    debugLog('No auth data for password change', {});
+    showView('login');
+    return false;
+  }
+  const submitBtn = document.getElementById('password-submit-btn');
+  if (submitBtn) {
+    submitBtn.classList.add('loading');
+    submitBtn.disabled = true;
+  }
+  try {
+    debugLog('Changing password', {
+      currentPasswordLength: currentPassword.length,
+      newPasswordLength: newPassword.length
+    });
+    const data = await callProfileApi('change_password', {
+      current_password: currentPassword,
+      new_password: newPassword
+    });
+    if (data && data.success) {
+      if (document.getElementById('password-success-message')) document.getElementById('password-success-message').style.display = 'block';
+      if (document.getElementById('password-error-message')) document.getElementById('password-error-message').style.display = 'none';
+      if (document.getElementById('change-password-form')) document.getElementById('change-password-form').reset();
+      setTimeout(() => {
+        if (document.getElementById('password-success-message')) document.getElementById('password-success-message').style.display = 'none';
+      }, 5000);
+      return true;
+    } else {
+      if (document.getElementById('password-error-message')) document.getElementById('password-error-message').textContent = data?.message || 'စကားဝှက် ပြောင်းရန် မအောင်မြင်ပါ။';
+      if (document.getElementById('password-error-message')) document.getElementById('password-error-message').style.display = 'block';
+      if (document.getElementById('password-success-message')) document.getElementById('password-success-message').style.display = 'none';
+      return false;
+    }
+  } catch (error) {
+    debugLog('Password Change Error', error.message);
+    if (document.getElementById('password-error-message')) document.getElementById('password-error-message').textContent = 'Server နှင့် ဆက်သွယ်၍မရပါ။';
+    if (document.getElementById('password-error-message')) document.getElementById('password-error-message').style.display = 'block';
+    if (document.getElementById('password-success-message')) document.getElementById('password-success-message').style.display = 'none';
+    return false;
+  } finally {
+    if (submitBtn) {
+      submitBtn.classList.remove('loading');
+      submitBtn.disabled = false;
+    }
+  }
+}
+
+// Check password strength
+function checkPasswordStrength(password) {
+  const requirements = [
+    { regex: /.{6,}/, element: document.getElementById("length-req") },
+    { regex: /[0-9]/, element: document.getElementById("number-req") },
+    { regex: /[A-Z]/, element: document.getElementById("uppercase-req") }
+  ];
+  let strength = 0;
+  requirements.forEach(req => {
+    if (req.element) {
+      if (req.regex.test(password)) {
+        strength++;
+        req.element.classList.add('requirement-met');
+        req.element.classList.remove('requirement-unmet');
+        req.element.querySelector('i').className = 'fas fa-check';
+      } else {
+        req.element.classList.remove('requirement-met');
+        req.element.classList.add('requirement-unmet');
+        req.element.querySelector('i').className = 'fas fa-circle';
+      }
+    }
+  });
+  return strength;
+}
+
+// Validate form fields
+function validateField(field, pattern, errorMessage) {
+  const value = field.value.trim();
+  const isValid = pattern.test(value);
+  const errorElement = document.getElementById(`${field.id}-error`);
+  if (!isValid) {
+    field.classList.add('error');
+    if (errorElement) {
+      errorElement.textContent = errorMessage;
+      errorElement.style.display = 'block';
+    }
+  } else {
+    field.classList.remove('error');
+    if (errorElement) {
+      errorElement.style.display = 'none';
+    }
+  }
+  return isValid;
+}
+
+// Handle login
+function handleLogin(e) {
+  e.preventDefault();
+  var phone = document.getElementById('login-phone').value.trim();
+  var password = document.getElementById('login-password').value;
+  var rememberMe = document.getElementById('remember-me').checked;
+  var submitBtn = document.getElementById('login-submit-btn');
+  var errorMsg = document.getElementById('login-error-msg');
+  var successMsg = document.getElementById('login-success-msg');
+  errorMsg.style.display = 'none';
+  successMsg.style.display = 'none';
+  let isValid = true;
+  if (!phone.match(/^[0-9]{7,15}$/)) {
+    document.getElementById('login-phone').classList.add('error');
+    document.getElementById('login-phone-error').textContent = 'ဖုန်းနံပါတ် မှန်ကန်စွာ ထည့်ပါ။';
+    document.getElementById('login-phone-error').style.display = 'block';
+    isValid = false;
+  } else {
+    document.getElementById('login-phone').classList.remove('error');
+    document.getElementById('login-phone-error').style.display = 'none';
+  }
+  if (!password || password.length < 6) {
+    document.getElementById('login-password').classList.add('error');
+    document.getElementById('login-password-error').textContent = 'စကားဝှက် မှန်ကန်စွာ ထည့်ပါ။';
+    document.getElementById('login-password-error').style.display = 'block';
+    isValid = false;
+  } else {
+    document.getElementById('login-password').classList.remove('error');
+    document.getElementById('login-password-error').style.display = 'none';
+  }
+  if (!isValid) return;
+  submitBtn.classList.add('loading');
+  submitBtn.disabled = true;
+  debugLog('Login request', { phone, passwordLength: password.length, rememberMe });
+  fetch('https://amazemm.xyz/api/login.php', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ phone: phone, password: password })
+  })
+  .then(response => {
+    debugLog('Login Response Status', response.status);
+    return response.text().then(text => {
+      if (!text) throw new Error('Server returned empty response');
+      try {
+        return JSON.parse(text);
+      } catch (e) {
+        debugLog('JSON Parse Error', { text, error: e.message });
+        throw new Error('Invalid response format from server');
+      }
+    });
+  })
+  .then(data => {
+    debugLog('Login Response Data', data);
+    if (data.success) {
+      successMsg.textContent = 'အကောင့်ဝင်ခြင်း အောင်မြင်ပါသည်။';
+      successMsg.style.display = 'block';
+      if (data.token) {
+        AUTH.setLogin(phone, data.token, rememberMe);
+        setTimeout(() => { showView('home'); }, 1000);
+      }
+    } else {
+      errorMsg.textContent = data.message || 'မှားယွင်းမှုတစ်ခု ဖြစ်ပွားခဲ့သည်။';
+      errorMsg.style.display = 'block';
+    }
+  })
+  .catch(error => {
+    debugLog('Login Error', error.message);
+    errorMsg.textContent = 'Server သို့ ချိတ်ဆက်၍မရပါ။ နောက်မှ ပြန်လည်ကြိုးစားပါ။';
+    errorMsg.style.display = 'block';
+  })
+  .finally(() => {
+    submitBtn.classList.remove('loading');
+    submitBtn.disabled = false;
+  });
+}
+
+// Handle registration
+function handleRegister(e) {
+  e.preventDefault();
+  var name = document.getElementById('reg-name').value.trim();
+  var phone = document.getElementById('reg-phone').value.trim();
+  var password = document.getElementById('reg-password').value;
+  var agentCode = document.getElementById('reg-agent_code').value.trim();
+  var submitBtn = document.getElementById('reg-submit-btn');
+  var errorMsg = document.getElementById('reg-error-msg');
+  var successMsg = document.getElementById('reg-success-msg');
+  errorMsg.style.display = 'none';
+  successMsg.style.display = 'none';
+  let isValid = true;
+  if (name.length < 2) {
+    document.getElementById('reg-name').classList.add('error');
+    document.getElementById('reg-name-error').textContent = 'အမည် မှန်ကန်စွာ ထည့်ပါ။';
+    document.getElementById('reg-name-error').style.display = 'block';
+    isValid = false;
+  } else {
+    document.getElementById('reg-name').classList.remove('error');
+    document.getElementById('reg-name-error').style.display = 'none';
+  }
+  if (!phone.match(/^[0-9]{7,15}$/)) {
+    document.getElementById('reg-phone').classList.add('error');
+    document.getElementById('reg-phone-error').textContent = 'ဖုန်းနံပါတ် မှန်ကန်စွာ ထည့်ပါ။';
+    document.getElementById('reg-phone-error').style.display = 'block';
+    isValid = false;
+  } else {
+    document.getElementById('reg-phone').classList.remove('error');
+    document.getElementById('reg-phone-error').style.display = 'none';
+  }
+  if (password.length < 6) {
+    document.getElementById('reg-password').classList.add('error');
+    document.getElementById('reg-password-error').textContent = 'စကားဝှက် အနည်းဆုံး ၆ လုံးရှိရပါမည်။';
+    document.getElementById('reg-password-error').style.display = 'block';
+    isValid = false;
+  } else {
+    document.getElementById('reg-password').classList.remove('error');
+    document.getElementById('reg-password-error').style.display = 'none';
+  }
+  if (!isValid) return;
+  submitBtn.classList.add('loading');
+  submitBtn.disabled = true;
+  debugLog('Registration request', { name, phone, passwordLength: password.length, agentCode });
+  const registrationData = {
+    name: name,
+    phone: phone,
+    password: password,
+    agent_code: agentCode
+  };
+  fetch('https://amazemm.xyz/api/register.php', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(registrationData)
+  })
+  .then(response => {
+    debugLog('Registration Response Status', response.status);
+    return response.text().then(text => {
+      if (!text) throw new Error('Server returned empty response');
+      try {
+        return JSON.parse(text);
+      } catch (e) {
+        debugLog('JSON Parse Error', { text, error: e.message });
+        throw new Error('Invalid response format from server');
+      }
+    });
+  })
+  .then(data => {
+    debugLog('Registration Response Data', data);
+    if (data.success) {
+      successMsg.textContent = 'အကောင့်ဖွင့်ခြင်း အောင်မြင်ပါသည်။';
+      successMsg.style.display = 'block';
+      document.getElementById('register-form').reset();
+      if (data.token) {
+        AUTH.setLogin(phone, data.token, false);
+        setTimeout(() => { showView('home'); }, 1500);
+      }
+    } else {
+      errorMsg.textContent = data.message || 'မှားယွင်းမှုတစ်ခု ဖြစ်ပွားခဲ့သည်။';
+      errorMsg.style.display = 'block';
+    }
+  })
+  .catch(error => {
+    debugLog('Registration Error', error.message);
+    errorMsg.textContent = 'Server သို့ ချိတ်ဆက်၍မရပါ။ နောက်မှ ပြန်လည်ကြိုးစားပါ။';
+    errorMsg.style.display = 'block';
+  })
+  .finally(() => {
+    submitBtn.classList.remove('loading');
+    submitBtn.disabled = false;
+  });
+}
+
+// Handle password input for strength checker
+function handlePasswordInput() {
+  const password = document.getElementById('reg-password').value;
+  checkPasswordStrength(password);
+}
+
+// Handle change password form submission
+async function handleChangePassword(e) {
+  e.preventDefault();
+  const currentPassword = document.getElementById('current-password').value;
+  const newPassword = document.getElementById('new-password').value;
+  const confirmPassword = document.getElementById('confirm-password').value;
+  if (newPassword !== confirmPassword) {
+    if (document.getElementById('password-error-message')) document.getElementById('password-error-message').textContent = 'စကားဝှက် အသစ်နှင့် အတည်ပြုစကားဝှက်တို့ မတူညီပါ။';
+    if (document.getElementById('password-error-message')) document.getElementById('password-error-message').style.display = 'block';
+    return;
+  }
+  if (newPassword.length < 6) {
+    if (document.getElementById('password-error-message')) document.getElementById('password-error-message').textContent = 'စကားဝှက်သည် အနည်းဆုံး ၆ လုံး ရှိရပါမည်။';
+    if (document.getElementById('password-error-message')) document.getElementById('password-error-message').style.display = 'block';
+    return;
+  }
+  await changePassword(currentPassword, newPassword);
+}
+
+// Handle logout
+function handleLogout() {
+  debugLog('Logout button clicked', {});
+  AUTH.clearLogin();
+  showView('login');
+}
+
+// Guest handling logic
+function requireLoginHandler(e, tab = 'login') {
+  if (!AUTH.isLoggedIn()) {
+    if (e) e.preventDefault();
+    showView(tab);
+    return false;
+  }
+  return true;
+}
+function attachGuestHandlers() {
+  ['nav-wallet', 'nav-help', 'nav-profile'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) {
+      el.addEventListener('click', function(e) {
+        requireLoginHandler(e, 'login');
+      });
+    }
+  });
+  // Menu grid buttons: require login
+  document.addEventListener('click', function(e) {
+    const target = e.target.closest('.menu-grid a');
+    if (target) {
+      if (!AUTH.isLoggedIn()) {
+        e.preventDefault();
+        showView('login');
+      }
+    }
+  });
+}
+
+// Help tab logic
+function helpTabHandler() {
+  const navHelp = document.getElementById('nav-help');
+  const helpContainer = document.getElementById('help-container');
+  if (navHelp && helpContainer) {
+    navHelp.addEventListener('click', function(e) {
+      e.preventDefault();
+      if (document.getElementById('main-ui')) document.getElementById('main-ui').style.display = 'none';
+      if (document.getElementById('profile-ui')) document.getElementById('profile-ui').style.display = 'none';
+      if (document.getElementById('account-ui')) document.getElementById('account-ui').style.display = 'none';
+      helpContainer.style.display = 'block';
+      document.querySelectorAll('.navbar a').forEach(el => el.classList.remove('active'));
+      navHelp.classList.add('active');
+      if (!helpContainer.dataset.loaded) {
+        fetch("https://amazemm.xyz/api/contact_api.php")
+          .then(res => res.json())
+          .then(data => {
+            const list = document.getElementById('contact-list');
+            list.innerHTML = "";
+            if (data.success && data.contacts && data.contacts.length) {
+              data.contacts.forEach(contact => {
+                let icon, label, link, linkText;
+                if (contact.type === "viber") {
+                  icon = '<i class="fab fa-viber"></i>';
+                  label = "Viber";
+                  link = "viber://chat?number=" + encodeURIComponent(contact.phone.replace(/[^0-9+]/g, ''));
+                  linkText = contact.phone;
+                } else if (contact.type === "telegram") {
+                  icon = '<i class="fab fa-telegram"></i>';
+                  label = "Telegram";
+                  if (contact.username) {
+                    link = "https://t.me/" + contact.username;
+                    linkText = "@" + contact.username;
+                  } else {
+                    link = "https://t.me/" + contact.phone.replace(/[^0-9+]/g, '');
+                    linkText = contact.phone;
+                  }
+                } else {
+                  return;
+                }
+                list.innerHTML += `
+                  <li class="contact-item">
+                    <span class="contact-icon">${icon}</span>
+                    <span class="contact-details">
+                      <span class="contact-label">${label}</span><br>
+                      <a class="contact-link" href="${link}" target="_blank">${linkText}</a>
+                    </span>
+                  </li>
+                `;
+              });
+            } else {
+              list.innerHTML = `<li class="contact-item"><span class="contact-details">ဆက်သွယ်ရန်အချက်အလက်များ ရယူ၍မရပါ။<br>ကျေးဇူးပြု၍ နောက်မှ ပြန်လည်ကြိုးစားပါ။</span></li>`;
+            }
+            helpContainer.dataset.loaded = "1";
+          })
+          .catch(() => {
+            const list = document.getElementById('contact-list');
+            list.innerHTML = `<li class="contact-item"><span class="contact-details">ဆက်သွယ်ရန်အချက်အလက်များ ရယူ၍မရပါ။<br>ကျေးဇူးပြု၍ နောက်မှ ပြန်လည်ကြိုးစားပါ။</span></li>`;
+          });
+      }
+    });
+  }
+  var navHome = document.getElementById('nav-home');
+  if (navHome) {
+    navHome.addEventListener('click', function(e) {
+      e.preventDefault();
+      if (document.getElementById('main-ui')) document.getElementById('main-ui').style.display = 'block';
+      if (document.getElementById('profile-ui')) document.getElementById('profile-ui').style.display = 'none';
+      if (document.getElementById('account-ui')) document.getElementById('account-ui').style.display = 'none';
+      if (document.getElementById('help-container')) document.getElementById('help-container').style.display = 'none';
+      document.querySelectorAll('.navbar a').forEach(el => el.classList.remove('active'));
+      navHome.classList.add('active');
+    });
+  }
+}
+
+// Initialize event listeners
+function initEventListeners() {
+  if (document.getElementById('nav-home')) {
+    document.getElementById('nav-home').addEventListener('click', function(e) {
+      e.preventDefault();
+      if (AUTH.isLoggedIn()) {
+        showView('home');
+      } else {
+        showView('login');
+      }
+    });
+  }
+  if (document.getElementById('nav-profile')) {
+    document.getElementById('nav-profile').addEventListener('click', function(e) {
+      e.preventDefault();
+      if (AUTH.isLoggedIn()) {
+        showView('profile');
+      } else {
+        showView('login');
+      }
+    });
+  }
+  if (document.getElementById('nav-wallet')) {
+    document.getElementById('nav-wallet').addEventListener('click', function(e) {
+      e.preventDefault();
+      showView('wallet');
+    });
+  }
+  if (document.getElementById('reg-password')) {
+    document.getElementById('reg-password').addEventListener('input', handlePasswordInput);
+  }
+  if (document.getElementById('logout-button')) {
+    document.getElementById('logout-button').addEventListener('click', handleLogout);
+  }
+  if (document.getElementById('change-password-form')) {
+    document.getElementById('change-password-form').addEventListener('submit', handleChangePassword);
+  }
+  if (document.getElementById('debug-toggle')) {
+    document.getElementById('debug-toggle').addEventListener('click', function() {
+      debugMode = !debugMode;
+      if (document.getElementById('debug-panel')) document.getElementById('debug-panel').style.display = debugMode ? 'block' : 'none';
+      if (debugMode && document.getElementById('debug-content')) {
+        document.getElementById('debug-content').innerHTML = '<strong>Debug Mode Enabled</strong><br>';
+        debugLog('System info', {
+          userAgent: navigator.userAgent,
+          isLoggedIn: AUTH.isLoggedIn(),
+          phone: AUTH.getPhone()
+        });
+      }
+    });
+  }
+  if (document.getElementById('tab-login')) {
+    document.getElementById('tab-login').addEventListener('click', function() {
+      showTab('login');
+    });
+  }
+  if (document.getElementById('tab-register')) {
+    document.getElementById('tab-register').addEventListener('click', function() {
+      showTab('register');
+    });
+  }
+  if (document.getElementById('login-form')) {
+    document.getElementById('login-form').addEventListener('submit', handleLogin);
+  }
+  if (document.getElementById('register-form')) {
+    document.getElementById('register-form').addEventListener('submit', handleRegister);
+  }
+  attachGuestHandlers();
+  helpTabHandler();
+
+  // Wallet section back button (shows home)
+  if (document.getElementById('wallet-back')) {
+    document.getElementById('wallet-back').addEventListener('click', function(e) {
+      e.preventDefault();
+      showView('home');
+    });
+  }
+}
+
+// Initialize app
+function initApp() {
+  debugLog('Initializing application', {});
+  initEventListeners();
+  if (document.getElementById('main-ui')) document.getElementById('main-ui').style.display = 'block';
+  if (document.getElementById('account-ui')) document.getElementById('account-ui').style.display = 'none';
+  if (document.getElementById('profile-ui')) document.getElementById('profile-ui').style.display = 'none';
+  if (document.getElementById('help-container')) document.getElementById('help-container').style.display = 'none';
+  if (document.getElementById('wallet-section')) document.getElementById('wallet-section').classList.remove('active');
+  loadHomePage();
+}
+
+// Start the app when DOM is loaded
+document.addEventListener('DOMContentLoaded', function() {
+  if (!document.getElementById('debug-panel')) {
+    const debugPanel = document.createElement('div');
+    debugPanel.id = 'debug-panel';
+    debugPanel.className = 'debug-panel';
+    debugPanel.style.display = 'none';
+    debugPanel.innerHTML = '<div class="debug-title">Debug Information</div><div class="debug-content" id="debug-content"></div>';
+    document.body.appendChild(debugPanel);
+  }
+  initApp();
+});
+
+// ================== WALLET SECTION LOGIC ==================
+
+function mainWallet() {
+  const balanceElem = document.getElementById('wallet-balance');
+  const noteElem = document.getElementById('wallet-note');
+  const methodsElem = document.getElementById('wallet-methods');
+
+  function showStaticWallets() {
+    if (!methodsElem) return;
+    methodsElem.innerHTML = `
+      <div class="wallet-method">
+        <img style="height:100px;width:auto;" src="https://amazemm.xyz/images/kpay.png" alt="KBZPay Logo"/>
+        <div class="wallet-method-label">KBZPay</div>
+      </div>
+      <div class="wallet-method">
+        <img style="height:100px;width:auto;" src="https://amazemm.xyz/images/wave.png" alt="WavePay Logo"/>
+        <div class="wallet-method-label">WavePay</div>
+      </div>
+    `;
+  }
+
+  function showNoLogin() {
+    if (balanceElem) balanceElem.textContent = '0';
+    if (noteElem) noteElem.textContent = 'အကောင့်ဝင်ပါ။';
+    showStaticWallets();
+  }
+
+  function showApiErrorWallet() {
+    if (balanceElem) balanceElem.textContent = 'Error';
+    if (noteElem) noteElem.textContent = 'API Error!';
+    showStaticWallets();
+  }
+
+  function showDynamicWallets(data) {
+    if (balanceElem)
+      balanceElem.textContent =
+        typeof data.balance !== "undefined" && data.balance !== null
+          ? formatNumber(data.balance)
+          : '0';
+    if (noteElem) noteElem.textContent = data.note || "-";
+    if (methodsElem) {
+      methodsElem.innerHTML = '';
+      if (Array.isArray(data.wallets) && data.wallets.length) {
+        data.wallets.forEach(w => {
+          const div = document.createElement('div');
+          div.className = 'wallet-method';
+          div.innerHTML = `
+            <img style="height:64px;width:auto;" src="${w.logo}" alt="${w.name} Logo"/>
+            <div class="wallet-method-label">${w.name}</div>
+          `;
+          methodsElem.appendChild(div);
+        });
+      } else {
+        showStaticWallets();
+      }
+    }
+  }
+
+  const phone = AUTH.getPhone();
+  if (!phone) {
+    showNoLogin();
+    return;
+  }
+  fetch('https://amazemm.xyz/api/wallet_api.php', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+    body: 'phone=' + encodeURIComponent(phone)
+  })
+    .then(res => res.json())
+    .then(data => {
+      if (typeof data === "object" && data !== null && "wallets" in data) {
+        showDynamicWallets(data);
+      } else {
+        showApiErrorWallet();
+      }
+    })
+    .catch(showApiErrorWallet);
+}
+
+
+
+UI ပြက်စီးသွားပါပြီ ဖြစ်သင့်ပါသလား ဖြစ်သင့်​သော အရာလား
