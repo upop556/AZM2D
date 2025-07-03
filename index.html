@@ -24,21 +24,61 @@
   <link rel="stylesheet" href="css/header.css">
   <link rel="stylesheet" href="css/wallet-history-icon.css">
   <link rel="stylesheet" href="css/wallet-methods-row.css">
+  <style>
+    /* Login button (main page) */
+    #main-login-btn-area {
+      margin: 28px 0 10px 0;
+      text-align: center;
+    }
+    #main-login-btn {
+      background: #1877f2;
+      color: #fff;
+      font-family: 'Poppins', 'Noto Sans Myanmar', sans-serif;
+      font-size: 1.18em;
+      font-weight: 700;
+      border: none;
+      border-radius: 12px;
+      padding: 15px 60px;
+      box-shadow: 0 4px 24px #1877f244;
+      letter-spacing: 0.7px;
+      cursor: pointer;
+      transition: background 0.2s, color 0.2s, box-shadow 0.2s, transform 0.1s;
+      outline: none;
+      margin-bottom: 7px;
+    }
+    #main-login-btn:hover,
+    #main-login-btn:focus {
+      background: #1256b3;
+      color: #fff;
+      transform: translateY(-1px) scale(1.04);
+      box-shadow: 0 6px 32px #1877f266;
+    }
+    @media (max-width: 600px) {
+      #main-login-btn-area {
+        margin: 15px 0 6px 0;
+      }
+      #main-login-btn {
+        font-size: 1em;
+        padding: 12px 18vw;
+        border-radius: 8px;
+      }
+    }
+  </style>
 </head>
 <body style="background-image: url('https://amazemm.xyz/images/bg-main.jpg'); background-size: cover; background-repeat: no-repeat; background-position: center center; background-attachment: fixed;">
   <!-- Fixed Header -->
-<div class="header" id="main-header">
-  <div class="header-title">
-    <img src="images/azm-logo.png" alt="Logo" class="header-logo" />
-    AZM2D Game
+  <div class="header" id="main-header">
+    <div class="header-title">
+      <img src="images/azm-logo.png" alt="Logo" class="header-logo" />
+      AZM2D Game
+    </div>
+    <div class="header-icon">
+      <a href="http://bit.ly/45Ovkuk" title="Download App" target="_blank">
+        <span style="font-size: 1.5em;">⬇️</span>
+      </a>
+    </div>
   </div>
-  <div class="header-icon">
-    <a href="http://bit.ly/45Ovkuk" title="Download App" target="_blank">
-      <span style="font-size: 1.5em;">⬇️</span>
-    </a>
-  </div>
-</div>
-<!-- Main UI (Home) -->
+  <!-- Main UI (Home) -->
   <div id="main-ui">
     <div class="container">
       <div class="ad-banner">
@@ -49,6 +89,7 @@
       <div class="subtitle">
         <i class="fas fa-wallet"></i> လက်ကျန်ငွေ <span id="user-balance">0</span> ကျပ်
       </div>
+      <div id="main-login-btn-area"></div>
       <div class="menu-grid">
         <a href="b/2dnumber.php" class="menu-btn">
           <i class="fas fa-dice-two"></i>
@@ -77,8 +118,9 @@
       </div>
     </div>
   </div>
-
-  <!-- Wallet Section -->
+  <!-- ... other sections (wallet, profile, etc) unchanged ... -->
+  
+   <!-- Wallet Section -->
   <div class="wallet-container" id="wallet-container" style="display:none;">
     <a href="#" class="wallet-back" id="wallet-back" title="ပင်မစာမျက်နှာသို့">
       <i class="fa fa-arrow-left"></i>
@@ -470,8 +512,9 @@
     </div>
   </div>
 
-<!-- Bottom Navigation (always shown on main sections) -->
-  <div class="navbar" id="main-navbar">
+
+
+<div class="navbar" id="main-navbar">
     <a href="#" id="nav-home" class="active">
       <i class="fas fa-home"></i>
       <span>Home</span>
@@ -489,25 +532,87 @@
       <span>Profile</span>
     </a>
   </div>
-
-  <!-- Debug Toggle Button & Panel (for debugMode JS support) -->
   <button id="debug-toggle" style="display: none;">Debug</button>
   <div id="debug-panel" class="debug-panel" style="display:none;">
     <div id="debug-content"></div>
   </div>
-  
-  <!-- JS Files -->
+
   <script src="js/script.js"></script>
   <script src="js/wallet2.js"></script>
-<script src="js/wallet-transaction-history.js"></script>
-  
-<script>
+  <script src="js/wallet-transaction-history.js"></script>
+  <script>
+   // Existing JS logic...
+
+// --- Login button show/hide logic for main page, with auto refresh after login ---
+document.addEventListener('DOMContentLoaded', function() {
+  function isLoggedIn() {
+    if (window.AUTH && typeof AUTH.isLoggedIn === "function") return AUTH.isLoggedIn();
+    return !!(localStorage.getItem('azm2d_token') || sessionStorage.getItem('azm2d_token'));
+  }
+
+  function updateMainLoginBtn() {
+    var btnArea = document.getElementById('main-login-btn-area');
+    if (!btnArea) return;
+    if (!isLoggedIn()) {
+      btnArea.innerHTML = '<button id="main-login-btn">အကောင့်ဝင်ရန် Login</button>';
+    } else {
+      btnArea.innerHTML = '';
+    }
+    var btn = document.getElementById('main-login-btn');
+    if (btn) {
+      btn.onclick = function() {
+        document.getElementById('main-ui').style.display = 'none';
+        document.getElementById('account-ui').style.display = 'block';
+        document.getElementById('login-form').style.display = 'block';
+        document.getElementById('register-form').style.display = 'none';
+        document.getElementById('tab-login').classList.add('active');
+        document.getElementById('tab-register').classList.remove('active');
+      };
+    }
+  }
+
+  window.updateMainLoginBtn = updateMainLoginBtn;
+  updateMainLoginBtn();
+
+  // Patch legacy button update if it exists
+  if (window.updateLoginRegisterButtons) {
+    var oldUpd = window.updateLoginRegisterButtons;
+    window.updateLoginRegisterButtons = function() {
+      oldUpd();
+      updateMainLoginBtn();
+    };
+  }
+
+  // Auto-reload page after login (so UI is always fresh, button always hidden)
+  document.addEventListener('azm2d-login-success', function() {
+    updateMainLoginBtn();
+  });
+
+  // After logout, fully reload page for complete UI reset
+  document.addEventListener('azm2d-logout', function() {
+    updateMainLoginBtn();
+  });
+});
+
+// --- Ensure login button updates when returning to home ---
+function observeViewChanges() {
+  // You might already have a showView or similar, so this ensures button is updated
+  const originalShowView = window.showView;
+  window.showView = function(view) {
+    if (typeof originalShowView === 'function') originalShowView.apply(this, arguments);
+    if (view === 'home' && typeof updateMainLoginBtn === 'function') updateMainLoginBtn();
+  };
+}
+if (typeof window.showView === 'function') observeViewChanges();
+else document.addEventListener('DOMContentLoaded', observeViewChanges);
+
+// --- Disable non-active menu buttons in menu-grid except Game, 2D and 3D ---
 document.addEventListener('DOMContentLoaded', function() {
   var btns = document.querySelectorAll('.menu-grid a.menu-btn');
   btns.forEach(function(btn) {
     var text = btn.textContent.trim();
     // Allow 'Game', '2D', and '3D' to be active
-    if (!text.includes('Game') && !text.includes('2D') && !text.includes('3D')) {
+    if (!(text.includes('Game') || text.includes('2D') || text.includes('3D'))) {
       btn.addEventListener('click', function(e) {
         e.preventDefault();
         e.stopImmediatePropagation();
@@ -524,6 +629,6 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   });
 });
-</script>
+  </script>
 </body>
 </html>
