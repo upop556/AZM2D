@@ -537,98 +537,102 @@
     <div id="debug-content"></div>
   </div>
 
-  <script src="js/script.js"></script>
-  <script src="js/wallet2.js"></script>
-  <script src="js/wallet-transaction-history.js"></script>
-  <script>
-   // Existing JS logic...
-
-// --- Login button show/hide logic for main page, with auto refresh after login ---
-document.addEventListener('DOMContentLoaded', function() {
-  function isLoggedIn() {
-    if (window.AUTH && typeof AUTH.isLoggedIn === "function") return AUTH.isLoggedIn();
-    return !!(localStorage.getItem('azm2d_token') || sessionStorage.getItem('azm2d_token'));
-  }
-
-  function updateMainLoginBtn() {
-    var btnArea = document.getElementById('main-login-btn-area');
-    if (!btnArea) return;
-    if (!isLoggedIn()) {
-      btnArea.innerHTML = '<button id="main-login-btn">အကောင့်ဝင်ရန် Login</button>';
-    } else {
-      btnArea.innerHTML = '';
+  <script src="js/script2.js"></script>
+<script src="js/wallet3.js"></script>
+<script src="js/wallet-transaction-history.js"></script>
+<script src="js/2d.js"></script>
+<script src="js/kpay-tabs-withdraw.js"></script>
+<script>
+  // --- Login button show/hide logic for main page, with auto refresh after login ---
+  document.addEventListener('DOMContentLoaded', function() {
+    function isLoggedIn() {
+      // Only check localStorage, not sessionStorage
+      if (window.AUTH && typeof AUTH.isLoggedIn === "function") return AUTH.isLoggedIn();
+      return !!localStorage.getItem('azm2d_token');
     }
-    var btn = document.getElementById('main-login-btn');
-    if (btn) {
-      btn.onclick = function() {
-        document.getElementById('main-ui').style.display = 'none';
-        document.getElementById('account-ui').style.display = 'block';
-        document.getElementById('login-form').style.display = 'block';
-        document.getElementById('register-form').style.display = 'none';
-        document.getElementById('tab-login').classList.add('active');
-        document.getElementById('tab-register').classList.remove('active');
+
+    function updateMainLoginBtn() {
+      var btnArea = document.getElementById('main-login-btn-area');
+      if (!btnArea) return;
+      if (!isLoggedIn()) {
+        btnArea.innerHTML = '<button id="main-login-btn">အကောင့်ဝင်ရန် Login</button>';
+      } else {
+        btnArea.innerHTML = '';
+      }
+      var btn = document.getElementById('main-login-btn');
+      if (btn) {
+        btn.onclick = function() {
+          document.getElementById('main-ui').style.display = 'none';
+          document.getElementById('account-ui').style.display = 'block';
+          document.getElementById('login-form').style.display = 'block';
+          document.getElementById('register-form').style.display = 'none';
+          document.getElementById('tab-login').classList.add('active');
+          document.getElementById('tab-register').classList.remove('active');
+        };
+      }
+    }
+
+    window.updateMainLoginBtn = updateMainLoginBtn;
+    updateMainLoginBtn();
+
+    // Patch legacy button update if it exists
+    if (window.updateLoginRegisterButtons) {
+      var oldUpd = window.updateLoginRegisterButtons;
+      window.updateLoginRegisterButtons = function() {
+        oldUpd();
+        updateMainLoginBtn();
       };
     }
-  }
 
-  window.updateMainLoginBtn = updateMainLoginBtn;
-  updateMainLoginBtn();
-
-  // Patch legacy button update if it exists
-  if (window.updateLoginRegisterButtons) {
-    var oldUpd = window.updateLoginRegisterButtons;
-    window.updateLoginRegisterButtons = function() {
-      oldUpd();
+    // Auto-reload page after login (so UI is always fresh, button always hidden)
+    document.addEventListener('azm2d-login-success', function() {
       updateMainLoginBtn();
+    });
+
+    // After logout, fully reload page for complete UI reset
+    document.addEventListener('azm2d-logout', function() {
+      updateMainLoginBtn();
+    });
+
+    // --- Initialize KBZPay Tabs & Withdraw Handler (calls only if defined) ---
+    if (typeof initKpayTabAndWithdraw === "function") initKpayTabAndWithdraw();
+  });
+
+  // --- Ensure login button updates when returning to home ---
+  function observeViewChanges() {
+    // You might already have a showView or similar, so this ensures button is updated
+    const originalShowView = window.showView;
+    window.showView = function(view) {
+      if (typeof originalShowView === 'function') originalShowView.apply(this, arguments);
+      if (view === 'home' && typeof updateMainLoginBtn === 'function') updateMainLoginBtn();
     };
   }
+  if (typeof window.showView === 'function') observeViewChanges();
+  else document.addEventListener('DOMContentLoaded', observeViewChanges);
 
-  // Auto-reload page after login (so UI is always fresh, button always hidden)
-  document.addEventListener('azm2d-login-success', function() {
-    updateMainLoginBtn();
+  // --- Disable non-active menu buttons in menu-grid except Game, 2D and 3D ---
+  document.addEventListener('DOMContentLoaded', function() {
+    var btns = document.querySelectorAll('.menu-grid a.menu-btn');
+    btns.forEach(function(btn) {
+      var text = btn.textContent.trim();
+      // Allow 'Game', '2D', and '3D' to be active
+      if (!(text.includes('Game') || text.includes('2D') || text.includes('3D'))) {
+        btn.addEventListener('click', function(e) {
+          e.preventDefault();
+          e.stopImmediatePropagation();
+          return false;
+        });
+        btn.style.opacity = '0.45';
+        btn.style.cursor = 'not-allowed';
+        btn.style.filter = 'grayscale(60%)';
+        btn.setAttribute('tabindex', '-1');
+        btn.setAttribute('aria-disabled', 'true');
+        btn.addEventListener('mouseenter', function(e) {
+          btn.style.textDecoration = 'none';
+        });
+      }
+    });
   });
-
-  // After logout, fully reload page for complete UI reset
-  document.addEventListener('azm2d-logout', function() {
-    updateMainLoginBtn();
-  });
-});
-
-// --- Ensure login button updates when returning to home ---
-function observeViewChanges() {
-  // You might already have a showView or similar, so this ensures button is updated
-  const originalShowView = window.showView;
-  window.showView = function(view) {
-    if (typeof originalShowView === 'function') originalShowView.apply(this, arguments);
-    if (view === 'home' && typeof updateMainLoginBtn === 'function') updateMainLoginBtn();
-  };
-}
-if (typeof window.showView === 'function') observeViewChanges();
-else document.addEventListener('DOMContentLoaded', observeViewChanges);
-
-// --- Disable non-active menu buttons in menu-grid except Game, 2D and 3D ---
-document.addEventListener('DOMContentLoaded', function() {
-  var btns = document.querySelectorAll('.menu-grid a.menu-btn');
-  btns.forEach(function(btn) {
-    var text = btn.textContent.trim();
-    // Allow 'Game', '2D', and '3D' to be active
-    if (!(text.includes('Game') || text.includes('2D') || text.includes('3D'))) {
-      btn.addEventListener('click', function(e) {
-        e.preventDefault();
-        e.stopImmediatePropagation();
-        return false;
-      });
-      btn.style.opacity = '0.45';
-      btn.style.cursor = 'not-allowed';
-      btn.style.filter = 'grayscale(60%)';
-      btn.setAttribute('tabindex', '-1');
-      btn.setAttribute('aria-disabled', 'true');
-      btn.addEventListener('mouseenter', function(e) {
-        btn.style.textDecoration = 'none';
-      });
-    }
-  });
-});
-  </script>
+</script>
 </body>
 </html>
