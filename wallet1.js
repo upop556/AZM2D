@@ -113,41 +113,11 @@ let lastWalletBalance = 0; // for Wave UI sync
 
 const balanceElem = document.getElementById('wallet-balance');
 const noteElem = document.getElementById('wallet-note');
-const methodsElem = document.getElementById('wallet-methods');
 
-// Show static wallets (KBZPay & WavePay)
+// Show static wallets (KBZPay & WavePay) -- in your HTML, these are always present!
+// This function is now a no-op, left for compatibility
 function showStaticWallets() {
-  if (!methodsElem) return;
-  methodsElem.innerHTML = `
-    <div class="wallet-method">
-      <a href="#" id="show-kpay-section" style="display: flex; flex-direction: column; align-items: center;">
-        <img style="height:100px;width:auto;" src="https://amazemm.xyz/images/kpay.png" alt="KBZPay Logo"/>
-        <div class="wallet-method-label">KBZPay</div>
-      </a>
-    </div>
-    <div class="wallet-method">
-      <a href="#" id="show-wave-section" style="display: flex; flex-direction: column; align-items: center;">
-        <img style="height:100px;width:auto;" src="https://amazemm.xyz/images/wave.png" alt="WavePay Logo"/>
-        <div class="wallet-method-label">WavePay</div>
-      </a>
-    </div>
-  `;
-  safeNavHandler('show-kpay-section', function(e) {
-    e.preventDefault();
-    hideAllSections();
-    const el = document.getElementById('kpay-container');
-    if (el) el.style.display = '';
-    setKpayAdminPhone();
-  });
-  safeNavHandler('show-wave-section', function(e) {
-    e.preventDefault();
-    hideAllSections();
-    const el = document.getElementById('wave-container');
-    if (el) el.style.display = '';
-    showWavePay();
-    loadWaveDaiInfo();
-    setWaveBalance(lastWalletBalance);
-  });
+  // No dynamic changes required; methods already in HTML.
 }
 
 // Show UI for not logged in users
@@ -168,8 +138,6 @@ function showApiWalletError() {
 
 // Show dynamic wallet info fetched from API
 function showDynamicWallets(data) {
-  if (methodsElem) methodsElem.innerHTML = '';
-  // --- FIX: Always parse balance as number ---
   lastWalletBalance = Number(data.balance);
   if (isNaN(lastWalletBalance)) lastWalletBalance = 0;
   setAllBalances(lastWalletBalance);
@@ -189,60 +157,7 @@ function showDynamicWallets(data) {
     }
   }
 
-  // Show wallet methods (API only)
-  if (Array.isArray(data.wallets) && data.wallets.length) {
-    data.wallets.forEach(w => {
-      const div = document.createElement('div');
-      div.className = 'wallet-method';
-      if (w.name && (w.name.toLowerCase().includes('kpay') || w.name.toLowerCase().includes('kbz'))) {
-        div.innerHTML = `
-          <a href="#" class="api-kpay-link" style="display: flex; flex-direction: column; align-items: center;">
-            <img style="height:64px;width:auto;" src="${w.logo}" alt="${w.name} Logo"/>
-            <div class="wallet-method-label">${w.name}</div>
-          </a>
-        `;
-      } else if (w.name && w.name.toLowerCase().includes('wave')) {
-        div.innerHTML = `
-          <a href="#" class="api-wave-link" style="display: flex; flex-direction: column; align-items: center;">
-            <img style="height:64px;width:auto;" src="${w.logo}" alt="${w.name} Logo"/>
-            <div class="wallet-method-label">${w.name}</div>
-          </a>
-        `;
-      } else {
-        div.innerHTML = `
-          <img style="height:64px;width:auto;" src="${w.logo}" alt="${w.name} Logo"/>
-          <div class="wallet-method-label">${w.name}</div>
-        `;
-      }
-      methodsElem.appendChild(div);
-
-      // Attach kpay nav logic if kpay exists
-      const kpayLink = div.querySelector('.api-kpay-link');
-      if (kpayLink) {
-        kpayLink.onclick = function(e) {
-          e.preventDefault();
-          hideAllSections();
-          const el = document.getElementById('kpay-container');
-          if (el) el.style.display = '';
-          setKpayAdminPhone();
-        };
-      }
-      const waveLink = div.querySelector('.api-wave-link');
-      if (waveLink) {
-        waveLink.onclick = function(e) {
-          e.preventDefault();
-          hideAllSections();
-          const el = document.getElementById('wave-container');
-          if (el) el.style.display = '';
-          showWavePay();
-          loadWaveDaiInfo();
-          setWaveBalance(lastWalletBalance);
-        };
-      }
-    });
-  }
-
-  // --- Admin Phone Numbers (from API) ---
+  // Payment method buttons are always in HTML; no dynamic update needed.
   setKpayAdminPhone();
   loadWaveDaiInfo();
 }
@@ -253,10 +168,10 @@ function setKpayAdminPhone() {
   }
 }
 
-// Helper: set all balances (main, kpay, wave)
+// Helper: set all balances (main, kpay, wave, and home)
 function setAllBalances(balance) {
   const bal = Number(balance) || 0;
-  ['wallet-balance', 'kpay-user-balance', 'wm-balance'].forEach(id => {
+  ['wallet-balance', 'kpay-user-balance', 'wm-balance', 'user-balance'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.textContent = Number(bal).toLocaleString();
   });
@@ -267,30 +182,29 @@ function setWaveBalance(balance) {
   if (el) el.textContent = Number(balance || 0).toLocaleString();
 }
 
-// Helper: safely get phone from storage
+// Helper: safely get phone from storage (localStorage only)
 function getPhone() {
-  return (
-    localStorage.getItem('azm2d_phone') ||
-    sessionStorage.getItem('azm2d_phone') ||
-    ''
-  );
+  return localStorage.getItem('azm2d_phone') || '';
 }
 
 // Load wallet data from unified API
 function loadWalletData() {
   const phone = getPhone();
-  if (!phone) {
+  const token = localStorage.getItem('azm2d_token');
+  if (!phone || !token) {
     showNoLogin();
     return;
   }
   fetch('https://amazemm.xyz/api/wallet_api.php', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    headers: { 
+      'Content-Type': 'application/x-www-form-urlencoded',
+      'Authorization': 'Bearer ' + token // <--- Token added for authorization!
+    },
     body: 'phone=' + encodeURIComponent(phone)
   })
     .then(res => res.json())
     .then(data => {
-      console.log('Wallet API Response:', data); // Debug
       if (typeof data === "object" && data !== null && data.success && "wallets" in data) {
         showDynamicWallets(data);
       } else {
@@ -300,190 +214,6 @@ function loadWalletData() {
     .catch(showApiWalletError);
 }
 
-// ... (rest of your JS logic unchanged)
-
-// ---- KBZPay Tab Switching ----
-const tabDeposit = document.getElementById('tab-deposit');
-const tabWithdraw = document.getElementById('tab-withdraw');
-const depositForm = document.getElementById('kpay-deposit-form');
-const withdrawForm = document.getElementById('kpay-withdraw-form');
-const showDeposit = document.getElementById('show-deposit');
-const showWithdraw = document.getElementById('show-withdraw');
-
-function switchTab(tab) {
-  if(tab === 'deposit') {
-    if(tabDeposit) tabDeposit.classList.add('active');
-    if(tabWithdraw) tabWithdraw.classList.remove('active');
-    if(depositForm) depositForm.classList.add('active');
-    if(withdrawForm) withdrawForm.classList.remove('active');
-    if(showDeposit) showDeposit.style.display = 'none';
-    if(showWithdraw) showWithdraw.style.display = '';
-  } else {
-    if(tabDeposit) tabDeposit.classList.remove('active');
-    if(tabWithdraw) tabWithdraw.classList.add('active');
-    if(depositForm) depositForm.classList.remove('active');
-    if(withdrawForm) withdrawForm.classList.add('active');
-    if(showDeposit) showDeposit.style.display = '';
-    if(showWithdraw) showWithdraw.style.display = 'none';
-  }
-}
-if (tabDeposit && tabWithdraw && depositForm && withdrawForm && showDeposit && showWithdraw) {
-  tabDeposit.onclick = () => switchTab('deposit');
-  tabWithdraw.onclick = () => switchTab('withdraw');
-  showDeposit.onclick = () => switchTab('deposit');
-  showWithdraw.onclick = () => switchTab('withdraw');
-}
-
-// ---- KBZPay Deposit Screenshot Preview ----
-const uploadBox = document.getElementById('kpay-upload-box');
-const uploadInput = document.getElementById('deposit-screenshot');
-const previewDiv = document.getElementById('kpay-preview');
-if (uploadBox && uploadInput && previewDiv) {
-  uploadBox.onclick = () => uploadInput.click();
-  uploadInput.onchange = function() {
-    previewDiv.innerHTML = "";
-    if(this.files && this.files[0]) {
-      const file = this.files[0];
-      const reader = new FileReader();
-      reader.onload = function(e) {
-        previewDiv.innerHTML = `<img src="${e.target.result}" alt="screenshot" style="max-width:100%;max-height:110px;margin-top:8px;border-radius:7px;">`;
-      };
-      reader.readAsDataURL(file);
-    }
-  };
-}
-
-// ---- KBZPay Deposit Form Submit (Unified API) ----
-if (depositForm) depositForm.onsubmit = async function(e) {
-  e.preventDefault();
-  if(document.getElementById('deposit-success')) document.getElementById('deposit-success').style.display = 'none';
-  if(document.getElementById('deposit-error')) document.getElementById('deposit-error').style.display = 'none';
-
-  const amount = document.getElementById('deposit-amount').value;
-  const txid = document.getElementById('deposit-txid').value;
-  const screenshot = uploadInput && uploadInput.files ? uploadInput.files[0] : null;
-
-  // Check phone before submit
-  const phone = getPhone();
-  if(!phone) {
-    showError('deposit-error', 'အကောင့်ဝင်ပါ။');
-    return;
-  }
-
-  if(!amount || amount < 1000) {
-    showError('deposit-error', 'ငွေသွင်းပမာဏ မှန်ကန်စွာ ထည့်ပါ။');
-    return;
-  }
-  if(!screenshot && (!txid || txid.length !== 6)) {
-    showError('deposit-error', 'Screenshot သို့မဟုတ် လုပ်ငန်းစဉ်နောက် ၆ လုံး တစ်ခုခု တင်ပါ။');
-    return;
-  }
-
-  // Unified API Integration
-  const formData = new FormData();
-  formData.append('phone', phone);
-  formData.append('action', 'deposit');
-  formData.append('method', 'kpay');
-  formData.append('amount', amount);
-  formData.append('txid', txid);
-  if(screenshot) formData.append('screenshot', screenshot);
-
-  try {
-    const res = await fetch('https://amazemm.xyz/api/wallet_api.php', {
-      method: 'POST',
-      body: formData
-    });
-    const data = await res.json();
-    if(data.success) {
-      showSuccess('deposit-success', data.message || 'ငွေသွင်းတင်ပြပြီးပါပြီ။');
-      depositForm.reset();
-      if(previewDiv) previewDiv.innerHTML = "";
-      loadWalletData();
-      loadWalletTransactionHistory();
-    } else {
-      showError('deposit-error', data.error || data.message || 'တင်ပြမှု မအောင်မြင်ပါ။');
-    }
-    setTimeout(()=>{ if(document.getElementById('deposit-success')) document.getElementById('deposit-success').style.display='none'; }, 4000);
-  } catch (err) {
-    showError('deposit-error', 'Server error');
-  }
-}
-
-// ---- KBZPay Withdraw Form Submit (Unified API) ----
-if (withdrawForm) withdrawForm.onsubmit = async function(e) {
-  e.preventDefault();
-  if(document.getElementById('withdraw-success')) document.getElementById('withdraw-success').style.display = 'none';
-  if(document.getElementById('withdraw-error')) document.getElementById('withdraw-error').style.display = 'none';
-
-  const amount = document.getElementById('withdraw-amount').value;
-  const phoneField = document.getElementById('withdraw-phone').value;
-  const pwd = document.getElementById('withdraw-password').value;
-
-  // Check phone before submit
-  const phone = getPhone();
-  if(!phone) {
-    showError('withdraw-error', 'အကောင့်ဝင်ပါ။');
-    return;
-  }
-
-  if(!amount || amount < 1000) {
-    showError('withdraw-error', 'ထုတ်ယူမည့်ပမာဏ မှန်ကန်စွာ ထည့်ပါ။');
-    return;
-  }
-  if(!phoneField || !phoneField.match(/^09\d{7,14}$/)) {
-    showError('withdraw-error', 'ငွေလက်ခံမည့် KBZPay ဖုန်းနံပါတ် မှန်ကန်စွာ ထည့်ပါ။');
-    return;
-  }
-  if(!pwd || pwd.length < 4) {
-    showError('withdraw-error', 'Password မှန်ကန်စွာ ထည့်ပါ။');
-    return;
-  }
-
-  // Unified API Integration
-  const formData = new FormData();
-  formData.append('phone', phone);
-  formData.append('action', 'withdraw');
-  formData.append('method', 'kpay');
-  formData.append('amount', amount);
-  formData.append('phone', phoneField);
-  formData.append('password', pwd);
-
-  try {
-    const res = await fetch('https://amazemm.xyz/api/wallet_api.php', {
-      method: 'POST',
-      body: formData
-    });
-    const data = await res.json();
-    if(data.success) {
-      showSuccess('withdraw-success', data.message || 'ငွေထုတ်တင်ပြပြီးပါပြီ။');
-      withdrawForm.reset();
-      loadWalletData();
-      loadWalletTransactionHistory();
-    } else {
-      showError('withdraw-error', data.error || data.message || 'တင်ပြမှု မအောင်မြင်ပါ။');
-    }
-    setTimeout(()=>{ if(document.getElementById('withdraw-success')) document.getElementById('withdraw-success').style.display='none'; }, 4000);
-  } catch (err) {
-    showError('withdraw-error', 'Server error');
-  }
-}
-
-// ---- Success/Error Helpers ----
-function showSuccess(id, msg) {
-  const box = document.getElementById(id);
-  if (box) {
-    box.textContent = msg;
-    box.style.display = 'block';
-  }
-}
-function showError(id, msg) {
-  const box = document.getElementById(id);
-  if (box) {
-    box.textContent = msg;
-    box.style.display = 'block';
-  }
-}
-
 // ---- INITIAL PAGE LOGIC ----
 document.addEventListener('DOMContentLoaded', function() {
   hideAllSections();
@@ -491,15 +221,110 @@ document.addEventListener('DOMContentLoaded', function() {
   if (el) el.style.display = '';
   setActiveNav('nav-home');
   loadWalletData();
-  // Preload wallet transaction history for balance sync on wallet tab
-  // (optional) loadWalletTransactionHistory();
+
+  // Kpay Tab Switch Logic
+  const tabDeposit = document.getElementById('tab-deposit');
+  const tabWithdraw = document.getElementById('tab-withdraw');
+  const kpayDepositForm = document.getElementById('kpay-deposit-form');
+  const kpayWithdrawForm = document.getElementById('kpay-withdraw-form');
+
+  if (tabDeposit && tabWithdraw && kpayDepositForm && kpayWithdrawForm) {
+    tabDeposit.onclick = function() {
+      tabDeposit.classList.add('active');
+      tabWithdraw.classList.remove('active');
+      kpayDepositForm.classList.add('active');
+      kpayWithdrawForm.classList.remove('active');
+    };
+    tabWithdraw.onclick = function() {
+      tabWithdraw.classList.add('active');
+      tabDeposit.classList.remove('active');
+      kpayDepositForm.classList.remove('active');
+      kpayWithdrawForm.classList.add('active');
+    };
+  }
+
+  // Kpay Withdraw Form Submit Handler
+  if (kpayWithdrawForm) {
+    kpayWithdrawForm.onsubmit = function(e) {
+      if (!e) return;
+      e.preventDefault();
+      const amount = document.getElementById('withdraw-amount').value;
+      const phoneField = document.getElementById('withdraw-phone').value;
+      const password = document.getElementById('withdraw-password').value;
+
+      // Check phone before submit
+      const phone = getPhone();
+      const token = localStorage.getItem('azm2d_token');
+      if(!phone || !token) {
+        showError('withdraw-error', 'အကောင့်ဝင်ပါ။');
+        return;
+      }
+      if (!amount || amount < 1000) {
+        showError('withdraw-error', 'ထုတ်ယူမည့်ပမာဏ မှန်ကန်စွာ ထည့်ပါ။');
+        return;
+      }
+      if (!phoneField || !phoneField.match(/^09\d{7,14}$/)) {
+        showError('withdraw-error', 'ငွေလက်ခံမည့် KBZPay ဖုန်းနံပါတ် မှန်ကန်စွာ ထည့်ပါ။');
+        return;
+      }
+      if (!password || password.length < 4) {
+        showError('withdraw-error', 'Password မှန်ကန်စွာ ထည့်ပါ။');
+        return;
+      }
+
+      const formData = new FormData();
+      formData.append('phone', phone);
+      formData.append('action', 'withdraw');
+      formData.append('method', 'kpay');
+      formData.append('amount', amount);
+      formData.append('phone', phoneField);
+      formData.append('password', password);
+
+      const succ = document.getElementById('withdraw-success');
+      const err = document.getElementById('withdraw-error');
+      if (succ) succ.style.display = 'none';
+      if (err) err.style.display = 'none';
+
+      fetch('https://amazemm.xyz/api/wallet_api.php', {
+          method: 'POST',
+          headers: { 'Authorization': 'Bearer ' + token },
+          body: formData
+        })
+        .then(r => r.json())
+        .then(data => {
+          if (data.success) {
+            if (succ) {
+              succ.style.display = 'block';
+              succ.textContent = data.message || 'အောင်မြင်ပါသည်။';
+            }
+            if (err) err.style.display = 'none';
+            const form = document.getElementById('kpay-withdraw-form');
+            if (form) form.reset();
+            loadWalletData();
+            if (typeof loadWalletTransactionHistory === "function") loadWalletTransactionHistory();
+          } else {
+            if (err) {
+              err.style.display = 'block';
+              err.textContent = data.error || data.message || 'မှားယွင်းမှုတစ်ခု ဖြစ်ပွားခဲ့သည်။';
+            }
+          }
+        })
+        .catch(() => {
+          if (err) {
+            err.style.display = 'block';
+            err.textContent = 'Server သို့ မချိတ်ဆက်နိုင်ပါ။';
+          }
+        });
+    };
+  }
+
 });
 
 // ---- WavePay Section Logic ----
 
-// Helper to get token from localStorage/sessionStorage (for Dai info)
+// Helper to get token from localStorage only (for Dai info)
 function getToken() {
-  return localStorage.getItem('azm2d_token') || sessionStorage.getItem('azm2d_token');
+  return localStorage.getItem('azm2d_token');
 }
 
 // Get Wave Dai phone and note from settings API
@@ -565,7 +390,8 @@ if (wmDepositForm) {
 
     // Check phone before submit
     const phone = getPhone();
-    if(!phone) {
+    const token = localStorage.getItem('azm2d_token');
+    if(!phone || !token) {
       showError('wm-deposit-error', 'အကောင့်ဝင်ပါ။');
       return;
     }
@@ -594,6 +420,7 @@ if (wmDepositForm) {
 
     fetch('https://amazemm.xyz/api/wallet_api.php', {
         method: 'POST',
+        headers: { 'Authorization': 'Bearer ' + token },
         body: formData
       })
       .then(r => r.json())
@@ -607,7 +434,7 @@ if (wmDepositForm) {
           const form = document.getElementById('wm-deposit-form');
           if (form) form.reset();
           loadWalletData();
-          loadWalletTransactionHistory();
+          if (typeof loadWalletTransactionHistory === "function") loadWalletTransactionHistory();
         } else {
           if (err) {
             err.style.display = 'block';
@@ -636,7 +463,8 @@ if (wmWithdrawForm) {
 
     // Check phone before submit
     const phone = getPhone();
-    if(!phone) {
+    const token = localStorage.getItem('azm2d_token');
+    if(!phone || !token) {
       showError('wm-withdraw-error', 'အကောင့်ဝင်ပါ။');
       return;
     }
@@ -669,6 +497,7 @@ if (wmWithdrawForm) {
 
     fetch('https://amazemm.xyz/api/wallet_api.php', {
         method: 'POST',
+        headers: { 'Authorization': 'Bearer ' + token },
         body: formData
       })
       .then(r => r.json())
@@ -682,7 +511,7 @@ if (wmWithdrawForm) {
           const form = document.getElementById('wm-withdraw-form');
           if (form) form.reset();
           loadWalletData();
-          loadWalletTransactionHistory();
+          if (typeof loadWalletTransactionHistory === "function") loadWalletTransactionHistory();
         } else {
           if (err) {
             err.style.display = 'block';
@@ -696,6 +525,15 @@ if (wmWithdrawForm) {
           err.textContent = 'Server သို့ မချိတ်ဆက်နိုင်ပါ။';
         }
       });
+  }
+}
+
+// Show error message utility
+function showError(elemId, msg) {
+  var el = document.getElementById(elemId);
+  if (el) {
+    el.style.display = 'block';
+    el.textContent = msg;
   }
 }
 
@@ -770,17 +608,17 @@ function showKpay() {
 
 // Navbar events (main)
 if(document.getElementById('nav-home'))    document.getElementById('nav-home').onclick    = () => { showSection('home'); return false; }
-if(document.getElementById('nav-wallet'))  document.getElementById('nav-wallet').onclick  = () => { showSection('wallet'); loadWalletData(); loadWalletTransactionHistory(); return false; }
+if(document.getElementById('nav-wallet'))  document.getElementById('nav-wallet').onclick  = () => { showSection('wallet'); loadWalletData(); if (typeof loadWalletTransactionHistory === "function") loadWalletTransactionHistory(); return false; }
 if(document.getElementById('nav-help'))    document.getElementById('nav-help').onclick    = () => { showSection('help'); return false; }
 if(document.getElementById('nav-profile')) document.getElementById('nav-profile').onclick = () => { showSection('profile'); return false; }
 // Kpay navbar events
 if(document.getElementById('nav-home-kpay'))    document.getElementById('nav-home-kpay').onclick    = () => { showSection('home'); return false; }
-if(document.getElementById('nav-wallet-kpay'))  document.getElementById('nav-wallet-kpay').onclick  = () => { showSection('wallet'); loadWalletData(); loadWalletTransactionHistory(); return false; }
+if(document.getElementById('nav-wallet-kpay'))  document.getElementById('nav-wallet-kpay').onclick  = () => { showSection('wallet'); loadWalletData(); if (typeof loadWalletTransactionHistory === "function") loadWalletTransactionHistory(); return false; }
 if(document.getElementById('nav-help-kpay'))    document.getElementById('nav-help-kpay').onclick    = () => { showSection('help'); return false; }
 if(document.getElementById('nav-profile-kpay')) document.getElementById('nav-profile-kpay').onclick = () => { showSection('profile'); return false; }
 // WavePay navbar events
 if(document.getElementById('nav-home-wave'))    document.getElementById('nav-home-wave').onclick    = () => { showSection('home'); return false; }
-if(document.getElementById('nav-wallet-wave'))  document.getElementById('nav-wallet-wave').onclick  = () => { showSection('wallet'); loadWalletData(); loadWalletTransactionHistory(); return false; }
+if(document.getElementById('nav-wallet-wave'))  document.getElementById('nav-wallet-wave').onclick  = () => { showSection('wallet'); loadWalletData(); if (typeof loadWalletTransactionHistory === "function") loadWalletTransactionHistory(); return false; }
 if(document.getElementById('nav-help-wave'))    document.getElementById('nav-help-wave').onclick    = () => { showSection('help'); return false; }
 if(document.getElementById('nav-profile-wave')) document.getElementById('nav-profile-wave').onclick = () => { showSection('profile'); return false; }
 
