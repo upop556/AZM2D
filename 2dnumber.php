@@ -1,5 +1,5 @@
 <?php
-//2dnumber.php - UPDATED
+//2dnumber.php - UPDATED (SET data fully removed)
 session_start();
 date_default_timezone_set('Asia/Yangon');
 header('Content-Type: text/html; charset=utf-8');
@@ -9,7 +9,8 @@ require_once __DIR__ . '/db.php';
 
 // --- Check Login ---
 if (empty($_SESSION['user_id'])) {
-    echo "<h2 style='color:red;text-align:center;margin-top:50px;'>အကောင့်ဝင်ပါ။ (Please login)</h2>";
+    // Redirect to index.html if not logged in
+    header('Location: /index.html');
     exit;
 }
 $current_user = $_SESSION['user_id'] ?? null;
@@ -57,7 +58,6 @@ try {
     // Keep closed status as false in case of DB error
 }
 
-
 // If ?api=1, serve JSON API
 if (isset($_GET['api'])) {
     header('Content-Type: application/json');
@@ -76,74 +76,14 @@ if (isset($_GET['api'])) {
         }
     }
 
-    // Try several proxies in order to fetch LIVE data
-    $target_url = "https://www.set.or.th/th/home";
-    $proxies = [
-        "https://api.allorigins.win/raw?url=",
-        "https://thingproxy.freeboard.io/fetch/",
-        "https://corsproxy.io/?"
-    ];
-    $html = false;
-    foreach ($proxies as $proxy) {
-        $proxy_url = $proxy . urlencode($target_url);
-        $context = stream_context_create(['http' => ['timeout' => 7]]); // 7 seconds timeout
-        $html = @file_get_contents($proxy_url, false, $context);
-        if ($html && strlen($html) > 1000) break;
-    }
-
-    $live_data_error = null;
-    $mainValue = "-";
-    $set_index = "-";
-    $value = "-";
-
-    if (!$html) {
-        $live_data_error = 'Failed to fetch live data from SET website.';
-    } else {
-        // Parse HTML for SET index (table) and Value (regex)
-        libxml_use_internal_errors(true);
-        $dom = new DOMDocument();
-        @$dom->loadHTML($html);
-        libxml_clear_errors();
-        $xpath = new DOMXPath($dom);
-
-        // 1. Extract SET Index
-        $rows = $xpath->query('//table//tr');
-        foreach ($rows as $row) {
-            $tds = $row->getElementsByTagName('td');
-            if ($tds->length > 1 && trim($tds->item(0)->textContent) === 'SET') {
-                $set_index = trim($tds->item(1)->textContent);
-                break;
-            }
-        }
-
-        // 2. Extract Value (from "ล้านบาท", e.g. "47,225.04 ล้านบาท")
-        if (preg_match('/([\d,]+\.\d{2})\s*ล้านบาท/', $html, $m)) {
-            $value = $m[1];
-        }
-
-        // 3. MainValue: SET နောက်ဆုံး digit + Value ဒဿမအရှေ့က digit
-        if ($set_index !== "-" && $value !== "-") {
-            $set_digits = preg_replace('/\D/', '', $set_index);
-            $set_last_digit = !empty($set_digits) ? substr($set_digits, -1) : '0';
-
-            $value_clean = str_replace(',', '', $value);
-            $value_parts = explode('.', $value_clean);
-            $value_before_decimal = $value_parts[0];
-            $value_special_digit = !empty($value_before_decimal) ? substr($value_before_decimal, -1) : '0';
-
-            $mainValue = $set_last_digit . $value_special_digit;
-        }
-    }
-
-    // 4. Output JSON
+    // Output only historical/manual data and balance (NO live SET data)
     $data = [
-        "MainValue" => $mainValue,
-        "Set"       => $set_index,
-        "Value"     => $value,
+        "MainValue" => "-",
+        "Set"       => "-",
+        "Value"     => "-",
         "Balance"   => $user_balance,
         "Updated"   => date('Y-m-d H:i:s'),
-        "error"     => $live_data_error,
-        // This key contains the manually entered data from the admin panel
+        "error"     => null,
         "historical" => $historical_data
     ];
     echo json_encode($data, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
@@ -351,168 +291,193 @@ if (isset($_GET['api'])) {
         </div>
     </div>
     <script>
-    const isClosedToday = <?= $is_closed_today ? 'true' : 'false' ?>;
-    const closedReason = <?= json_encode($closed_reason) ?>;
-    const isClosedNextDay = <?= $is_closed_next_day ? 'true' : 'false' ?>;
-    const nextDayClosedReason = <?= json_encode($next_day_closed_reason) ?>;
+/**
+ * Thai SET Live Data Render
+ */
+function getThaiSETDataAndRender() {
+    fetch('thai-setdata_api.php')
+        .then(r => r.json())
+        .then(data => {
+            document.getElementById('MainValue').textContent = data.MainValue && data.MainValue !== "စောင့်ဆိုင်းပါ" ? data.MainValue : "N/A";
+            document.getElementById('Set').textContent = data.Set && data.Set !== "စောင့်ဆိုင်းပါ" ? data.Set : "N/A";
+            document.getElementById('Value').textContent = data.Value && data.Value !== "စောင့်ဆိုင်းပါ" ? data.Value : "N/A";
+            document.getElementById('Updated').textContent = data.Update && data.Update !== "စောင့်ဆိုင်းပါ" ? data.Update : "N/A";
+        })
+        .catch(e => {
+            document.getElementById('error').textContent = 'Thai SET API fetch error: ' + e.message;
+            document.getElementById('MainValue').textContent = 'N/A';
+            document.getElementById('Set').textContent = 'N/A';
+            document.getElementById('Value').textContent = 'N/A';
+            document.getElementById('Updated').textContent = 'N/A';
+        });
+}
 
-    function renderTimeTables(historicalData) {
-        const times = { "11:00": "11:00 AM", "12:01": "12:01 PM", "15:00": "03:00 PM", "16:30": "04:30 PM" };
-        let html = "";
-        const today = new Date().toISOString().slice(0, 10); 
+// Thai SET live data auto-refresh
+getThaiSETDataAndRender();
+setInterval(getThaiSETDataAndRender, 5000);
 
-        for (const key in times) {
-            const displayTime = times[key];
-            const result = historicalData && historicalData[today] && historicalData[today][key] ? historicalData[today][key] : null;
-            
-            const mainValue = result ? result.MainValue : "စောင့်ဆိုင်းပါ";
-            const set = result ? result.Set : "-";
-            const value = result ? result.Value : "-";
-            const color = result ? 'var(--accent)' : '#999';
+// PHP variables exposed to JS
+const isClosedToday = <?= $is_closed_today ? 'true' : 'false' ?>;
+const closedReason = <?= json_encode($closed_reason) ?>;
+const isClosedNextDay = <?= $is_closed_next_day ? 'true' : 'false' ?>;
+const nextDayClosedReason = <?= json_encode($next_day_closed_reason) ?>;
 
-            html += `
-            <div class="history-card">
-                <div class="history-left">
-                    <div class="history-time">${displayTime}</div>
-                    <div class="history-main-value" style="color:${color};">${mainValue}</div>
-                </div>
-                <div class="history-right">
-                    <div class="history-detail"><strong>SET:</strong> ${set}</div>
-                    <div class="history-detail"><strong>Value:</strong> ${value}</div>
-                </div>
-            </div>`;
-        }
-        document.getElementById("historyGrid").innerHTML = html;
+/**
+ * Manual/historical data table
+ */
+function renderTimeTables(historicalData) {
+    const times = { "11:00": "11:00 AM", "12:01": "12:01 PM", "15:00": "03:00 PM", "16:30": "04:30 PM" };
+    let html = "";
+    const today = new Date().toISOString().slice(0, 10);
+
+    for (const key in times) {
+        const displayTime = times[key];
+        const result = historicalData && historicalData[today] && historicalData[today][key] ? historicalData[today][key] : null;
+
+        // If no result, show N/A for all fields
+        const mainValue = result && result.MainValue && result.MainValue !== "စောင့်ဆိုင်းပါ" ? result.MainValue : "N/A";
+        const set = result && result.Set && result.Set !== "စောင့်ဆိုင်းပါ" ? result.Set : "N/A";
+        const value = result && result.Value && result.Value !== "စောင့်ဆိုင်းပါ" ? result.Value : "N/A";
+        const color = mainValue !== "N/A" ? 'var(--accent)' : '#999';
+
+        html += `
+        <div class="history-card">
+            <div class="history-left">
+                <div class="history-time">${displayTime}</div>
+                <div class="history-main-value" style="color:${color};">${mainValue}</div>
+            </div>
+            <div class="history-right">
+                <div class="history-detail"><strong>SET:</strong> ${set}</div>
+                <div class="history-detail"><strong>Value:</strong> ${value}</div>
+            </div>
+        </div>`;
     }
+    document.getElementById("historyGrid").innerHTML = html;
+}
 
-    function getDataAndRender() {
-        // If the main value is currently showing a spinner, don't do it again.
-        // This prevents the spinner from showing on every auto-refresh.
-        if (document.getElementById('MainValue').textContent === '') {
-             document.getElementById('MainValue').innerHTML = '<div class="loading-spinner"></div>';
-        }
-        
-        fetch('?api=1')
-            .then(r => r.json())
-            .then(data => {
-                document.getElementById('MainValue').textContent = data.MainValue || "-";
-                document.getElementById('Set').textContent = data.Set || "-";
-                document.getElementById('Value').textContent = data.Value || "-";
-                document.getElementById('Balance').textContent = parseInt(data.Balance).toLocaleString();
-                document.getElementById('Updated').textContent = data.Updated;
-
-                if(data.error){
-                    document.getElementById('error').textContent = data.error;
-                } else {
-                    document.getElementById('error').textContent = ''; 
-                }
-                
-                renderTimeTables(data.historical);
-            })
-            .catch(e=>{
-                document.getElementById('error').textContent = 'API fetch error: ' + e.message;
-                document.getElementById('MainValue').textContent = '-';
-                renderTimeTables({});
-            });
-    }
-
-    function updateBettingStatus() {
-        const now = new Date();
-        const mmtOffsetMinutes = 390; // UTC+6:30
-        const mmtTimeInMinutes = now.getUTCHours() * 60 + now.getUTCMinutes() + mmtOffsetMinutes;
-        const mmtHour = Math.floor(mmtTimeInMinutes / 60) % 24;
-        const mmtMinute = mmtTimeInMinutes % 60;
-        const mmtTime = mmtHour * 100 + mmtMinute;
-
-        const betBtnFixed = document.getElementById('betBtnFixed');
-        const betPopupTitle = document.getElementById('betPopupTitle');
-
-        const btn1100 = document.getElementById('btn-1100');
-        const btn1201 = document.getElementById('btn-1201');
-        const btn1500 = document.getElementById('btn-1500');
-        const btn1630 = document.getElementById('btn-1630');
-
-        // After 5 PM, betting is for the next day
-        if (mmtTime >= 1700) {
-            betBtnFixed.textContent = "ထိုးမည်";
-            betPopupTitle.textContent = "နောက်ရက်အတွက် ထိုးမည့်အချိန်ရွေးပါ";
-
-            // Get next day's day of the week (0=Sun, 6=Sat)
-            const nextDay = new Date(now.getTime() + 24 * 60 * 60 * 1000);
-            const nextDayDow = nextDay.getUTCDay();
-            const isNextDayWeekend = (nextDayDow === 0 || nextDayDow === 6);
-            
-            const reasonText = nextDayClosedReason ? `ပိတ်ရက် (${nextDayClosedReason})` : "ဈေးပိတ်သည်";
-
-            if (isClosedNextDay || isNextDayWeekend) {
-                [btn1100, btn1201, btn1500, btn1630].forEach(btn => {
-                    btn.disabled = true;
-                    btn.textContent = reasonText;
-                });
-                betBtnFixed.style.background = '#ccc';
-                betBtnFixed.style.cursor = 'not-allowed';
-                betBtnFixed.textContent = `နောက်ရက် ${reasonText}`;
-                betBtnFixed.onclick = null;
+/**
+ * Manual/historical data and balance render
+ */
+function getDataAndRender() {
+    fetch('?api=1')
+        .then(r => r.json())
+        .then(data => {
+            // Do NOT overwrite live MainValue/SET/Value from thai-setdata_api.php
+            document.getElementById('Balance').textContent = parseInt(data.Balance).toLocaleString();
+            if (data.error) {
+                document.getElementById('error').textContent = data.error;
             } else {
-                 // Re-enable everything for next-day betting
-                betBtnFixed.style.background = 'var(--warning)';
-                betBtnFixed.style.cursor = 'pointer';
-                betBtnFixed.textContent = "ထိုးမည်";
-                betBtnFixed.onclick = showBetPopup;
-
-                btn1100.disabled = false; btn1100.textContent = "11:00 AM"; btn1100.onclick = () => location.href='11am_2d.php';
-                btn1201.disabled = false; btn1201.textContent = "12:01 PM"; btn1201.onclick = () => location.href='1201am_2d.php';
-                btn1500.disabled = false; btn1500.textContent = "03:00 PM"; btn1500.onclick = () => location.href='3pm_2d.php';
-                btn1630.disabled = false; btn1630.textContent = "04:30 PM"; btn1630.onclick = () => location.href='430pm_2d.php';
+                document.getElementById('error').textContent = '';
             }
-        } 
-        // Before 5 PM, betting is for today
-        else {
+            renderTimeTables(data.historical);
+        })
+        .catch(e => {
+            document.getElementById('error').textContent = 'API fetch error: ' + e.message;
+            renderTimeTables({});
+        });
+}
+
+/**
+ * Betting status/time button logic
+ */
+function updateBettingStatus() {
+    const now = new Date();
+    const mmtOffsetMinutes = 390; // UTC+6:30
+    const mmtTimeInMinutes = now.getUTCHours() * 60 + now.getUTCMinutes() + mmtOffsetMinutes;
+    const mmtHour = Math.floor(mmtTimeInMinutes / 60) % 24;
+    const mmtMinute = mmtTimeInMinutes % 60;
+    const mmtTime = mmtHour * 100 + mmtMinute;
+
+    const betBtnFixed = document.getElementById('betBtnFixed');
+    const betPopupTitle = document.getElementById('betPopupTitle');
+
+    const btn1100 = document.getElementById('btn-1100');
+    const btn1201 = document.getElementById('btn-1201');
+    const btn1500 = document.getElementById('btn-1500');
+    const btn1630 = document.getElementById('btn-1630');
+
+    // After 5 PM, betting is for the next day
+    if (mmtTime >= 1700) {
+        betBtnFixed.textContent = "ထိုးမည်";
+        betPopupTitle.textContent = "နောက်ရက်အတွက် ထိုးမည့်အချိန်ရွေးပါ";
+
+        // Get next day's day of the week (0=Sun, 6=Sat)
+        const nextDay = new Date(now.getTime() + 24 * 60 * 60 * 1000);
+        const nextDayDow = nextDay.getUTCDay();
+        const isNextDayWeekend = (nextDayDow === 0 || nextDayDow === 6);
+        
+        const reasonText = nextDayClosedReason ? `ပိတ်ရက် (${nextDayClosedReason})` : "ဈေးပိတ်သည်";
+
+        if (isClosedNextDay || isNextDayWeekend) {
+            [btn1100, btn1201, btn1500, btn1630].forEach(btn => {
+                btn.disabled = true;
+                btn.textContent = reasonText;
+            });
+            betBtnFixed.style.background = '#ccc';
+            betBtnFixed.style.cursor = 'not-allowed';
+            betBtnFixed.textContent = `နောက်ရက် ${reasonText}`;
+            betBtnFixed.onclick = null;
+        } else {
+            // Re-enable everything for next-day betting
+            betBtnFixed.style.background = 'var(--warning)';
+            betBtnFixed.style.cursor = 'pointer';
             betBtnFixed.textContent = "ထိုးမည်";
-            betPopupTitle.textContent = "ထိုးမည့်အချိန်ရွေးပါ";
+            betBtnFixed.onclick = showBetPopup;
 
-            const reasonText = closedReason ? `ပိတ်ရက် (${closedReason})` : "ယနေ့ ဈေးပိတ်သည်";
-            const isWeekend = (now.getUTCDay() === 0 || now.getUTCDay() === 6);
-
-            if (isClosedToday || isWeekend) {
-                 [btn1100, btn1201, btn1500, btn1630].forEach(btn => {
-                    btn.disabled = true;
-                    btn.textContent = reasonText;
-                });
-                betBtnFixed.style.background = '#ccc';
-                betBtnFixed.style.cursor = 'not-allowed';
-                betBtnFixed.textContent = reasonText;
-                betBtnFixed.onclick = null;
-                return;
-            }
-
-            btn1100.disabled = mmtTime >= 1055; btn1100.onclick = () => location.href='11am_2d.php';
-            btn1201.disabled = mmtTime >= 1156; btn1201.onclick = () => location.href='1201am_2d.php';
-            btn1500.disabled = mmtTime >= 1455; btn1500.onclick = () => location.href='3pm_2d.php';
-            btn1630.disabled = mmtTime >= 1625; btn1630.onclick = () => location.href='430pm_2d.php';
+            btn1100.disabled = false; btn1100.textContent = "11:00 AM"; btn1100.onclick = () => location.href='11am_2d.php';
+            btn1201.disabled = false; btn1201.textContent = "12:01 PM"; btn1201.onclick = () => location.href='1201am_2d.php';
+            btn1500.disabled = false; btn1500.textContent = "03:00 PM"; btn1500.onclick = () => location.href='3pm_2d.php';
+            btn1630.disabled = false; btn1630.textContent = "04:30 PM"; btn1630.onclick = () => location.href='430pm_2d.php';
         }
     }
+    // Before 5 PM, betting is for today
+    else {
+        betBtnFixed.textContent = "ထိုးမည်";
+        betPopupTitle.textContent = "ထိုးမည့်အချိန်ရွေးပါ";
 
-    function showBetPopup() {
-        // Always update state right before showing
-        updateBettingStatus(); 
-        const betBtnFixed = document.getElementById('betBtnFixed');
-        // If the main button is enabled, show the popup
-        if (betBtnFixed.style.cursor !== 'not-allowed') {
-            document.getElementById('betPopupBg').style.display = 'block';
+        const reasonText = closedReason ? `ပိတ်ရက် (${closedReason})` : "ယနေ့ ဈေးပိတ်သည်";
+        const isWeekend = (now.getUTCDay() === 0 || now.getUTCDay() === 6);
+
+        if (isClosedToday || isWeekend) {
+            [btn1100, btn1201, btn1500, btn1630].forEach(btn => {
+                btn.disabled = true;
+                btn.textContent = reasonText;
+            });
+            betBtnFixed.style.background = '#ccc';
+            betBtnFixed.style.cursor = 'not-allowed';
+            betBtnFixed.textContent = reasonText;
+            betBtnFixed.onclick = null;
+            return;
         }
-    }
-    function hideBetPopup() {
-        document.getElementById('betPopupBg').style.display = 'none';
-    }
 
-    // Initial calls
-    getDataAndRender();
+        btn1100.disabled = mmtTime >= 1055; btn1100.onclick = () => location.href='11am_2d.php';
+        btn1201.disabled = mmtTime >= 1156; btn1201.onclick = () => location.href='1201am_2d.php';
+        btn1500.disabled = mmtTime >= 1455; btn1500.onclick = () => location.href='3pm_2d.php';
+        btn1630.disabled = mmtTime >= 1625; btn1630.onclick = () => location.href='430pm_2d.php';
+    }
+}
+
+/**
+ * Bet popup logic
+ */
+function showBetPopup() {
     updateBettingStatus();
+    const betBtnFixed = document.getElementById('betBtnFixed');
+    if (betBtnFixed.style.cursor !== 'not-allowed') {
+        document.getElementById('betPopupBg').style.display = 'block';
+    }
+}
+function hideBetPopup() {
+    document.getElementById('betPopupBg').style.display = 'none';
+}
 
-    // Auto-refresh data and betting status
-    setInterval(getDataAndRender, 5000);
-    setInterval(updateBettingStatus, 15000); // Check betting status every 15s
-    </script>
+// Initial calls
+getDataAndRender();
+updateBettingStatus();
+setInterval(getDataAndRender, 5000);
+setInterval(updateBettingStatus, 15000);
+</script>
 </body>
 </html>
+
+
