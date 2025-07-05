@@ -7,28 +7,21 @@ let currentView = 'home';
 // Helper functions for API and storage
 const AUTH = {
   getToken: function() {
-    return localStorage.getItem('azm2d_token') || sessionStorage.getItem('azm2d_token');
+    return localStorage.getItem('azm2d_token');
   },
 
   getPhone: function() {
-    return localStorage.getItem('azm2d_phone') || sessionStorage.getItem('azm2d_phone');
+    return localStorage.getItem('azm2d_phone');
   },
 
-  setLogin: function(phone, token, remember = false) {
-    if (remember) {
-      localStorage.setItem('azm2d_phone', phone);
-      localStorage.setItem('azm2d_token', token);
-    } else {
-      sessionStorage.setItem('azm2d_phone', phone);
-      sessionStorage.setItem('azm2d_token', token);
-    }
+  setLogin: function(phone, token) {
+    localStorage.setItem('azm2d_phone', phone);
+    localStorage.setItem('azm2d_token', token);
   },
 
   clearLogin: function() {
     localStorage.removeItem('azm2d_phone');
     localStorage.removeItem('azm2d_token');
-    sessionStorage.removeItem('azm2d_phone');
-    sessionStorage.removeItem('azm2d_token');
   },
 
   isLoggedIn: function() {
@@ -39,22 +32,21 @@ const AUTH = {
 // Debug logging
 function debugLog(message, data) {
   if (!debugMode) return;
-
   console.log(`[DEBUG] ${message}:`, data);
-
   const debugContent = document.getElementById('debug-content');
   if (debugContent) {
     const timestamp = new Date().toLocaleTimeString();
     let dataText = '';
-
     try {
       dataText = typeof data === 'object' ? JSON.stringify(data, null, 2) : String(data);
     } catch (e) {
       dataText = '[Error displaying data]';
     }
-
-    debugContent.innerHTML += `<div><strong>${timestamp}</strong>: ${message}<br><span>${dataText}</span></div><hr>`;
-    debugContent.scrollTop = debugContent.scrollHeight;
+    // Do not show "Debug Mode Enabled" in UI, skip adding if message contains it
+    if (!/Debug Mode Enabled/i.test(message)) {
+      debugContent.innerHTML += `<div><strong>${timestamp}</strong>: ${message}<br><span>${dataText}</span></div><hr>`;
+      debugContent.scrollTop = debugContent.scrollHeight;
+    }
   }
 }
 
@@ -75,28 +67,28 @@ function showApiError(show = true) {
 }
 
 function formatNumber(x) {
-  return x.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+  if (!x && x !== 0) return "0";
+  return Number(x).toLocaleString();
 }
 
 // View management
 function showView(view) {
   currentView = view;
-
-  // Update navigation
   document.querySelectorAll('.navbar a').forEach(el => el.classList.remove('active'));
   const activeNav = document.getElementById(`nav-${view}`);
   if (activeNav) activeNav.classList.add('active');
-
-  // Hide all views
   document.getElementById('main-ui').style.display = 'none';
   document.getElementById('profile-ui').style.display = 'none';
   document.getElementById('account-ui').style.display = 'none';
   if (document.getElementById('help-container')) document.getElementById('help-container').style.display = 'none';
+  if (document.getElementById('wallet-container')) document.getElementById('wallet-container').style.display = 'none';
 
-  // Show selected view
   if (view === 'home') {
     document.getElementById('main-ui').style.display = 'block';
     loadHomePage();
+  } else if (view === 'wallet') {
+    if (document.getElementById('wallet-container')) document.getElementById('wallet-container').style.display = 'block';
+    loadWalletData();
   } else if (view === 'profile') {
     document.getElementById('profile-ui').style.display = 'block';
     loadProfilePage();
@@ -106,8 +98,6 @@ function showView(view) {
   } else if (view === 'help') {
     if (document.getElementById('help-container')) document.getElementById('help-container').style.display = 'block';
   }
-
-  // Scroll to top
   window.scrollTo(0, 0);
 }
 
@@ -117,7 +107,6 @@ function showTab(tab) {
   document.getElementById('login-form').style.display = tab === 'login' ? 'block' : 'none';
   document.getElementById('tab-register').classList.toggle('active', tab === 'register');
   document.getElementById('tab-login').classList.toggle('active', tab === 'login');
-  // Clear any messages when switching tab
   document.querySelectorAll('.success-msg,.error-msg').forEach(e => e.style.display = 'none');
   document.querySelectorAll('.form-input').forEach(e => e.classList.remove('error'));
 }
@@ -126,22 +115,18 @@ function showTab(tab) {
 function loadAdBanner() {
   fetch('https://amazemm.xyz/api/ad_banner_api.php')
     .then(response => {
-      if (!response.ok) {
-        throw new Error('Network response was not ok');
-      }
+      if (!response.ok) throw new Error('Network response was not ok');
       return response.json();
     })
     .then(data => {
       if(data.success && data.banner) {
         document.getElementById('ad-banner-img').src = data.banner.image_url;
-        // Hide title/desc always, just in case
         document.getElementById('ad-banner-title').style.display = "none";
         document.getElementById('ad-banner-desc').style.display = "none";
       }
     })
     .catch(error => {
       debugLog('Ad banner error:', error);
-      // Use a fallback image or hide the banner
       document.querySelector('.ad-banner').style.display = 'none';
     });
 }
@@ -163,11 +148,8 @@ function loadProfilePage() {
 function loadUserBalance() {
   const token = AUTH.getToken();
   const phone = AUTH.getPhone();
-
   if (!token || !phone) return;
-
   debugLog('Loading user balance', {});
-
   fetch('https://amazemm.xyz/api/user.php', {
     method: 'POST',
     headers: { 
@@ -177,19 +159,14 @@ function loadUserBalance() {
     body: JSON.stringify({ phone: phone })
   })
   .then(response => {
-    if (!response.ok) {
-      throw new Error('Network response was not ok');
-    }
+    if (!response.ok) throw new Error('Network response was not ok');
     return response.json();
   })
   .then(data => {
     debugLog('User data received', data);
-
     if (data.success && data.user) {
-      // Update balance in home page
       document.getElementById('user-balance').textContent = formatNumber(data.user.balance || 0);
     } else {
-      // Token expired or invalid, force logout
       debugLog('User data invalid, logging out', data);
       AUTH.clearLogin();
       showView('login');
@@ -205,20 +182,12 @@ function loadUserBalance() {
 async function callProfileApi(actionName, additionalData = {}) {
   const phone = AUTH.getPhone();
   const token = AUTH.getToken();
-
   if (!phone || !token) {
     debugLog(`No auth data for ${actionName}`, { phone });
     return null;
   }
-
-  // Prepare request data
-  const requestData = {
-    action: actionName,
-    ...additionalData
-  };
-
+  const requestData = { action: actionName, ...additionalData };
   debugLog(`API Request: ${actionName}`, requestData);
-
   try {
     const response = await fetch('https://amazemm.xyz/api/profile.php', {
       method: 'POST',
@@ -228,16 +197,9 @@ async function callProfileApi(actionName, additionalData = {}) {
       },
       body: JSON.stringify(requestData)
     });
-
     debugLog(`API Response Status: ${actionName}`, response.status);
-
-    // Handle empty or invalid response
     const responseText = await response.text();
-    if (!responseText) {
-      throw new Error('Empty response from server');
-    }
-
-    // Try to parse JSON response
+    if (!responseText) throw new Error('Empty response from server');
     let data;
     try {
       data = JSON.parse(responseText);
@@ -257,27 +219,19 @@ async function callProfileApi(actionName, additionalData = {}) {
 async function fetchUserProfile() {
   showLoading();
   showApiError(false);
-
   try {
     if (!AUTH.isLoggedIn()) {
       debugLog('Not logged in', {});
       showView('login');
       return;
     }
-
     debugLog('Fetching user profile', { phone: AUTH.getPhone() });
-
     const data = await callProfileApi('get_profile');
-
     if (data && data.success && data.user) {
-      // Update profile information
       updateProfileUI(data.user);
     } else {
-      // Token expired or invalid
       showApiError(true);
       debugLog('Invalid API response', data);
-
-      // If unauthorized, logout after delay
       setTimeout(() => {
         AUTH.clearLogin();
         showView('login');
@@ -294,23 +248,15 @@ async function fetchUserProfile() {
 // Update profile UI
 function updateProfileUI(user) {
   debugLog('Updating UI with user data', user);
-
-  // Basic profile info
   document.getElementById('profile-name').textContent = user.name || 'N/A';
   document.getElementById('profile-phone').textContent = user.phone || 'N/A';
-
-  // Profile avatar - first letter of name
   const avatarElement = document.getElementById('profile-avatar');
   if (user.name && user.name.length > 0) {
     avatarElement.innerHTML = user.name.charAt(0).toUpperCase();
   } else {
     avatarElement.innerHTML = '<i class="fas fa-user"></i>';
   }
-
-  // Balance
   document.getElementById('balance-amount').textContent = formatNumber(user.balance || 0);
-
-  // Information list
   document.getElementById('info-name').textContent = user.name || 'N/A';
   document.getElementById('info-phone').textContent = user.phone || 'N/A';
   document.getElementById('info-agent-code').textContent = user.agent_code || 'N/A';
@@ -323,32 +269,25 @@ async function changePassword(currentPassword, newPassword) {
     showView('login');
     return false;
   }
-
   const submitBtn = document.getElementById('password-submit-btn');
   submitBtn.classList.add('loading');
   submitBtn.disabled = true;
-
   try {
     debugLog('Changing password', {
       currentPasswordLength: currentPassword.length,
       newPasswordLength: newPassword.length
     });
-
     const data = await callProfileApi('change_password', {
       current_password: currentPassword,
       new_password: newPassword
     });
-
     if (data && data.success) {
       document.getElementById('password-success-message').style.display = 'block';
       document.getElementById('password-error-message').style.display = 'none';
       document.getElementById('change-password-form').reset();
-
-      // Hide success message after a few seconds
       setTimeout(() => {
         document.getElementById('password-success-message').style.display = 'none';
       }, 5000);
-
       return true;
     } else {
       document.getElementById('password-error-message').textContent = data?.message || 'စကားဝှက် ပြောင်းရန် မအောင်မြင်ပါ။';
@@ -375,7 +314,6 @@ function checkPasswordStrength(password) {
     { regex: /[0-9]/, element: document.getElementById("number-req") },
     { regex: /[A-Z]/, element: document.getElementById("uppercase-req") }
   ];
-
   let strength = 0;
   requirements.forEach(req => {
     if (req.element) {
@@ -391,7 +329,6 @@ function checkPasswordStrength(password) {
       }
     }
   });
-
   return strength;
 }
 
@@ -400,7 +337,6 @@ function validateField(field, pattern, errorMessage) {
   const value = field.value.trim();
   const isValid = pattern.test(value);
   const errorElement = document.getElementById(`${field.id}-error`);
-
   if (!isValid) {
     field.classList.add('error');
     if (errorElement) {
@@ -413,29 +349,20 @@ function validateField(field, pattern, errorMessage) {
       errorElement.style.display = 'none';
     }
   }
-
   return isValid;
 }
 
 // Handle login
 function handleLogin(e) {
   e.preventDefault();
-
   var phone = document.getElementById('login-phone').value.trim();
   var password = document.getElementById('login-password').value;
-  var rememberMe = document.getElementById('remember-me').checked;
   var submitBtn = document.getElementById('login-submit-btn');
   var errorMsg = document.getElementById('login-error-msg');
   var successMsg = document.getElementById('login-success-msg');
-
-  // Clear previous messages
   errorMsg.style.display = 'none';
   successMsg.style.display = 'none';
-
-  // Validate fields
   let isValid = true;
-
-  // Validate phone
   if (!phone.match(/^[0-9]{7,15}$/)) {
     document.getElementById('login-phone').classList.add('error');
     document.getElementById('login-phone-error').textContent = 'ဖုန်းနံပါတ် မှန်ကန်စွာ ထည့်ပါ။';
@@ -445,8 +372,6 @@ function handleLogin(e) {
     document.getElementById('login-phone').classList.remove('error');
     document.getElementById('login-phone-error').style.display = 'none';
   }
-
-  // Validate password
   if (!password || password.length < 6) {
     document.getElementById('login-password').classList.add('error');
     document.getElementById('login-password-error').textContent = 'စကားဝှက် မှန်ကန်စွာ ထည့်ပါ။';
@@ -456,15 +381,10 @@ function handleLogin(e) {
     document.getElementById('login-password').classList.remove('error');
     document.getElementById('login-password-error').style.display = 'none';
   }
-
   if (!isValid) return;
-
-  // Show loading state
   submitBtn.classList.add('loading');
   submitBtn.disabled = true;
-
-  debugLog('Login request', { phone, passwordLength: password.length, rememberMe });
-
+  debugLog('Login request', { phone, passwordLength: password.length });
   fetch('https://amazemm.xyz/api/login.php', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -475,14 +395,8 @@ function handleLogin(e) {
   })
   .then(response => {
     debugLog('Login Response Status', response.status);
-
-    // Check if response is empty
     return response.text().then(text => {
-      if (!text) {
-        throw new Error('Server returned empty response');
-      }
-
-      // Try to parse as JSON
+      if (!text) throw new Error('Server returned empty response');
       try {
         return JSON.parse(text);
       } catch (e) {
@@ -493,18 +407,12 @@ function handleLogin(e) {
   })
   .then(data => {
     debugLog('Login Response Data', data);
-
     if(data.success) {
       successMsg.textContent = 'အကောင့်ဝင်ခြင်း အောင်မြင်ပါသည်။';
       successMsg.style.display = 'block';
-
       if(data.token) {
-        AUTH.setLogin(phone, data.token, rememberMe);
-
-        // Delay to show success message before redirecting
-        setTimeout(() => {
-          showView('home');
-        }, 1000);
+        AUTH.setLogin(phone, data.token); // localStorage only
+        setTimeout(() => { showView('home'); }, 1000);
       }
     } else {
       errorMsg.textContent = data.message || 'မှားယွင်းမှုတစ်ခု ဖြစ်ပွားခဲ့သည်။';
@@ -517,7 +425,6 @@ function handleLogin(e) {
     errorMsg.style.display = 'block';
   })
   .finally(() => {
-    // Hide loading state
     submitBtn.classList.remove('loading');
     submitBtn.disabled = false;
   });
@@ -526,7 +433,6 @@ function handleLogin(e) {
 // Handle registration
 function handleRegister(e) {
   e.preventDefault();
-
   var name = document.getElementById('reg-name').value.trim();
   var phone = document.getElementById('reg-phone').value.trim();
   var password = document.getElementById('reg-password').value;
@@ -534,15 +440,9 @@ function handleRegister(e) {
   var submitBtn = document.getElementById('reg-submit-btn');
   var errorMsg = document.getElementById('reg-error-msg');
   var successMsg = document.getElementById('reg-success-msg');
-
-  // Clear previous messages
   errorMsg.style.display = 'none';
   successMsg.style.display = 'none';
-
-  // Validate fields
   let isValid = true;
-
-  // Validate name
   if (name.length < 2) {
     document.getElementById('reg-name').classList.add('error');
     document.getElementById('reg-name-error').textContent = 'အမည် မှန်ကန်စွာ ထည့်ပါ။';
@@ -552,8 +452,6 @@ function handleRegister(e) {
     document.getElementById('reg-name').classList.remove('error');
     document.getElementById('reg-name-error').style.display = 'none';
   }
-
-  // Validate phone
   if (!phone.match(/^[0-9]{7,15}$/)) {
     document.getElementById('reg-phone').classList.add('error');
     document.getElementById('reg-phone-error').textContent = 'ဖုန်းနံပါတ် မှန်ကန်စွာ ထည့်ပါ။';
@@ -563,8 +461,6 @@ function handleRegister(e) {
     document.getElementById('reg-phone').classList.remove('error');
     document.getElementById('reg-phone-error').style.display = 'none';
   }
-
-  // Validate password
   if (password.length < 6) {
     document.getElementById('reg-password').classList.add('error');
     document.getElementById('reg-password-error').textContent = 'စကားဝှက် အနည်းဆုံး ၆ လုံးရှိရပါမည်။';
@@ -574,23 +470,16 @@ function handleRegister(e) {
     document.getElementById('reg-password').classList.remove('error');
     document.getElementById('reg-password-error').style.display = 'none';
   }
-
   if (!isValid) return;
-
-  // Show loading state
   submitBtn.classList.add('loading');
   submitBtn.disabled = true;
-
   debugLog('Registration request', { name, phone, passwordLength: password.length, agentCode });
-
-  // Prepare registration data
   const registrationData = {
     name: name,
     phone: phone,
     password: password,
     agent_code: agentCode
   };
-
   fetch('https://amazemm.xyz/api/register.php', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -598,14 +487,8 @@ function handleRegister(e) {
   })
   .then(response => {
     debugLog('Registration Response Status', response.status);
-
-    // Check if response is empty
     return response.text().then(text => {
-      if (!text) {
-        throw new Error('Server returned empty response');
-      }
-
-      // Try to parse as JSON
+      if (!text) throw new Error('Server returned empty response');
       try {
         return JSON.parse(text);
       } catch (e) {
@@ -616,20 +499,13 @@ function handleRegister(e) {
   })
   .then(data => {
     debugLog('Registration Response Data', data);
-
     if(data.success) {
       successMsg.textContent = 'အကောင့်ဖွင့်ခြင်း အောင်မြင်ပါသည်။';
       successMsg.style.display = 'block';
       document.getElementById('register-form').reset();
-
-      // Auto-login
       if(data.token) {
-        AUTH.setLogin(phone, data.token, false); // Don't remember by default
-
-        // Delay to show success message before redirecting
-        setTimeout(() => {
-          showView('home');
-        }, 1500);
+        AUTH.setLogin(phone, data.token); // localStorage only
+        setTimeout(() => { showView('home'); }, 1500);
       }
     } else {
       errorMsg.textContent = data.message || 'မှားယွင်းမှုတစ်ခု ဖြစ်ပွားခဲ့သည်။';
@@ -642,7 +518,6 @@ function handleRegister(e) {
     errorMsg.style.display = 'block';
   })
   .finally(() => {
-    // Hide loading state
     submitBtn.classList.remove('loading');
     submitBtn.disabled = false;
   });
@@ -657,25 +532,19 @@ function handlePasswordInput() {
 // Handle change password form submission
 async function handleChangePassword(e) {
   e.preventDefault();
-
   const currentPassword = document.getElementById('current-password').value;
   const newPassword = document.getElementById('new-password').value;
   const confirmPassword = document.getElementById('confirm-password').value;
-
-  // Validate passwords
   if (newPassword !== confirmPassword) {
     document.getElementById('password-error-message').textContent = 'စကားဝှက် အသစ်နှင့် အတည်ပြုစကားဝှက်တို့ မတူညီပါ။';
     document.getElementById('password-error-message').style.display = 'block';
     return;
   }
-
   if (newPassword.length < 6) {
     document.getElementById('password-error-message').textContent = 'စကားဝှက်သည် အနည်းဆုံး ၆ လုံး ရှိရပါမည်။';
     document.getElementById('password-error-message').style.display = 'block';
     return;
   }
-
-  // Attempt to change password
   await changePassword(currentPassword, newPassword);
 }
 
@@ -687,8 +556,6 @@ function handleLogout() {
 }
 
 // -- GUEST HANDLING LOGIC START --
-
-// Helper to check if guest should be redirected to login
 function requireLoginHandler(e, tab = 'login') {
   if (!AUTH.isLoggedIn()) {
     if (e) e.preventDefault();
@@ -697,9 +564,7 @@ function requireLoginHandler(e, tab = 'login') {
   }
   return true;
 }
-
 function attachGuestHandlers() {
-  // Navbar: Wallet, Help, Profile all require login
   ['nav-wallet', 'nav-help', 'nav-profile'].forEach(id => {
     const el = document.getElementById(id);
     if (el) {
@@ -708,8 +573,6 @@ function attachGuestHandlers() {
       });
     }
   });
-
-  // Menu grid buttons: require login
   document.querySelectorAll('.menu-grid a').forEach(function(btn) {
     btn.addEventListener('click', function(e) {
       requireLoginHandler(e, 'login');
@@ -725,15 +588,13 @@ function helpTabHandler() {
   if (navHelp && helpContainer) {
     navHelp.addEventListener('click', function(e) {
       e.preventDefault();
-      // Hide all main sections
       document.getElementById('main-ui').style.display = 'none';
       document.getElementById('profile-ui').style.display = 'none';
       document.getElementById('account-ui').style.display = 'none';
+      if (document.getElementById('wallet-container')) document.getElementById('wallet-container').style.display = 'none';
       helpContainer.style.display = 'block';
-      // Set navbar active state
       document.querySelectorAll('.navbar a').forEach(el => el.classList.remove('active'));
       navHelp.classList.add('active');
-      // Fetch contacts if not loaded
       if (!helpContainer.dataset.loaded) {
         fetch("https://amazemm.xyz/api/contact_api.php")
           .then(res => res.json())
@@ -783,8 +644,6 @@ function helpTabHandler() {
       }
     });
   }
-
-  // Home nav restores main UI
   var navHome = document.getElementById('nav-home');
   if (navHome) {
     navHome.addEventListener('click', function(e) {
@@ -793,6 +652,7 @@ function helpTabHandler() {
       document.getElementById('profile-ui').style.display = 'none';
       document.getElementById('account-ui').style.display = 'none';
       if (document.getElementById('help-container')) document.getElementById('help-container').style.display = 'none';
+      if (document.getElementById('wallet-container')) document.getElementById('wallet-container').style.display = 'none';
       document.querySelectorAll('.navbar a').forEach(el => el.classList.remove('active'));
       navHome.classList.add('active');
     });
@@ -801,7 +661,6 @@ function helpTabHandler() {
 
 // Initialize event listeners
 function initEventListeners() {
-  // Navigation links
   document.getElementById('nav-home').addEventListener('click', function(e) {
     e.preventDefault();
     if (AUTH.isLoggedIn()) {
@@ -810,7 +669,6 @@ function initEventListeners() {
       showView('login');
     }
   });
-
   document.getElementById('nav-profile').addEventListener('click', function(e) {
     e.preventDefault();
     if (AUTH.isLoggedIn()) {
@@ -819,83 +677,70 @@ function initEventListeners() {
       showView('login');
     }
   });
-
-  // Auth-related events
+  document.getElementById('nav-wallet').addEventListener('click', function(e) {
+    e.preventDefault();
+    if (AUTH.isLoggedIn()) {
+      showView('wallet');
+    } else {
+      showView('login');
+    }
+  });
   if (document.getElementById('reg-password')) {
     document.getElementById('reg-password').addEventListener('input', handlePasswordInput);
   }
-
   if (document.getElementById('logout-button')) {
     document.getElementById('logout-button').addEventListener('click', handleLogout);
   }
-
   if (document.getElementById('change-password-form')) {
     document.getElementById('change-password-form').addEventListener('submit', handleChangePassword);
   }
-
-  // Debug toggle
-  document.getElementById('debug-toggle').addEventListener('click', function() {
-    debugMode = !debugMode;
-    document.getElementById('debug-panel').style.display = debugMode ? 'block' : 'none';
-
-    if (debugMode) {
-      document.getElementById('debug-content').innerHTML = '<strong>Debug Mode Enabled</strong><br>';
-      debugLog('System info', {
-        userAgent: navigator.userAgent,
-        isLoggedIn: AUTH.isLoggedIn(),
-        phone: AUTH.getPhone()
-      });
-    }
-  });
-
-  // Login/Register tab switching
+  // Hide debug panel UI and do not show "Debug Mode Enabled"
+  const debugToggle = document.getElementById('debug-toggle');
+  const debugPanel = document.getElementById('debug-panel');
+  if (debugToggle) debugToggle.style.display = "none";
+  if (debugPanel) debugPanel.style.display = "none";
   document.getElementById('tab-login').addEventListener('click', function() {
     showTab('login');
   });
   document.getElementById('tab-register').addEventListener('click', function() {
     showTab('register');
   });
-
-  // Login/Register form submit
   if (document.getElementById('login-form')) {
     document.getElementById('login-form').addEventListener('submit', handleLogin);
   }
   if (document.getElementById('register-form')) {
     document.getElementById('register-form').addEventListener('submit', handleRegister);
   }
-
-  // Attach guest logic for non-logged-in users
   attachGuestHandlers();
-
-  // Help & Home nav logic
   helpTabHandler();
+  const walletBack = document.getElementById('wallet-back');
+  if (walletBack) {
+    walletBack.addEventListener('click', function(e) {
+      e.preventDefault();
+      showView('home');
+    });
+  }
 }
 
 // Initialize app
 function initApp() {
   debugLog('Initializing application', {});
-
-  // Set up event listeners
   initEventListeners();
-
-  // Always show the main UI, hide login/register UI
   document.getElementById('main-ui').style.display = 'block';
   document.getElementById('account-ui').style.display = 'none';
   document.getElementById('profile-ui').style.display = 'none';
   if (document.getElementById('help-container')) document.getElementById('help-container').style.display = 'none';
+  if (document.getElementById('wallet-container')) document.getElementById('wallet-container').style.display = 'none';
   loadHomePage();
 }
 
-// Start the app when DOM is loaded
 document.addEventListener('DOMContentLoaded', function() {
-  // Add debug panel if not exists
   if (!document.getElementById('debug-panel')) {
     const debugPanel = document.createElement('div');
     debugPanel.id = 'debug-panel';
     debugPanel.className = 'debug-panel';
+    debugPanel.style.display = 'none';
     document.body.appendChild(debugPanel);
   }
-
-  // Initialize application
   initApp();
 });
