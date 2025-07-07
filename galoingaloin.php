@@ -776,7 +776,7 @@ function updateTimerDisplay(remaining) {
     timerDiv.textContent = "ပေါက်ကောင်ဖွင့်ရန် ကျန်ရှိချိန် - " + min + " မိနစ် " + (sec < 10 ? ("0" + sec) : sec) + " စက္ကန့်";
 }
 
-// Animated slot update + payout + result
+// Animated slot update + payout + result, now also updates round_no after spin
 function fetchAndUpdateSlotsAnimated(callback) {
     fetch(window.location.pathname + '?auto_spin=1')
         .then(response => response.json())
@@ -791,6 +791,10 @@ function fetchAndUpdateSlotsAnimated(callback) {
                     i++;
                     setTimeout(animateSlot, 2000);
                 } else if (typeof callback === "function") {
+                    // Force update round number on UI after spin!
+                    if (data.round_no) {
+                        document.getElementById('round_no').textContent = data.round_no;
+                    }
                     callback(data); // Pass server result for payout display
                 }
             }
@@ -836,6 +840,7 @@ function fetchDrawTimeAndStartTimer() {
                     clearInterval(timerInterval);
                     fetchAndUpdateSlotsAnimated(function (data) {
                         showPayoutMessageFromAutoSpin(data);
+                        // After spin, update round_no from API response (already done in fetchAndUpdateSlotsAnimated)
                         fetchDrawTimeAndStartTimer();
                     });
                     return;
