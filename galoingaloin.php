@@ -99,6 +99,7 @@ function get_or_create_round($animals) {
 
 $round = get_or_create_round($animals);
 
+// --- Helper: Clear all bets and relevant session data ---
 function clear_all_bets_and_session() {
     unset($_SESSION['bets']);
     unset($_SESSION['bets_clear_time']);
@@ -405,6 +406,9 @@ if (isset($_GET['debug_session'])) {
     exit;
 }
 ?>
+
+
+
 <!DOCTYPE html>
 <html lang="my">
 <head>
