@@ -99,38 +99,42 @@ function get_or_create_round($animals) {
 
 $round = get_or_create_round($animals);
 
-// --- Reset bets when round changes (after 4 seconds from previous round's draw_time) ---
+function clear_all_bets_and_session() {
+    unset($_SESSION['bets']);
+    unset($_SESSION['bets_clear_time']);
+    unset($_SESSION['payout_claimed']);
+}
+
+// --- Reset bets and session state when round changes (after 4 seconds from previous round's draw_time) ---
 if (
     isset($_SESSION['previous_round_no']) &&
     $_SESSION['previous_round_no'] != $round['round_no']
 ) {
-    unset($_SESSION['payout_claimed']);
     $stmt = $pdo->prepare("SELECT draw_time FROM slot_rounds WHERE round_no = ?");
     $stmt->execute([$_SESSION['previous_round_no']]);
     $prev_round = $stmt->fetch(PDO::FETCH_ASSOC);
     $prev_draw_time = isset($prev_round['draw_time']) ? strtotime($prev_round['draw_time']) : false;
 
     if ($prev_draw_time && (time() >= $prev_draw_time + 4)) {
-        clear_all_bets();
-        unset($_SESSION['bets_clear_time']);
+        clear_all_bets_and_session();
     } else {
         $_SESSION['bets_clear_time'] = $prev_draw_time ? $prev_draw_time + 4 : time() + 4;
     }
 }
 $_SESSION['previous_round_no'] = $round['round_no'];
 
+// --- Always clear bets if time comes (failsafe) ---
 if (isset($_SESSION['bets_clear_time']) && time() >= $_SESSION['bets_clear_time']) {
-    clear_all_bets();
-    unset($_SESSION['bets_clear_time']);
+    clear_all_bets_and_session();
 }
 
+// --- Check if betting is open for the current round ---
 function is_bet_open($round) {
     $draw_time = strtotime($round['draw_time']);
     $now = time();
     $remaining = $draw_time - $now;
     return $remaining > BET_CLOSE_BEFORE_DRAW;
 }
-function clear_all_bets() { unset($_SESSION['bets']); }
 
 function result_text_message($payout, $won_animals, $animals) {
     if ($payout > 0) {
@@ -375,7 +379,7 @@ if (isset($_GET['get_draw_time'])) {
 
 // --- API: Clear all current bets (UX improvement) ---
 if (isset($_GET['clear_bets'])) {
-    clear_all_bets();
+    clear_all_bets_and_session();
     echo json_encode([
         'success' => true,
         'message' => 'All bets cleared.',
@@ -823,6 +827,8 @@ function fetchDrawTimeAndStartTimer() {
                 const a = animalDict[slotKeys[i]];
                 div.innerHTML = `<img src="${a.photo}" alt="${a.name}">${a.name}`;
             });
+            // BET amount UI reset
+            document.querySelectorAll('.bet-amount').forEach(el => el.textContent = "0");
             updateTimerDisplay(countdown);
             if (timerInterval) clearInterval(timerInterval);
             timerInterval = setInterval(() => {
