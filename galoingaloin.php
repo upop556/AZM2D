@@ -309,7 +309,6 @@ if (isset($_GET['get_payout'])) {
         }
     }
     $user_bets = $_SESSION['bets'];
-
     $payout = 0;
     $won_animals = [];
     $total_bet = 0;
@@ -378,7 +377,7 @@ if (isset($_GET['get_payout'])) {
     $result_text = $total_bet > 0 ? result_text_message($payout, $won_animals, $animals) : "ဒီပွဲအတွက် ဘာမှ မထိုးရသေးပါ။";
 
     // --- Auto-clear bets after payout ---
-    // clear_all_bets(); // FIX: Don't clear here! Bets will be cleared when round changes or after 4 sec.
+    // clear_all_bets(); // Don't clear here! Bets will be cleared when round changes or after 4 sec.
 
     echo json_encode([
         'payout' => $payout,
@@ -473,6 +472,7 @@ if (isset($_GET['debug_session'])) {
     exit;
 }
 ?>
+
 <!DOCTYPE html>
 <html lang="my">
 <head>
