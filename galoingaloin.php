@@ -80,11 +80,9 @@ function get_or_create_round($animals) {
 
     if (!$round) {
         $rand_keys = array_rand($animal_keys, 3);
-        // Fix: array_rand returns int if count==1, so always cast to array
         if (!is_array($rand_keys)) {
             $rand_keys = [$rand_keys];
         }
-        // Defensive: ensure 3 unique animals. If not, shuffle and pick.
         $rand_keys = array_unique($rand_keys);
         while (count($rand_keys) < 3) {
             $more = array_rand($animal_keys, 1);
@@ -118,7 +116,6 @@ if (
     $_SESSION['previous_round_no'] != $round['round_no']
 ) {
     unset($_SESSION['payout_claimed']);
-    // Find previous round's draw_time
     $stmt = $pdo->prepare("SELECT draw_time FROM slot_rounds WHERE round_no = ?");
     $stmt->execute([$_SESSION['previous_round_no']]);
     $prev_round = $stmt->fetch(PDO::FETCH_ASSOC);
@@ -301,14 +298,18 @@ if (isset($_GET['get_payout'])) {
     $slot_keys = [$round['slot1'], $round['slot2'], $round['slot3']];
     $slot_wins = array_count_values($slot_keys);
 
-    // FIX: Always initialize bets array for payout calculation!
+    // --- FIX: Always properly initialize bets array for payout calculation!
     if (!isset($_SESSION['bets']) || !is_array($_SESSION['bets'])) {
         $_SESSION['bets'] = [];
-        foreach ($animal_keys as $k) {
+    }
+    // Ensure all animal keys exist
+    foreach ($animal_keys as $k) {
+        if (!isset($_SESSION['bets'][$k])) {
             $_SESSION['bets'][$k] = 0;
         }
     }
     $user_bets = $_SESSION['bets'];
+
     $payout = 0;
     $won_animals = [];
     $total_bet = 0;
@@ -391,7 +392,6 @@ if (isset($_GET['get_payout'])) {
 
 // --- API: Get balance, bets, bet_amount ---
 if (isset($_GET['get_balance'])) {
-    // Refresh balance from database
     $stmt = $pdo->prepare("SELECT balance FROM users WHERE id = ? LIMIT 1");
     $stmt->execute([$user_id]);
     $row = $stmt->fetch(PDO::FETCH_ASSOC);
