@@ -278,12 +278,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['bet_animal'])) {
 }
 
 // --- API: Calculate payout at round finish ---
-// Only allow payout within 4 seconds after round draw_time
 if (isset($_GET['get_payout'])) {
     $draw_time = strtotime($round['draw_time']);
     $now = time();
 
-    // If draw time expired, just return
     if ($now > $draw_time + 4) {
         echo json_encode([
             'payout' => 0,
@@ -298,11 +296,10 @@ if (isset($_GET['get_payout'])) {
     $slot_keys = [$round['slot1'], $round['slot2'], $round['slot3']];
     $slot_wins = array_count_values($slot_keys);
 
-    // --- FIX: Always properly initialize bets array for payout calculation!
+    // FIX: Always initialize bets array and ensure all animal keys exist!
     if (!isset($_SESSION['bets']) || !is_array($_SESSION['bets'])) {
         $_SESSION['bets'] = [];
     }
-    // Ensure all animal keys exist
     foreach ($animal_keys as $k) {
         if (!isset($_SESSION['bets'][$k])) {
             $_SESSION['bets'][$k] = 0;
