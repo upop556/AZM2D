@@ -345,7 +345,11 @@ if (isset($_GET['auto_spin'])) {
         'won_animals' => $won_animals,
         'current_balance' => $_SESSION['balance'],
         'result_text' => $result_text,
-        'round_no' => $round['round_no'] + 1 // for UI display (human readable)
+        'round_no' => $round['round_no'] + 1,
+        'slot1' => $round['slot1'],
+        'slot2' => $round['slot2'],
+        'slot3' => $round['slot3'],
+        'draw_time' => $round['draw_time']
     ]);
     exit;
 }
@@ -362,6 +366,9 @@ if (isset($_GET['get_draw_time'])) {
         'remaining' => $remaining,
         'round_no' => $round['round_no'] + 1,
         'bet_open' => $remaining > BET_CLOSE_BEFORE_DRAW ? 1 : 0,
+        'slot1' => $round['slot1'],
+        'slot2' => $round['slot2'],
+        'slot3' => $round['slot3']
     ]);
     exit;
 }
@@ -394,7 +401,6 @@ if (isset($_GET['debug_session'])) {
     exit;
 }
 ?>
-
 <!DOCTYPE html>
 <html lang="my">
 <head>
@@ -747,24 +753,28 @@ function fetchAndUpdateSlotsAnimated(callback) {
     fetch(window.location.pathname + '?auto_spin=1')
         .then(response => response.json())
         .then(data => {
-            const slots = data.slots;
+            // Update slot UI from server response!
             const slotDivs = document.querySelectorAll('#slots .slot');
-            slotDivs.forEach(div => div.innerHTML = "");
-            let i = 0;
-            function animateSlot() {
-                if (i < slotDivs.length) {
-                    slotDivs[i].innerHTML = `<img src="${slots[i].photo}" alt="${slots[i].name}">${slots[i].name}`;
-                    i++;
-                    setTimeout(animateSlot, 2000);
-                } else if (typeof callback === "function") {
-                    // Update round number after spin!
-                    if (data.round_no) {
-                        document.getElementById('round_no').textContent = data.round_no;
-                    }
-                    callback(data);
-                }
+            const slotKeys = [data.slot1, data.slot2, data.slot3];
+            const animalDict = {
+                chicken: {name: "ကြက်", photo: "/images/chicken.png"},
+                elephant: {name: "ဆင်", photo: "/images/elephant.png"},
+                tiger: {name: "ကျား", photo: "/images/tiger.png"},
+                shrimp: {name: "ပုစွန်", photo: "/images/shrimp.png"},
+                turtle: {name: "လိပ်", photo: "/images/turtle.png"},
+                fish: {name: "ငါး", photo: "/images/fish.png"}
+            };
+            slotDivs.forEach((div, i) => {
+                const a = animalDict[slotKeys[i]];
+                div.innerHTML = `<img src="${a.photo}" alt="${a.name}">${a.name}`;
+            });
+            // Update round number after spin!
+            if (data.round_no) {
+                document.getElementById('round_no').textContent = data.round_no;
             }
-            animateSlot();
+            if (typeof callback === "function") {
+                callback(data);
+            }
         });
 }
 
@@ -798,6 +808,21 @@ function fetchDrawTimeAndStartTimer() {
             let countdown = data.remaining;
             let thisRoundNo = data.round_no;
             document.getElementById('round_no').textContent = thisRoundNo;
+            // Always update slots for new round from server (pre-spin)
+            const slotDivs = document.querySelectorAll('#slots .slot');
+            const slotKeys = [data.slot1, data.slot2, data.slot3];
+            const animalDict = {
+                chicken: {name: "ကြက်", photo: "/images/chicken.png"},
+                elephant: {name: "ဆင်", photo: "/images/elephant.png"},
+                tiger: {name: "ကျား", photo: "/images/tiger.png"},
+                shrimp: {name: "ပုစွန်", photo: "/images/shrimp.png"},
+                turtle: {name: "လိပ်", photo: "/images/turtle.png"},
+                fish: {name: "ငါး", photo: "/images/fish.png"}
+            };
+            slotDivs.forEach((div, i) => {
+                const a = animalDict[slotKeys[i]];
+                div.innerHTML = `<img src="${a.photo}" alt="${a.name}">${a.name}`;
+            });
             updateTimerDisplay(countdown);
             if (timerInterval) clearInterval(timerInterval);
             timerInterval = setInterval(() => {
