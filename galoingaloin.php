@@ -301,7 +301,15 @@ if (isset($_GET['get_payout'])) {
     $slot_keys = [$round['slot1'], $round['slot2'], $round['slot3']];
     $slot_wins = array_count_values($slot_keys);
 
-    $user_bets = isset($_SESSION['bets']) ? $_SESSION['bets'] : [];
+    // FIX: Always initialize bets array for payout calculation!
+    if (!isset($_SESSION['bets']) || !is_array($_SESSION['bets'])) {
+        $_SESSION['bets'] = [];
+        foreach ($animal_keys as $k) {
+            $_SESSION['bets'][$k] = 0;
+        }
+    }
+    $user_bets = $_SESSION['bets'];
+
     $payout = 0;
     $won_animals = [];
     $total_bet = 0;
@@ -465,7 +473,6 @@ if (isset($_GET['debug_session'])) {
     exit;
 }
 ?>
-
 <!DOCTYPE html>
 <html lang="my">
 <head>
