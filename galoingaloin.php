@@ -1,7 +1,7 @@
 <?php
 // --- ERROR DISPLAY (Production Safe) ---
-ini_set('display_errors', 0); // Set to 0 for production
-ini_set('display_startup_errors', 0); // Set to 0 for production
+ini_set('display_errors', 0);
+ini_set('display_startup_errors', 0);
 error_reporting(E_ALL);
 session_start();
 
@@ -50,8 +50,6 @@ $animal_keys = ["chicken", "elephant", "tiger", "shrimp", "turtle", "fish"];
 if (!isset($_SESSION['bets']) || !is_array($_SESSION['bets'])) {
     $_SESSION['bets'] = [];
 }
-
-// Ensure all animal keys exist in bets array
 foreach ($animal_keys as $k) {
     if (!isset($_SESSION['bets'][$k])) {
         $_SESSION['bets'][$k] = 0;
@@ -178,7 +176,6 @@ function result_text_message($payout, $won_animals, $animals) {
 }
 
 // --- API: Place bet for animal ---
-// Block placing bets before bets are cleared for new round (during the 4 sec delay)
 if (isset($_SESSION['bets_clear_time']) && time() < $_SESSION['bets_clear_time']) {
     if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['bet_animal'])) {
         echo json_encode([
@@ -191,7 +188,6 @@ if (isset($_SESSION['bets_clear_time']) && time() < $_SESSION['bets_clear_time']
     }
 }
 
-// (Extra: Allow to set last_bet_amount from client)
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['set_balance'])) {
     $amt = intval($_POST['set_balance']);
     if ($amt > 0) {
@@ -208,7 +204,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['bet_animal'])) {
     $animal_key = $_POST['bet_animal'];
     $bet_amount = isset($_SESSION['last_bet_amount']) ? intval($_SESSION['last_bet_amount']) : 0;
 
-    // Check if animal is valid
     if (!in_array($animal_key, $animal_keys)) {
         echo json_encode([
             'success' => false,
@@ -219,7 +214,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['bet_animal'])) {
         exit;
     }
 
-    // Check if betting is open
     if (!is_bet_open($round)) {
         echo json_encode([
             'success' => false,
@@ -230,7 +224,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['bet_animal'])) {
         exit;
     }
 
-    // Check if user has enough balance and bet amount is valid
     if ($bet_amount <= 0) {
         echo json_encode([
             'success' => false,
@@ -250,7 +243,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['bet_animal'])) {
         exit;
     }
 
-    // Initialize bets array if missing (after clear)
     if (!isset($_SESSION['bets']) || !is_array($_SESSION['bets'])) {
         $_SESSION['bets'] = [];
         foreach ($animal_keys as $k) {
@@ -260,11 +252,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['bet_animal'])) {
         $_SESSION['bets'][$animal_key] = 0;
     }
 
-    // Deduct balance and add bet
     $_SESSION['balance'] -= $bet_amount;
     $_SESSION['bets'][$animal_key] += $bet_amount;
 
-    // Update user balance in database
     $stmt = $pdo->prepare("UPDATE users SET balance = ? WHERE id = ?");
     $stmt->execute([$_SESSION['balance'], $user_id]);
 
@@ -277,26 +267,33 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['bet_animal'])) {
     exit;
 }
 
-// --- API: Calculate payout at round finish ---
-if (isset($_GET['get_payout'])) {
-    $draw_time = strtotime($round['draw_time']);
-    $now = time();
+// --- API: Get balance, bets, bet_amount ---
+if (isset($_GET['get_balance'])) {
+    $stmt = $pdo->prepare("SELECT balance FROM users WHERE id = ? LIMIT 1");
+    $stmt->execute([$user_id]);
+    $row = $stmt->fetch(PDO::FETCH_ASSOC);
+    $db_balance = $row ? (float)$row['balance'] : 0;
+    $_SESSION['balance'] = $db_balance;
 
-    if ($now > $draw_time + 4) {
-        echo json_encode([
-            'payout' => 0,
-            'won_animals' => [],
-            'current_balance' => $_SESSION['balance'],
-            'result_text' => '',
-            'bets' => isset($_SESSION['bets']) ? $_SESSION['bets'] : [],
-        ]);
-        exit;
-    }
+    echo json_encode([
+        'balance' => $_SESSION['balance'],
+        'bets' => isset($_SESSION['bets']) ? $_SESSION['bets'] : [],
+        'last_bet_amount' => $_SESSION['last_bet_amount'],
+        'debug' => [
+            'user_id' => $user_id,
+            'round_no' => $round['round_no'],
+            'session_id' => session_id()
+        ]
+    ]);
+    exit;
+}
 
+// --- API: Auto spin slots & payout at once ---
+if (isset($_GET['auto_spin'])) {
     $slot_keys = [$round['slot1'], $round['slot2'], $round['slot3']];
     $slot_wins = array_count_values($slot_keys);
 
-    // FIX: Always initialize bets array and ensure all animal keys exist!
+    // Ensure bets array
     if (!isset($_SESSION['bets']) || !is_array($_SESSION['bets'])) {
         $_SESSION['bets'] = [];
     }
@@ -307,6 +304,7 @@ if (isset($_GET['get_payout'])) {
     }
     $user_bets = $_SESSION['bets'];
 
+    // Payout logic
     $payout = 0;
     $won_animals = [];
     $total_bet = 0;
@@ -329,7 +327,7 @@ if (isset($_GET['get_payout'])) {
         }
     }
 
-    // Add payout to user balance if first claim (not already claimed)
+    // Add payout to user balance if not already claimed for this round
     if (
         !isset($_SESSION['payout_claimed']) ||
         $_SESSION['payout_claimed'] !== $round['round_no']
@@ -342,7 +340,7 @@ if (isset($_GET['get_payout'])) {
         $_SESSION['payout_claimed'] = $round['round_no'];
     }
 
-    // Always update/insert bet record for this round (even if payout_claimed)
+    // Always update/insert bet record for this round
     $bet_animals = [];
     foreach ($animal_keys as $k) {
         $bet_animals[$k] = isset($user_bets[$k]) ? $user_bets[$k] : 0;
@@ -374,54 +372,15 @@ if (isset($_GET['get_payout'])) {
     // Generate result text
     $result_text = $total_bet > 0 ? result_text_message($payout, $won_animals, $animals) : "ဒီပွဲအတွက် ဘာမှ မထိုးရသေးပါ။";
 
-    // --- Auto-clear bets after payout ---
-    // clear_all_bets(); // Don't clear here! Bets will be cleared when round changes or after 4 sec.
-
+    header("Content-Type: application/json; charset=UTF-8");
     echo json_encode([
+        'slots' => $slot_keys,
+        'bets' => $user_bets,
         'payout' => $payout,
         'won_animals' => $won_animals,
         'current_balance' => $_SESSION['balance'],
         'result_text' => $result_text,
-        'bets' => isset($_SESSION['bets']) ? $_SESSION['bets'] : [],
     ]);
-    exit;
-}
-
-// --- API: Get balance, bets, bet_amount ---
-if (isset($_GET['get_balance'])) {
-    $stmt = $pdo->prepare("SELECT balance FROM users WHERE id = ? LIMIT 1");
-    $stmt->execute([$user_id]);
-    $row = $stmt->fetch(PDO::FETCH_ASSOC);
-    $db_balance = $row ? (float)$row['balance'] : 0;
-    $_SESSION['balance'] = $db_balance;
-
-    echo json_encode([
-        'balance' => $_SESSION['balance'],
-        'bets' => isset($_SESSION['bets']) ? $_SESSION['bets'] : [],
-        'last_bet_amount' => $_SESSION['last_bet_amount'],
-        'debug' => [
-            'user_id' => $user_id,
-            'round_no' => $round['round_no'],
-            'session_id' => session_id()
-        ]
-    ]);
-    exit;
-}
-
-// --- API: Auto spin slots ---
-if (isset($_GET['auto_spin'])) {
-    $slot_keys = [$round['slot1'], $round['slot2'], $round['slot3']];
-    $slots = [];
-    foreach ($slot_keys as $k) {
-        foreach ($animals as $a) {
-            if ($a['key'] === $k) {
-                $slots[] = $a;
-                break;
-            }
-        }
-    }
-    header("Content-Type: application/json; charset=UTF-8");
-    echo json_encode($slots);
     exit;
 }
 
@@ -792,6 +751,7 @@ if (isset($_GET['debug_session'])) {
           <button class="popup-confirm" id="balance-confirm" disabled>OK</button>
       </div>
   </div>
+
 <script>
 let lastBetAmount = 0;
 let selectedAmount = null;
@@ -816,11 +776,12 @@ function updateTimerDisplay(remaining) {
     timerDiv.textContent = "ပေါက်ကောင်ဖွင့်ရန် ကျန်ရှိချိန် - " + min + " မိနစ် " + (sec < 10 ? ("0" + sec) : sec) + " စက္ကန့်";
 }
 
-// Animated slot update
+// Animated slot update + payout + result
 function fetchAndUpdateSlotsAnimated(callback) {
     fetch(window.location.pathname + '?auto_spin=1')
         .then(response => response.json())
-        .then(slots => {
+        .then(data => {
+            const slots = data.slots;
             const slotDivs = document.querySelectorAll('#slots .slot');
             slotDivs.forEach(div => div.innerHTML = "");
             let i = 0;
@@ -830,37 +791,33 @@ function fetchAndUpdateSlotsAnimated(callback) {
                     i++;
                     setTimeout(animateSlot, 2000);
                 } else if (typeof callback === "function") {
-                    callback();
+                    callback(data); // Pass server result for payout display
                 }
             }
             animateSlot();
         });
 }
 
-// Payout message and UI update after payout
-function showPayoutMessage() {
-    fetch(window.location.pathname + '?get_payout=1')
-        .then(r => r.json())
-        .then(data => {
-            let payoutDiv = document.getElementById('payout-message');
-            payoutDiv.innerHTML = data.result_text;
+// Payout message and UI update after payout (now uses auto_spin result)
+function showPayoutMessageFromAutoSpin(data) {
+    let payoutDiv = document.getElementById('payout-message');
+    payoutDiv.innerHTML = data.result_text;
 
-            // Update balance instantly with highlight
-            let balEl = document.getElementById('balance');
-            let balInfo = document.getElementById('balance-info');
-            balEl.textContent = Number(data.current_balance).toLocaleString();
-            balInfo.classList.add('updated');
-            setTimeout(()=>{ balInfo.classList.remove('updated'); }, 1100);
+    // Update balance instantly with highlight
+    let balEl = document.getElementById('balance');
+    let balInfo = document.getElementById('balance-info');
+    balEl.textContent = Number(data.current_balance).toLocaleString();
+    balInfo.classList.add('updated');
+    setTimeout(()=>{ balInfo.classList.remove('updated'); }, 1100);
 
-            // BET AMOUNT တွေကို UI မှာ 0 ပြန်တင်
-            if (data.bets) { refreshBetsOnUI(data.bets); }
-            else { document.querySelectorAll('.bet-amount').forEach(el => el.textContent = "0"); }
+    // BET AMOUNT တွေကို UI မှာ 0 ပြန်တင်
+    if (data.bets) { refreshBetsOnUI(data.bets); }
+    else { document.querySelectorAll('.bet-amount').forEach(el => el.textContent = "0"); }
 
-            document.querySelectorAll('.animal-item').forEach(el => el.classList.remove('selected'));
-            showSelectedBetAmount(0);
+    document.querySelectorAll('.animal-item').forEach(el => el.classList.remove('selected'));
+    showSelectedBetAmount(0);
 
-            setTimeout(() => { payoutDiv.innerHTML = ""; }, 6000);
-        });
+    setTimeout(() => { payoutDiv.innerHTML = ""; }, 6000);
 }
 
 // Timer fetch and auto round logic
@@ -877,8 +834,8 @@ function fetchDrawTimeAndStartTimer() {
                 countdown--;
                 if (countdown < 0) {
                     clearInterval(timerInterval);
-                    fetchAndUpdateSlotsAnimated(function () {
-                        showPayoutMessage();
+                    fetchAndUpdateSlotsAnimated(function (data) {
+                        showPayoutMessageFromAutoSpin(data);
                         fetchDrawTimeAndStartTimer();
                     });
                     return;
