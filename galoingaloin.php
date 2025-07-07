@@ -1,5 +1,4 @@
 <?php
-// --- ERROR DISPLAY (Production Safe) ---
 ini_set('display_errors', 0);
 ini_set('display_startup_errors', 0);
 error_reporting(E_ALL);
@@ -13,15 +12,13 @@ if (!isset($_SESSION['user_id'])) {
     exit;
 }
 
-// --- ROUND CONTROL ---
-define('SLOT_ROUND_DURATION', 180); // 3 minutes per round
+define('SLOT_ROUND_DURATION', 180);
 define('FIRST_GAME_START', strtotime('2025-06-28 00:00:00'));
-define('BET_CLOSE_BEFORE_DRAW', 5); // Close betting 5 seconds before draw
+define('BET_CLOSE_BEFORE_DRAW', 5);
 
 function db() {
     return Db::getInstance()->getConnection();
 }
-
 function get_current_round_index() {
     $now = time();
     $index = floor(($now - FIRST_GAME_START) / SLOT_ROUND_DURATION);
@@ -36,17 +33,13 @@ $stmt->execute([$user_id]);
 $row = $stmt->fetch(PDO::FETCH_ASSOC);
 $current_balance = $row ? (float)$row['balance'] : 0;
 
-// Sync session balance with database
 if (!isset($_SESSION['balance']) || $_SESSION['balance'] !== $current_balance) {
     $_SESSION['balance'] = $current_balance;
 }
-
 if (!isset($_SESSION['last_bet_amount']) || !is_numeric($_SESSION['last_bet_amount'])) $_SESSION['last_bet_amount'] = 0;
 
 // --- ANIMAL KEYS ---
 $animal_keys = ["chicken", "elephant", "tiger", "shrimp", "turtle", "fish"];
-
-// Initialize bets array
 if (!isset($_SESSION['bets']) || !is_array($_SESSION['bets'])) {
     $_SESSION['bets'] = [];
 }
@@ -78,9 +71,7 @@ function get_or_create_round($animals) {
 
     if (!$round) {
         $rand_keys = array_rand($animal_keys, 3);
-        if (!is_array($rand_keys)) {
-            $rand_keys = [$rand_keys];
-        }
+        if (!is_array($rand_keys)) $rand_keys = [$rand_keys];
         $rand_keys = array_unique($rand_keys);
         while (count($rand_keys) < 3) {
             $more = array_rand($animal_keys, 1);
@@ -91,8 +82,8 @@ function get_or_create_round($animals) {
         $slot1 = $animal_keys[$rand_keys[0]];
         $slot2 = $animal_keys[$rand_keys[1]];
         $slot3 = $animal_keys[$rand_keys[2]];
-
         $draw_time = date("Y-m-d H:i:s", FIRST_GAME_START + ($current_round_no + 1) * SLOT_ROUND_DURATION);
+
         $stmt2 = $pdo->prepare("INSERT INTO slot_rounds (round_no, slot1, slot2, slot3, draw_time) VALUES (?, ?, ?, ?, ?)");
         $stmt2->execute([$current_round_no, $slot1, $slot2, $slot3, $draw_time]);
         $round = [
@@ -128,26 +119,19 @@ if (
 }
 $_SESSION['previous_round_no'] = $round['round_no'];
 
-// --- Separate check for clearing bets if time has come ---
 if (isset($_SESSION['bets_clear_time']) && time() >= $_SESSION['bets_clear_time']) {
     clear_all_bets();
     unset($_SESSION['bets_clear_time']);
 }
 
-// --- Check if betting is open for the current round ---
 function is_bet_open($round) {
     $draw_time = strtotime($round['draw_time']);
     $now = time();
     $remaining = $draw_time - $now;
     return $remaining > BET_CLOSE_BEFORE_DRAW;
 }
+function clear_all_bets() { unset($_SESSION['bets']); }
 
-// --- Helper function to clear bets ---
-function clear_all_bets() {
-    unset($_SESSION['bets']);
-}
-
-// --- Result text helper (Myanmar concise) ---
 function result_text_message($payout, $won_animals, $animals) {
     if ($payout > 0) {
         $lines = [];
@@ -203,7 +187,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['set_balance'])) {
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['bet_animal'])) {
     $animal_key = $_POST['bet_animal'];
     $bet_amount = isset($_SESSION['last_bet_amount']) ? intval($_SESSION['last_bet_amount']) : 0;
-
     if (!in_array($animal_key, $animal_keys)) {
         echo json_encode([
             'success' => false,
@@ -213,7 +196,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['bet_animal'])) {
         ]);
         exit;
     }
-
     if (!is_bet_open($round)) {
         echo json_encode([
             'success' => false,
@@ -223,7 +205,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['bet_animal'])) {
         ]);
         exit;
     }
-
     if ($bet_amount <= 0) {
         echo json_encode([
             'success' => false,
@@ -242,7 +223,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['bet_animal'])) {
         ]);
         exit;
     }
-
     if (!isset($_SESSION['bets']) || !is_array($_SESSION['bets'])) {
         $_SESSION['bets'] = [];
         foreach ($animal_keys as $k) {
@@ -251,13 +231,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['bet_animal'])) {
     } elseif (!isset($_SESSION['bets'][$animal_key])) {
         $_SESSION['bets'][$animal_key] = 0;
     }
-
     $_SESSION['balance'] -= $bet_amount;
     $_SESSION['bets'][$animal_key] += $bet_amount;
 
     $stmt = $pdo->prepare("UPDATE users SET balance = ? WHERE id = ?");
     $stmt->execute([$_SESSION['balance'], $user_id]);
-
     echo json_encode([
         'success' => true,
         'message' => 'Bet placed successfully.',
@@ -274,7 +252,6 @@ if (isset($_GET['get_balance'])) {
     $row = $stmt->fetch(PDO::FETCH_ASSOC);
     $db_balance = $row ? (float)$row['balance'] : 0;
     $_SESSION['balance'] = $db_balance;
-
     echo json_encode([
         'balance' => $_SESSION['balance'],
         'bets' => isset($_SESSION['bets']) ? $_SESSION['bets'] : [],
@@ -288,12 +265,11 @@ if (isset($_GET['get_balance'])) {
     exit;
 }
 
-// --- API: Auto spin slots & payout at once ---
+// --- API: Auto spin slots & payout & round_no update ---
 if (isset($_GET['auto_spin'])) {
     $slot_keys = [$round['slot1'], $round['slot2'], $round['slot3']];
     $slot_wins = array_count_values($slot_keys);
 
-    // Ensure bets array
     if (!isset($_SESSION['bets']) || !is_array($_SESSION['bets'])) {
         $_SESSION['bets'] = [];
     }
@@ -304,11 +280,9 @@ if (isset($_GET['auto_spin'])) {
     }
     $user_bets = $_SESSION['bets'];
 
-    // Payout logic
     $payout = 0;
     $won_animals = [];
     $total_bet = 0;
-
     foreach ($user_bets as $animal => $bet_amt) {
         $bet_amt = (float)$bet_amt;
         $total_bet += $bet_amt;
@@ -326,8 +300,6 @@ if (isset($_GET['auto_spin'])) {
             ];
         }
     }
-
-    // Add payout to user balance if not already claimed for this round
     if (
         !isset($_SESSION['payout_claimed']) ||
         $_SESSION['payout_claimed'] !== $round['round_no']
@@ -339,8 +311,6 @@ if (isset($_GET['auto_spin'])) {
         }
         $_SESSION['payout_claimed'] = $round['round_no'];
     }
-
-    // Always update/insert bet record for this round
     $bet_animals = [];
     foreach ($animal_keys as $k) {
         $bet_animals[$k] = isset($user_bets[$k]) ? $user_bets[$k] : 0;
@@ -351,11 +321,9 @@ if (isset($_GET['auto_spin'])) {
     $status = $payout > 0 ? 'won' : 'lost';
     $winnings = number_format($payout, 2, '.', '');
     $created_at = date('Y-m-d H:i:s');
-
     $check = $pdo->prepare("SELECT id FROM bets WHERE user_id = ? AND round_no = ?");
     $check->execute([$user_id, $round['round_no']]);
     $already_bet = $check->fetch(PDO::FETCH_ASSOC);
-
     if ($already_bet) {
         $stmt = $pdo->prepare("UPDATE bets SET bet_animals = ?, amount = ?, status = ?, winnings = ?, draw_time = ?, draw_date = ?, created_at = ? WHERE id = ?");
         $stmt->execute([
@@ -368,10 +336,7 @@ if (isset($_GET['auto_spin'])) {
             $user_id, $round['round_no'], $bet_animals_json, $total_bet, $draw_time_str, $draw_date, $status, $winnings, $created_at
         ]);
     }
-
-    // Generate result text
     $result_text = $total_bet > 0 ? result_text_message($payout, $won_animals, $animals) : "ဒီပွဲအတွက် ဘာမှ မထိုးရသေးပါ။";
-
     header("Content-Type: application/json; charset=UTF-8");
     echo json_encode([
         'slots' => $slot_keys,
@@ -380,6 +345,7 @@ if (isset($_GET['auto_spin'])) {
         'won_animals' => $won_animals,
         'current_balance' => $_SESSION['balance'],
         'result_text' => $result_text,
+        'round_no' => $round['round_no'] + 1 // for UI display (human readable)
     ]);
     exit;
 }
@@ -776,7 +742,7 @@ function updateTimerDisplay(remaining) {
     timerDiv.textContent = "ပေါက်ကောင်ဖွင့်ရန် ကျန်ရှိချိန် - " + min + " မိနစ် " + (sec < 10 ? ("0" + sec) : sec) + " စက္ကန့်";
 }
 
-// Animated slot update + payout + result, now also updates round_no after spin
+// Animated slot update + payout + result
 function fetchAndUpdateSlotsAnimated(callback) {
     fetch(window.location.pathname + '?auto_spin=1')
         .then(response => response.json())
@@ -791,11 +757,11 @@ function fetchAndUpdateSlotsAnimated(callback) {
                     i++;
                     setTimeout(animateSlot, 2000);
                 } else if (typeof callback === "function") {
-                    // Force update round number on UI after spin!
+                    // Update round number after spin!
                     if (data.round_no) {
                         document.getElementById('round_no').textContent = data.round_no;
                     }
-                    callback(data); // Pass server result for payout display
+                    callback(data);
                 }
             }
             animateSlot();
@@ -840,7 +806,6 @@ function fetchDrawTimeAndStartTimer() {
                     clearInterval(timerInterval);
                     fetchAndUpdateSlotsAnimated(function (data) {
                         showPayoutMessageFromAutoSpin(data);
-                        // After spin, update round_no from API response (already done in fetchAndUpdateSlotsAnimated)
                         fetchDrawTimeAndStartTimer();
                     });
                     return;
@@ -936,7 +901,6 @@ document.querySelectorAll('.animal-item').forEach(el => {
     }
 });
 
-// Refresh balance and bets UI function
 function refreshBalance() {
     fetch(window.location.pathname + '?get_balance=1')
         .then(r => r.json())
