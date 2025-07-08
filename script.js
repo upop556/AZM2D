@@ -7,21 +7,28 @@ let currentView = 'home';
 // Helper functions for API and storage
 const AUTH = {
   getToken: function() {
-    return localStorage.getItem('azm2d_token');
+    return localStorage.getItem('azm2d_token') || sessionStorage.getItem('azm2d_token');
   },
 
   getPhone: function() {
-    return localStorage.getItem('azm2d_phone');
+    return localStorage.getItem('azm2d_phone') || sessionStorage.getItem('azm2d_phone');
   },
 
-  setLogin: function(phone, token) {
-    localStorage.setItem('azm2d_phone', phone);
-    localStorage.setItem('azm2d_token', token);
+  setLogin: function(phone, token, remember = false) {
+    if (remember) {
+      localStorage.setItem('azm2d_phone', phone);
+      localStorage.setItem('azm2d_token', token);
+    } else {
+      sessionStorage.setItem('azm2d_phone', phone);
+      sessionStorage.setItem('azm2d_token', token);
+    }
   },
 
   clearLogin: function() {
     localStorage.removeItem('azm2d_phone');
     localStorage.removeItem('azm2d_token');
+    sessionStorage.removeItem('azm2d_phone');
+    sessionStorage.removeItem('azm2d_token');
   },
 
   isLoggedIn: function() {
@@ -357,6 +364,7 @@ function handleLogin(e) {
   e.preventDefault();
   var phone = document.getElementById('login-phone').value.trim();
   var password = document.getElementById('login-password').value;
+  var rememberMe = document.getElementById('remember-me').checked;
   var submitBtn = document.getElementById('login-submit-btn');
   var errorMsg = document.getElementById('login-error-msg');
   var successMsg = document.getElementById('login-success-msg');
@@ -384,7 +392,7 @@ function handleLogin(e) {
   if (!isValid) return;
   submitBtn.classList.add('loading');
   submitBtn.disabled = true;
-  debugLog('Login request', { phone, passwordLength: password.length });
+  debugLog('Login request', { phone, passwordLength: password.length, rememberMe });
   fetch('https://amazemm.xyz/api/login.php', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -411,7 +419,7 @@ function handleLogin(e) {
       successMsg.textContent = 'အကောင့်ဝင်ခြင်း အောင်မြင်ပါသည်။';
       successMsg.style.display = 'block';
       if(data.token) {
-        AUTH.setLogin(phone, data.token); // localStorage only
+        AUTH.setLogin(phone, data.token, rememberMe);
         setTimeout(() => { showView('home'); }, 1000);
       }
     } else {
@@ -504,7 +512,7 @@ function handleRegister(e) {
       successMsg.style.display = 'block';
       document.getElementById('register-form').reset();
       if(data.token) {
-        AUTH.setLogin(phone, data.token); // localStorage only
+        AUTH.setLogin(phone, data.token, false);
         setTimeout(() => { showView('home'); }, 1500);
       }
     } else {
