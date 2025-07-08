@@ -24,7 +24,6 @@
   <link rel="stylesheet" href="css/header.css">
   <link rel="stylesheet" href="css/wallet-history-icon.css">
   <link rel="stylesheet" href="css/wallet-methods-row.css">
-<link rel="stylesheet" href="css/admin-marquee.css">
   <style>
     /* Login button (main page) */
     #main-login-btn-area {
@@ -80,11 +79,6 @@
     </div>
   </div>
 
-  <!-- Admin Marquee: header အောက်မှာ ထည့်ထားသည် -->
-  <div id="admin-marquee-area" style="display:none;">
-    <marquee id="admin-marquee-msg" scrollamount="5" behavior="scroll" direction="left"></marquee>
-  </div>
-
   <!-- Main UI (Home) -->
   <div id="main-ui">
     <div class="container">
@@ -96,6 +90,7 @@
       <div class="subtitle">
         <i class="fas fa-wallet"></i> လက်ကျန်ငွေ <span id="user-balance">0</span> ကျပ်
       </div>
+
       <div id="main-login-btn-area"></div>
       <div class="menu-grid">
         <a href="b/2dnumber.php" class="menu-btn">
@@ -550,7 +545,6 @@
 <script src="js/wallet-transaction-history.js"></script>
 <!-- KBZPay Tabs & Withdraw Handler (modular, keeps code clean) -->
 <script src="js/kpay-tabs-withdraw.js"></script>
-<script src="js/admin-marquee.js"></script>
 <script>
   // --- Login button show/hide logic for main page, with auto refresh after login ---
   document.addEventListener('DOMContentLoaded', function() {
