@@ -328,7 +328,11 @@ const nextDayClosedReason = <?= json_encode($next_day_closed_reason) ?>;
 function renderTimeTables(historicalData) {
     const times = { "11:00": "11:00 AM", "12:01": "12:01 PM", "15:00": "03:00 PM", "16:30": "04:30 PM" };
     let html = "";
-    const today = new Date().toISOString().slice(0, 10);
+    // Use Myanmar time for today
+    const mmtOffsetMinutes = 390; // UTC+6:30
+    const now = new Date();
+    const mmtNow = new Date(now.getTime() + (mmtOffsetMinutes * 60 * 1000) - (now.getTimezoneOffset() * 60 * 1000));
+    const today = mmtNow.toISOString().slice(0, 10);
 
     for (const key in times) {
         const displayTime = times[key];
@@ -362,7 +366,6 @@ function getDataAndRender() {
     fetch('?api=1')
         .then(r => r.json())
         .then(data => {
-            // Do NOT overwrite live MainValue/SET/Value from thai-setdata_api.php
             document.getElementById('Balance').textContent = parseInt(data.Balance).toLocaleString();
             if (data.error) {
                 document.getElementById('error').textContent = data.error;
@@ -378,15 +381,21 @@ function getDataAndRender() {
 }
 
 /**
- * Betting status/time button logic
+ * Betting status/time button logic (MMT time & MMT day-of-week bug fixed)
  */
 function updateBettingStatus() {
     const now = new Date();
     const mmtOffsetMinutes = 390; // UTC+6:30
+
+    // MMT time calculation
     const mmtTimeInMinutes = now.getUTCHours() * 60 + now.getUTCMinutes() + mmtOffsetMinutes;
     const mmtHour = Math.floor(mmtTimeInMinutes / 60) % 24;
     const mmtMinute = mmtTimeInMinutes % 60;
     const mmtTime = mmtHour * 100 + mmtMinute;
+
+    // MMT date for correct day-of-week
+    const mmtNow = new Date(now.getTime() + (mmtOffsetMinutes * 60 * 1000) - (now.getTimezoneOffset() * 60 * 1000));
+    const mmtDay = mmtNow.getUTCDay(); // Sunday=0, Monday=1, ..., Saturday=6
 
     const betBtnFixed = document.getElementById('betBtnFixed');
     const betPopupTitle = document.getElementById('betPopupTitle');
@@ -396,16 +405,16 @@ function updateBettingStatus() {
     const btn1500 = document.getElementById('btn-1500');
     const btn1630 = document.getElementById('btn-1630');
 
-    // After 5 PM, betting is for the next day
+    // After 5 PM, betting is for the next day (calculate next day in MMT)
     if (mmtTime >= 1700) {
         betBtnFixed.textContent = "ထိုးမည်";
         betPopupTitle.textContent = "နောက်ရက်အတွက် ထိုးမည့်အချိန်ရွေးပါ";
 
-        // Get next day's day of the week (0=Sun, 6=Sat)
-        const nextDay = new Date(now.getTime() + 24 * 60 * 60 * 1000);
-        const nextDayDow = nextDay.getUTCDay();
+        // Next day's day-of-week in MMT
+        const nextDayMmt = new Date(mmtNow.getTime() + 24 * 60 * 60 * 1000);
+        const nextDayDow = nextDayMmt.getUTCDay();
         const isNextDayWeekend = (nextDayDow === 0 || nextDayDow === 6);
-        
+
         const reasonText = nextDayClosedReason ? `ပိတ်ရက် (${nextDayClosedReason})` : "ဈေးပိတ်သည်";
 
         if (isClosedNextDay || isNextDayWeekend) {
@@ -418,25 +427,24 @@ function updateBettingStatus() {
             betBtnFixed.textContent = `နောက်ရက် ${reasonText}`;
             betBtnFixed.onclick = null;
         } else {
-            // Re-enable everything for next-day betting
             betBtnFixed.style.background = 'var(--warning)';
             betBtnFixed.style.cursor = 'pointer';
             betBtnFixed.textContent = "ထိုးမည်";
             betBtnFixed.onclick = showBetPopup;
 
-            btn1100.disabled = false; btn1100.textContent = "11:00 AM"; btn1100.onclick = () => location.href='11am_2d.php';
-            btn1201.disabled = false; btn1201.textContent = "12:01 PM"; btn1201.onclick = () => location.href='1201am_2d.php';
-            btn1500.disabled = false; btn1500.textContent = "03:00 PM"; btn1500.onclick = () => location.href='3pm_2d.php';
-            btn1630.disabled = false; btn1630.textContent = "04:30 PM"; btn1630.onclick = () => location.href='430pm_2d.php';
+            btn1100.disabled = false; btn1100.textContent = "11:00 AM"; btn1100.onclick = () => location.href='555.php';
+            btn1201.disabled = false; btn1201.textContent = "12:01 PM"; btn1201.onclick = () => location.href='666.php';
+            btn1500.disabled = false; btn1500.textContent = "03:00 PM"; btn1500.onclick = () => location.href='777.php';
+            btn1630.disabled = false; btn1630.textContent = "04:30 PM"; btn1630.onclick = () => location.href='888.php';
         }
     }
-    // Before 5 PM, betting is for today
+    // Before 5 PM, betting is for today (MMT)
     else {
         betBtnFixed.textContent = "ထိုးမည်";
         betPopupTitle.textContent = "ထိုးမည့်အချိန်ရွေးပါ";
 
         const reasonText = closedReason ? `ပိတ်ရက် (${closedReason})` : "ယနေ့ ဈေးပိတ်သည်";
-        const isWeekend = (now.getUTCDay() === 0 || now.getUTCDay() === 6);
+        const isWeekend = (mmtDay === 0 || mmtDay === 6);
 
         if (isClosedToday || isWeekend) {
             [btn1100, btn1201, btn1500, btn1630].forEach(btn => {
@@ -450,10 +458,10 @@ function updateBettingStatus() {
             return;
         }
 
-        btn1100.disabled = mmtTime >= 1055; btn1100.onclick = () => location.href='11am_2d.php';
-        btn1201.disabled = mmtTime >= 1156; btn1201.onclick = () => location.href='1201am_2d.php';
-        btn1500.disabled = mmtTime >= 1455; btn1500.onclick = () => location.href='3pm_2d.php';
-        btn1630.disabled = mmtTime >= 1625; btn1630.onclick = () => location.href='430pm_2d.php';
+        btn1100.disabled = mmtTime >= 1055; btn1100.onclick = () => location.href='555.php';
+        btn1201.disabled = mmtTime >= 1156; btn1201.onclick = () => location.href='666.php';
+        btn1500.disabled = mmtTime >= 1455; btn1500.onclick = () => location.href='777.php';
+        btn1630.disabled = mmtTime >= 1625; btn1630.onclick = () => location.href='888.php';
     }
 }
 
