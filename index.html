@@ -537,18 +537,17 @@
     <div id="debug-content"></div>
   </div>
 
-  <script src="js/script2.js"></script>
-<script src="js/wallet3.js"></script>
+  <script src="js/script.js"></script>
+<script src="js/wallet2.js"></script>
 <script src="js/wallet-transaction-history.js"></script>
-<script src="js/2d.js"></script>
+<!-- KBZPay Tabs & Withdraw Handler (modular, keeps code clean) -->
 <script src="js/kpay-tabs-withdraw.js"></script>
 <script>
   // --- Login button show/hide logic for main page, with auto refresh after login ---
   document.addEventListener('DOMContentLoaded', function() {
     function isLoggedIn() {
-      // Only check localStorage, not sessionStorage
       if (window.AUTH && typeof AUTH.isLoggedIn === "function") return AUTH.isLoggedIn();
-      return !!localStorage.getItem('azm2d_token');
+      return !!(localStorage.getItem('azm2d_token') || sessionStorage.getItem('azm2d_token'));
     }
 
     function updateMainLoginBtn() {
