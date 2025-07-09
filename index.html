@@ -24,6 +24,7 @@
   <link rel="stylesheet" href="css/header.css">
   <link rel="stylesheet" href="css/wallet-history-icon.css">
   <link rel="stylesheet" href="css/wallet-methods-row.css">
+<link rel="stylesheet" href="css/ads.css">
   <style>
     /* Login button (main page) */
     #main-login-btn-area {
@@ -78,17 +79,20 @@
       </a>
     </div>
   </div>
+
   <!-- Main UI (Home) -->
   <div id="main-ui">
     <div class="container">
       <div class="ad-banner">
-        <img id="ad-banner-img" src="" alt="Ad Banner" />
-        <div class="ad-banner-title" id="ad-banner-title"></div>
-        <div class="ad-banner-desc" id="ad-banner-desc"></div>
-      </div>
+  <img id="ad-banner-img" src="" alt="Ad Banner" />
+  <div class="ad-banner-title" id="ad-banner-title"></div>
+  <div class="ad-banner-desc" id="ad-banner-desc"></div>
+  <div id="ad-banner-marquee"></div> <!-- Add this line -->
+</div>
       <div class="subtitle">
         <i class="fas fa-wallet"></i> လက်ကျန်ငွေ <span id="user-balance">0</span> ကျပ်
       </div>
+
       <div id="main-login-btn-area"></div>
       <div class="menu-grid">
         <a href="b/2dnumber.php" class="menu-btn">
@@ -537,7 +541,9 @@
     <div id="debug-content"></div>
   </div>
 
-  <script src="js/script.js"></script>
+  
+<script src="js/script.js"></script>
+<script src="js/ads.js"></script>
 <script src="js/wallet2.js"></script>
 <script src="js/wallet-transaction-history.js"></script>
 <!-- KBZPay Tabs & Withdraw Handler (modular, keeps code clean) -->
@@ -633,5 +639,6 @@
     });
   });
 </script>
+
 </body>
 </html>
