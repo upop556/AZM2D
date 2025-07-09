@@ -408,180 +408,179 @@
   </div>
 
   <!-- KBZPay Section (with header & navbar) -->
-  <div class="kpay-container" id="kpay-container" style="display:none;">
-    <div class="header" style="background:#0974d0;">
-      <div class="header-title" style="color:#fff;">KBZPay</div>
-      <div class="header-icon">
-        <a href="#" id="kpay-back-btn" title="Back to Wallet">
-          <i class="fa fa-arrow-left" style="color:#fff;"></i>
-        </a>
-      </div>
-    </div>
-    <div class="kpay-title">
-      <i class="fab fa-cc-visa"></i> KBZPay ငွေသွင်း / ငွေထုတ်
-    </div>
-    <div class="kpay-balance">
-      လက်ကျန်ငွေ: <span id="kpay-user-balance">0</span> ကျပ်
-    </div>
-    <div class="tabs">
-      <button class="tab-btn active" id="tab-deposit">ငွေသွင်း</button>
-      <button class="tab-btn" id="tab-withdraw">ငွေထုတ်</button>
-    </div>
-    <!-- Deposit Form -->
-    <form class="kpay-form active" id="kpay-deposit-form" enctype="multipart/form-data" autocomplete="off">
-      <div class="kpay-label">ဒိုင် KBZPay ဖုန်းနံပါတ်</div>
-      <div class="kpay-admin-phone" id="admin-kpay-phone">09XXXXXXXXX</div>
-      <div class="kpay-note">
-        ဤ KBZPay ဖုန်းသို့ ငွေသွင်းပြီး Screenshot သို့မဟုတ် လုပ်ငန်းစဉ်နောက် ၆ လုံးထည့်ပါ။ <br>
-        Admin မှ အတည်ပြုလျှင်သာ ငွေသွင်းအောင်မြင်ပါမည်။
-      </div>
-      <label class="kpay-label" for="deposit-amount">ငွေသွင်း ပမာဏ (ကျပ်)</label>
-      <input class="kpay-input" type="number" min="1000" step="1000" id="deposit-amount" required placeholder="ဥပမာ - 5000">
-      <label class="kpay-label">Screenshot သို့မဟုတ် လုပ်ငန်းစဉ်နောက် ၆ လုံး</label>
-      <div class="kpay-upload" id="kpay-upload-box">
-        <input type="file" id="deposit-screenshot" accept="image/*" />
-        <span id="kpay-upload-text"><i class="fa fa-upload"></i> Screenshot တင်ရန် နှိပ်ပါ</span>
-        <div id="kpay-preview"></div>
-      </div>
-      <input class="kpay-input" type="text" id="deposit-txid" maxlength="6" pattern="[0-9A-Za-z]{6}" placeholder="လုပ်ငန်းစဉ်နောက် ၆ လုံး (မရှိရင်လျစ်ထားနိုင်သည်)">
-      <button class="kpay-btn" type="submit">အပ်နှံမှု တင်ပြမည်</button>
-      <div class="kpay-success" id="deposit-success"></div>
-      <div class="kpay-error" id="deposit-error"></div>
-    </form>
-    <!-- Withdraw Form -->
-    <form class="kpay-form" id="kpay-withdraw-form" autocomplete="off">
-      <div class="kpay-note">
-        ငွေထုတ်ရန် အောက်ပါအချက်အလက်များ ဖြည့်ပါ။ Admin အတည်ပြုမှသာ ငွေထုတ်နိုင်ပါသည်။
-      </div>
-      <label class="kpay-label" for="withdraw-amount">ထုတ်လိုသည့် ပမာဏ (ကျပ်)</label>
-      <input class="kpay-input" type="number" min="1000" step="1000" id="withdraw-amount" required placeholder="ဥပမာ - 5000">
-      <label class="kpay-label" for="withdraw-phone">ငွေလက်ခံမည့် KBZPay ဖုန်းနံပါတ်</label>
-      <input class="kpay-input" type="tel" id="withdraw-phone" required placeholder="ဖုန်းနံပါတ် (09...)">
-      <label class="kpay-label" for="withdraw-password">Password</label>
-      <input class="kpay-input" type="password" id="withdraw-password" required placeholder="သင့်အကောင့် စကားဝှက်">
-      <button class="kpay-btn" type="submit">ငွေထုတ်မှု တင်ပြမည်</button>
-      <div class="kpay-success" id="withdraw-success"></div>
-      <div class="kpay-error" id="withdraw-error"></div>
-    </form>
-    <!-- Actions -->
-    <div class="kpay-actions">
-      <span id="show-deposit" style="display:none;"><a href="#">ငွေသွင်းသို့ ပြန်သွားရန်</a></span>
-      <span id="show-withdraw"><a href="#">ငွေထုတ်သို့ ပြောင်းရန်</a></span>
-    </div>
-    <!-- Kpay navbar -->
-    <div class="navbar" id="kpay-navbar">
-      <a href="#" id="nav-home-kpay" class="active">
-        <i class="fas fa-home"></i>
-        <span>Home</span>
-      </a>
-      <a href="#" id="nav-wallet-kpay">
-        <i class="fas fa-wallet"></i>
-        <span>Wallet</span>
-      </a>
-      <a href="#" id="nav-help-kpay">
-        <i class="fas fa-question-circle"></i>
-        <span>Help</span>
-      </a>
-      <a href="#" id="nav-profile-kpay">
-        <i class="fas fa-user"></i>
-        <span>Profile</span>
+<div class="kpay-container" id="kpay-container" style="display:none;">
+  <div class="header" style="background:#0974d0;">
+    <div class="header-title" style="color:#fff;">KBZPay</div>
+    <div class="header-icon">
+      <a href="#" id="kpay-back-btn" title="Back to Wallet">
+        <i class="fa fa-arrow-left" style="color:#fff;"></i>
       </a>
     </div>
   </div>
-
-  <!-- WavePay Section (with header & navbar) -->
-  <div class="wave-container" id="wave-container" style="display:none;max-width:480px;margin:0 auto;">
-    <div class="header" style="background:#0974d0;">
-      <div class="header-title" style="color:#fff;">Wave Money</div>
-      <div class="header-icon">
-        <a href="#" id="wave-back-btn" title="Back to Wallet">
-          <i class="fa fa-arrow-left" style="color:#fff;"></i>
-        </a>
-      </div>
+  <div class="kpay-title">
+    <i class="fab fa-cc-visa"></i> KBZPay ငွေသွင်း / ငွေထုတ်
+  </div>
+  <div class="kpay-balance">
+    လက်ကျန်ငွေ: <span id="kpay-user-balance">0</span> ကျပ်
+  </div>
+  <div class="tabs">
+    <button class="tab-btn active" id="tab-deposit">ငွေသွင်း</button>
+    <button class="tab-btn" id="tab-withdraw">ငွေထုတ်</button>
+  </div>
+  <!-- Deposit Form -->
+  <form class="kpay-form active" id="kpay-deposit-form" enctype="multipart/form-data" autocomplete="off">
+    <div class="kpay-label">ဒိုင် KBZPay ဖုန်းနံပါတ်</div>
+    <div class="kpay-admin-phone" id="admin-kpay-phone">09XXXXXXXXX</div>
+    <div class="kpay-note">
+      ဤ KBZPay ဖုန်းသို့ ငွေသွင်းပြီး Screenshot သို့မဟုတ် လုပ်ငန်းစဉ်နောက် ၆ လုံးထည့်ပါ။ <br>
+      Admin မှ အတည်ပြုလျှင်သာ ငွေသွင်းအောင်မြင်ပါမည်။
     </div>
-    <main>
-      <!-- Balance Section -->
-      <section class="wm-section" style="text-align:center;">
-        <div class="wm-title"><i class="fas fa-wallet"></i> လက်ကျန်ငွေ</div>
-        <div class="wm-balance" id="wm-balance">0</div>
-        <div style="font-size:1em;">ကျပ်</div>
-      </section>
-      <!-- Dai Note -->
-      <section class="wm-section">
-        <div class="wm-title"><i class="fas fa-info-circle"></i> ဒိုင်မှတ်ချက်</div>
-        <div class="wm-note" id="wm-note">
-          အရေးကြီး: ငွေသွင်း/ထုတ်မှုသည် ဒိုင်လုပ်ဆောင်သည်။ Admin မှ အတည်ပြုမှသာ သင့်အကောင့်တွင် လက်ကျန်ငွေတိုး/လျော့မည်။ Admin မှ ပယ်ချပါက မူရင်း လက်ကျန်ငွေနှင့် ပြန်လည်ထပ်ပေါင်းမည်။
-        </div>
-      </section>
-      <!-- Tabs for Deposit/Withdraw -->
-      <section class="wm-section">
-        <div class="wm-tabs">
-          <button class="wm-tab-btn active" id="wm-tab-deposit">ငွေသွင်း</button>
-          <button class="wm-tab-btn" id="wm-tab-withdraw">ငွေထုတ်</button>
-        </div>
-        <!-- Deposit Form -->
-        <form id="wm-deposit-form" style="display:block;">
-          <div class="wm-form-group">
-            <label class="wm-label">ဒိုင် WavePay ဖုန်းနံပါတ်</label>
-            <div>
-              <span id="wm-dai-phone" style="font-weight:600;font-size:1.08em;">09XXXXXXXXX</span>
-              <button type="button" class="wm-copy-btn" id="wm-copy-dai-phone"><i class="fa fa-copy"></i> Copy</button>
-            </div>
-          </div>
-          <div class="wm-form-group">
-            <label class="wm-label" for="wm-deposit-amount">သွင်းမည့်ငွေပမာဏ (ကျပ်)</label>
-            <input type="number" min="1000" step="1000" class="wm-input" id="wm-deposit-amount" required placeholder="ဥပမာ - 5000">
-          </div>
-          <div class="wm-form-group">
-            <label class="wm-label" for="wm-deposit-screenshot">Screenshot သို့မဟုတ် လုပ်ငန်းစဉ် နောက်ဆုံး ၆ လုံး</label>
-            <input type="file" accept="image/*" id="wm-deposit-screenshot" style="margin-bottom:6px;">
-            <input type="text" maxlength="6" class="wm-input" id="wm-deposit-txid" placeholder="လုပ်ငန်းစဉ်နောက် ၆ လုံး (မရှိရင်လျစ်ထားနိုင်သည်)">
-          </div>
-          <button class="wm-btn" type="submit">အပ်နှံမှု တင်ပြမည်</button>
-          <div class="wm-success" id="wm-deposit-success" style="display:none;"></div>
-          <div class="wm-error" id="wm-deposit-error" style="display:none;"></div>
-        </form>
-        <!-- Withdraw Form -->
-        <form id="wm-withdraw-form" style="display:none;">
-          <div class="wm-form-group">
-            <label class="wm-label" for="wm-withdraw-phone">ငွေလက်ခံမည့် WavePay ဖုန်းနံပါတ်</label>
-            <input type="tel" class="wm-input" id="wm-withdraw-phone" required placeholder="ဖုန်းနံပါတ် (09...)">
-          </div>
-          <div class="wm-form-group">
-            <label class="wm-label" for="wm-withdraw-amount">ထုတ်ယူမည့်ငွေပမာဏ (ကျပ်)</label>
-            <input type="number" min="1000" step="1000" class="wm-input" id="wm-withdraw-amount" required placeholder="ဥပမာ - 5000">
-          </div>
-          <div class="wm-form-group">
-            <label class="wm-label" for="wm-withdraw-password">သင့်အကောင့် စကားဝှက်</label>
-            <input type="password" class="wm-input" id="wm-withdraw-password" required placeholder="စကားဝှက်">
-          </div>
-          <button class="wm-btn" type="submit">ငွေထုတ်မှု တင်ပြမည်</button>
-          <div class="wm-success" id="wm-withdraw-success" style="display:none;"></div>
-          <div class="wm-error" id="wm-withdraw-error" style="display:none;"></div>
-        </form>
-      </section>
-    </main>
-    <!-- WavePay navbar -->
-    <div class="navbar" id="wave-navbar">
-      <a href="#" id="nav-home-wave" class="active">
-        <i class="fas fa-home"></i>
-        <span>Home</span>
-      </a>
-      <a href="#" id="nav-wallet-wave">
-        <i class="fas fa-wallet"></i>
-        <span>Wallet</span>
-      </a>
-      <a href="#" id="nav-help-wave">
-        <i class="fas fa-question-circle"></i>
-        <span>Help</span>
-      </a>
-      <a href="#" id="nav-profile-wave">
-        <i class="fas fa-user"></i>
-        <span>Profile</span>
+    <label class="kpay-label" for="kpay-deposit-amount">ငွေသွင်း ပမာဏ (ကျပ်)</label>
+    <input class="kpay-input" type="number" min="1000" step="1000" id="kpay-deposit-amount" required placeholder="ဥပမာ - 5000">
+    <label class="kpay-label">Screenshot သို့မဟုတ် လုပ်ငန်းစဉ်နောက် ၆ လုံး</label>
+    <div class="kpay-upload" id="kpay-upload-box">
+      <input type="file" id="kpay-deposit-screenshot" accept="image/*" />
+      <span id="kpay-upload-text"><i class="fa fa-upload"></i> Screenshot တင်ရန် နှိပ်ပါ</span>
+      <div id="kpay-preview"></div>
+    </div>
+    <input class="kpay-input" type="text" id="kpay-deposit-txid" maxlength="6" pattern="[0-9A-Za-z]{6}" placeholder="လုပ်ငန်းစဉ်နောက် ၆ လုံး (မရှိရင်လျစ်ထားနိုင်သည်)">
+    <button class="kpay-btn" type="submit">အပ်နှံမှု တင်ပြမည်</button>
+    <div class="kpay-success" id="kpay-deposit-success"></div>
+    <div class="kpay-error" id="kpay-deposit-error"></div>
+  </form>
+  <!-- Withdraw Form -->
+  <form class="kpay-form" id="kpay-withdraw-form" autocomplete="off">
+    <div class="kpay-note">
+      ငွေထုတ်ရန် အောက်ပါအချက်အလက်များ ဖြည့်ပါ။ Admin အတည်ပြုမှသာ ငွေထုတ်နိုင်ပါသည်။
+    </div>
+    <label class="kpay-label" for="withdraw-amount">ထုတ်လိုသည့် ပမာဏ (ကျပ်)</label>
+    <input class="kpay-input" type="number" min="1000" step="1000" id="withdraw-amount" required placeholder="ဥပမာ - 5000">
+    <label class="kpay-label" for="withdraw-phone">ငွေလက်ခံမည့် KBZPay ဖုန်းနံပါတ်</label>
+    <input class="kpay-input" type="tel" id="withdraw-phone" required placeholder="ဖုန်းနံပါတ် (09...)">
+    <label class="kpay-label" for="withdraw-password">Password</label>
+    <input class="kpay-input" type="password" id="withdraw-password" required placeholder="သင့်အကောင့် စကားဝှက်">
+    <button class="kpay-btn" type="submit">ငွေထုတ်မှု တင်ပြမည်</button>
+    <div class="kpay-success" id="withdraw-success"></div>
+    <div class="kpay-error" id="withdraw-error"></div>
+  </form>
+  <!-- Actions -->
+  <div class="kpay-actions">
+    <span id="show-deposit" style="display:none;"><a href="#">ငွေသွင်းသို့ ပြန်သွားရန်</a></span>
+    <span id="show-withdraw"><a href="#">ငွေထုတ်သို့ ပြောင်းရန်</a></span>
+  </div>
+  <!-- Kpay navbar -->
+  <div class="navbar" id="kpay-navbar">
+    <a href="#" id="nav-home-kpay" class="active">
+      <i class="fas fa-home"></i>
+      <span>Home</span>
+    </a>
+    <a href="#" id="nav-wallet-kpay">
+      <i class="fas fa-wallet"></i>
+      <span>Wallet</span>
+    </a>
+    <a href="#" id="nav-help-kpay">
+      <i class="fas fa-question-circle"></i>
+      <span>Help</span>
+    </a>
+    <a href="#" id="nav-profile-kpay">
+      <i class="fas fa-user"></i>
+      <span>Profile</span>
+    </a>
+  </div>
+</div>
+
+<!-- WavePay Section (with header & navbar) -->
+<div class="wave-container" id="wave-container" style="display:none;max-width:480px;margin:0 auto;">
+  <div class="header" style="background:#0974d0;">
+    <div class="header-title" style="color:#fff;">Wave Money</div>
+    <div class="header-icon">
+      <a href="#" id="wave-back-btn" title="Back to Wallet">
+        <i class="fa fa-arrow-left" style="color:#fff;"></i>
       </a>
     </div>
   </div>
-
+  <main>
+    <!-- Balance Section -->
+    <section class="wm-section" style="text-align:center;">
+      <div class="wm-title"><i class="fas fa-wallet"></i> လက်ကျန်ငွေ</div>
+      <div class="wm-balance" id="wm-balance">0</div>
+      <div style="font-size:1em;">ကျပ်</div>
+    </section>
+    <!-- Dai Note -->
+    <section class="wm-section">
+      <div class="wm-title"><i class="fas fa-info-circle"></i> ဒိုင်မှတ်ချက်</div>
+      <div class="wm-note" id="wm-note">
+        အရေးကြီး: ငွေသွင်း/ထုတ်မှုသည် ဒိုင်လုပ်ဆောင်သည်။ Admin မှ အတည်ပြုမှသာ သင့်အကောင့်တွင် လက်ကျန်ငွေတိုး/လျော့မည်။ Admin မှ ပယ်ချပါက မူရင်း လက်ကျန်ငွေနှင့် ပြန်လည်ထပ်ပေါင်းမည်။
+      </div>
+    </section>
+    <!-- Tabs for Deposit/Withdraw -->
+    <section class="wm-section">
+      <div class="wm-tabs">
+        <button class="wm-tab-btn active" id="wm-tab-deposit">ငွေသွင်း</button>
+        <button class="wm-tab-btn" id="wm-tab-withdraw">ငွေထုတ်</button>
+      </div>
+      <!-- Deposit Form -->
+      <form id="wm-deposit-form" style="display:block;">
+        <div class="wm-form-group">
+          <label class="wm-label">ဒိုင် WavePay ဖုန်းနံပါတ်</label>
+          <div>
+            <span id="wm-dai-phone" style="font-weight:600;font-size:1.08em;">09XXXXXXXXX</span>
+            <button type="button" class="wm-copy-btn" id="wm-copy-dai-phone"><i class="fa fa-copy"></i> Copy</button>
+          </div>
+        </div>
+        <div class="wm-form-group">
+          <label class="wm-label" for="wm-deposit-amount">သွင်းမည့်ငွေပမာဏ (ကျပ်)</label>
+          <input type="number" min="1000" step="1000" class="wm-input" id="wm-deposit-amount" required placeholder="ဥပမာ - 5000">
+        </div>
+        <div class="wm-form-group">
+          <label class="wm-label" for="wm-deposit-screenshot">Screenshot သို့မဟုတ် လုပ်ငန်းစဉ် နောက်ဆုံး ၆ လုံး</label>
+          <input type="file" accept="image/*" id="wm-deposit-screenshot" style="margin-bottom:6px;">
+          <input type="text" maxlength="6" class="wm-input" id="wm-deposit-txid" placeholder="လုပ်ငန်းစဉ်နောက် ၆ လုံး (မရှိရင်လျစ်ထားနိုင်သည်)">
+        </div>
+        <button class="wm-btn" type="submit">အပ်နှံမှု တင်ပြမည်</button>
+        <div class="wm-success" id="wm-deposit-success" style="display:none;"></div>
+        <div class="wm-error" id="wm-deposit-error" style="display:none;"></div>
+      </form>
+      <!-- Withdraw Form -->
+      <form id="wm-withdraw-form" style="display:none;">
+        <div class="wm-form-group">
+          <label class="wm-label" for="wm-withdraw-phone">ငွေလက်ခံမည့် WavePay ဖုန်းနံပါတ်</label>
+          <input type="tel" class="wm-input" id="wm-withdraw-phone" required placeholder="ဖုန်းနံပါတ် (09...)">
+        </div>
+        <div class="wm-form-group">
+          <label class="wm-label" for="wm-withdraw-amount">ထုတ်ယူမည့်ငွေပမာဏ (ကျပ်)</label>
+          <input type="number" min="1000" step="1000" class="wm-input" id="wm-withdraw-amount" required placeholder="ဥပမာ - 5000">
+        </div>
+        <div class="wm-form-group">
+          <label class="wm-label" for="wm-withdraw-password">သင့်အကောင့် စကားဝှက်</label>
+          <input type="password" class="wm-input" id="wm-withdraw-password" required placeholder="စကားဝှက်">
+        </div>
+        <button class="wm-btn" type="submit">ငွေထုတ်မှု တင်ပြမည်</button>
+        <div class="wm-success" id="wm-withdraw-success" style="display:none;"></div>
+        <div class="wm-error" id="wm-withdraw-error" style="display:none;"></div>
+      </form>
+    </section>
+  </main>
+  <!-- WavePay navbar -->
+  <div class="navbar" id="wave-navbar">
+    <a href="#" id="nav-home-wave" class="active">
+      <i class="fas fa-home"></i>
+      <span>Home</span>
+    </a>
+    <a href="#" id="nav-wallet-wave">
+      <i class="fas fa-wallet"></i>
+      <span>Wallet</span>
+    </a>
+    <a href="#" id="nav-help-wave">
+      <i class="fas fa-question-circle"></i>
+      <span>Help</span>
+    </a>
+    <a href="#" id="nav-profile-wave">
+      <i class="fas fa-user"></i>
+      <span>Profile</span>
+    </a>
+  </div>
+</div>
 
 
 <div class="navbar" id="main-navbar">
