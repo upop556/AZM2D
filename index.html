@@ -230,35 +230,41 @@
       </div>
 
 <!-- Affiliate / Referral Program Section -->
-      <div class="card" id="affiliate-section" style="margin-top:18px;">
-        <h2 class="section-title">
-          <i class="fas fa-link"></i> Affiliate / Referral Program
-        </h2>
-        <div style="margin-bottom:7px;">
-          <strong>Referral Code:</strong>
-          <span id="referral-code" style="user-select:all;font-family:monospace;">-</span>
-          <button id="copy-referral-btn" title="Copy Code" style="margin-left:6px;">
-            <i class="fa fa-copy"></i>
-          </button>
-        </div>
-        <div style="margin-bottom:7px;">
-          <strong>Referral Link:</strong>
-          <span id="referral-link" style="user-select:all;font-size:0.98em;">-</span>
-          <button id="copy-referral-link-btn" title="Copy Link" style="margin-left:6px;">
-            <i class="fa fa-copy"></i>
-          </button>
-          <button id="share-referral-link-btn" title="Share Link" style="margin-left:6px;">
-            <i class="fa fa-share"></i>
-          </button>
-        </div>
-        <div style="margin-bottom:7px;">
-          <span>Referred Users: <span id="referral-count">0</span></span>
-          &nbsp;|&nbsp;
-          <span>Earned Bonus: <span id="referral-bonus">0</span> ကျပ်</span>
-        </div>
-        <div id="referral-copy-success" style="display:none;color:green;font-size:0.97em;">Copied!</div>
-      </div>
-      <!-- End Affiliate / Referral Program Section -->
+<div class="card" id="affiliate-section" style="margin-top:18px;">
+  <h2 class="section-title">
+    <i class="fas fa-link"></i> Affiliate / Referral Program
+  </h2>
+  <div style="margin-bottom:7px;">
+    <strong>Referral Code:</strong>
+    <span id="referral-code" style="user-select:all;font-family:monospace;">-</span>
+    <button id="copy-referral-btn" title="Copy Code" style="margin-left:6px;">
+      <i class="fa fa-copy"></i>
+    </button>
+  </div>
+  <div style="margin-bottom:7px;">
+    <strong>Referral Link:</strong>
+    <span id="referral-link" style="user-select:all;font-size:0.98em;">-</span>
+    <button id="copy-referral-link-btn" title="Copy Link" style="margin-left:6px;">
+      <i class="fa fa-copy"></i>
+    </button>
+    <button id="share-referral-link-btn" title="Share Link" style="margin-left:6px;">
+      <i class="fa fa-share"></i>
+    </button>
+  </div>
+  <div style="margin-bottom:7px;">
+    <span>Referred Users: <span id="referral-count">0</span></span>
+    &nbsp;|&nbsp;
+    <span>Earned Bonus: <span id="referral-bonus">0</span> ကျပ်</span>
+  </div>
+  <div style="margin-bottom:7px;">
+    <span style="color:#1C7D1C;font-weight:bold;">
+      သင့် Referral Link မှတစ်ဆင့် ငွေသွင်းသူတစ်ဦးစီအတွက် <u>ကော်မရှင်ခ ၃%</u> ရရှိမည်။
+    </span>
+  </div>
+  <div id="referral-copy-success" style="display:none;color:green;font-size:0.97em;">Copied!</div>
+</div>
+<!-- End Affiliate / Referral Program Section -->
+
 
       <div class="card">
         <h2 class="section-title">စကားဝှက် ပြောင်းရန်</h2>
@@ -288,7 +294,7 @@
     </div>
   </div>
 
-<!-- ... (other code below unchanged) ... -->
+  <!-- ... (other code below unchanged) ... -->
 
   <!-- Login/Register UI (hidden by default) -->
   <div id="account-ui" style="display:none;">
@@ -320,6 +326,7 @@
           <button id="login-submit-btn" class="form-btn" type="submit">အကောင့်ဝင်မည်</button>
           <a href="#" onclick="alert('ဤလုပ်ဆောင်ချက်သည် လက်ရှိတွင် မရနိုင်သေးပါ။'); return false;" class="forgot-password">စကားဝှက်မေ့နေပါသလား?</a>
         </form>
+
         <!-- Register Form -->
         <form id="register-form" style="display:none;">
           <div class="form-title">အသစ်အကောင့်ဖွင့်ရန်</div>
@@ -352,8 +359,12 @@
             </div>
           </div>
           <div class="form-group">
-            <label class="form-label" for="reg-agent_code">Agent Code <span class="optional-tip">(ရှိပါကသာ ထည့်ပါ)</span></label>
-            <input class="form-input" type="text" id="reg-agent_code" name="agent_code" placeholder="Agent Code (မရှိရင်ကျော်ပါ)">
+            <label class="form-label" for="reg-referral_code">Referral Code <span class="optional-tip">(ရှိပါကသာ ထည့်ပါ)</span></label>
+            <input class="form-input" type="text" id="reg-referral_code" name="referral_code" placeholder="Referral Code (မရှိရင်ကျော်ပါ)">
+          </div>
+          <div class="form-checkbox-group">
+            <input type="checkbox" id="register-remember-me" class="form-checkbox">
+            <label for="register-remember-me" class="form-checkbox-label">အကောင့်မှတ်ထားရန်</label>
           </div>
           <button id="reg-submit-btn" class="form-btn" type="submit">အကောင့်ဖွင့်မည်</button>
         </form>
@@ -586,6 +597,7 @@
 <!-- KBZPay Tabs & Withdraw Handler (modular, keeps code clean) -->
 <script src="js/kpay-tabs-withdraw.js"></script>
 <script src="js/profile.js"></script>
+<script src="js/register.js"></script>
 
 
 <script>
