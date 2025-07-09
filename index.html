@@ -170,6 +170,8 @@
     </div>
   </div>
 
+  <!-- ... (other code above unchanged) ... -->
+
   <!-- Profile UI (hidden by default) -->
   <div id="profile-ui" style="display:none;">
     <div class="container">
@@ -193,6 +195,7 @@
         <div class="balance-amount" id="balance-amount">0</div>
         <div class="balance-currency">ကျပ်</div>
       </div>
+      
       <div class="card">
         <h2 class="section-title">အကောင့်အချက်အလက်များ</h2>
         <ul class="info-list">
@@ -225,6 +228,38 @@
           </li>
         </ul>
       </div>
+
+<!-- Affiliate / Referral Program Section -->
+      <div class="card" id="affiliate-section" style="margin-top:18px;">
+        <h2 class="section-title">
+          <i class="fas fa-link"></i> Affiliate / Referral Program
+        </h2>
+        <div style="margin-bottom:7px;">
+          <strong>Referral Code:</strong>
+          <span id="referral-code" style="user-select:all;font-family:monospace;">-</span>
+          <button id="copy-referral-btn" title="Copy Code" style="margin-left:6px;">
+            <i class="fa fa-copy"></i>
+          </button>
+        </div>
+        <div style="margin-bottom:7px;">
+          <strong>Referral Link:</strong>
+          <span id="referral-link" style="user-select:all;font-size:0.98em;">-</span>
+          <button id="copy-referral-link-btn" title="Copy Link" style="margin-left:6px;">
+            <i class="fa fa-copy"></i>
+          </button>
+          <button id="share-referral-link-btn" title="Share Link" style="margin-left:6px;">
+            <i class="fa fa-share"></i>
+          </button>
+        </div>
+        <div style="margin-bottom:7px;">
+          <span>Referred Users: <span id="referral-count">0</span></span>
+          &nbsp;|&nbsp;
+          <span>Earned Bonus: <span id="referral-bonus">0</span> ကျပ်</span>
+        </div>
+        <div id="referral-copy-success" style="display:none;color:green;font-size:0.97em;">Copied!</div>
+      </div>
+      <!-- End Affiliate / Referral Program Section -->
+
       <div class="card">
         <h2 class="section-title">စကားဝှက် ပြောင်းရန်</h2>
         <div class="success-message" id="password-success-message" style="display:none;">
@@ -252,6 +287,8 @@
       </button>
     </div>
   </div>
+
+<!-- ... (other code below unchanged) ... -->
 
   <!-- Login/Register UI (hidden by default) -->
   <div id="account-ui" style="display:none;">
@@ -548,6 +585,9 @@
 <script src="js/wallet-transaction-history.js"></script>
 <!-- KBZPay Tabs & Withdraw Handler (modular, keeps code clean) -->
 <script src="js/kpay-tabs-withdraw.js"></script>
+<script src="js/profile.js"></script>
+
+
 <script>
   // --- Login button show/hide logic for main page, with auto refresh after login ---
   document.addEventListener('DOMContentLoaded', function() {
