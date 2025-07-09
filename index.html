@@ -172,127 +172,140 @@
 
   <!-- ... (other code above unchanged) ... -->
 
-  <!-- Profile UI (hidden by default) -->
-  <div id="profile-ui" style="display:none;">
-    <div class="container">
-      <div class="spinner" id="loading-spinner"></div>
-      <div class="error-message" id="api-error-message" style="display:none;">
-        အချက်အလက်များ ရယူရန် မအောင်မြင်ပါ။
+<!-- Profile UI (hidden by default) -->
+<div id="profile-ui" style="display:none;">
+  <div class="container" style="max-width:420px;margin:auto;">
+    <div class="spinner" id="loading-spinner"></div>
+    <div class="error-message" id="api-error-message" style="display:none;">
+      အချက်အလက်များ ရယူရန် မအောင်မြင်ပါ။
+    </div>
+    <!-- Profile Card -->
+    <div class="card" style="padding-bottom:18px; position:relative;">
+      <div class="profile-header" style="gap:16px;">
+        <div class="profile-avatar" id="profile-avatar" style="min-width:68px; position:relative;">
+          <img src="images/default-avatar.png" id="profile-avatar-img" style="display:none; width:68px; height:68px; border-radius:50%; object-fit:cover; border:2px solid #ddd;" alt="Profile Photo"/>
+          <i class="fas fa-user" id="profile-avatar-icon"></i>
+          <!-- Profile Photo Edit Button -->
+          <label for="profile-photo-input" class="edit-avatar-btn" style="position:absolute; bottom:-2px; right:-2px; background:#fff; border-radius:50%; padding:4px; cursor:pointer; box-shadow:0 2px 8px rgba(0,0,0,0.13); border:1.5px solid #eee;">
+            <i class="fas fa-camera"></i>
+          </label>
+          <input type="file" id="profile-photo-input" accept="image/*" style="display:none;">
+        </div>
+        <div class="profile-title" style="display:flex;flex-direction:column;justify-content:center;">
+          <h1 class="profile-name" id="profile-name" style="margin:0 0 3px 0; font-size:1.15rem; font-weight:700; color:#2d39a7; letter-spacing:0.01em;">-</h1>
+          <p class="profile-phone" id="profile-phone" style="margin:0;color:#888;font-size:1rem;font-weight:500;">-</p>
+        </div>
       </div>
-      <div class="card">
-        <div class="profile-header">
-          <div class="profile-avatar" id="profile-avatar">
+      <div id="photo-upload-success" class="success-message" style="display:none;position:absolute;top:0;left:0;right:0;text-align:center;z-index:2;">
+        ပုံကို အောင်မြင်စွာ ပြောင်းလဲပြီးပါပြီ!
+      </div>
+      <div id="photo-upload-error" class="error-message" style="display:none;position:absolute;top:0;left:0;right:0;text-align:center;z-index:2;">
+        ပုံတင်ခြင်း မအောင်မြင်ပါ။
+      </div>
+    </div>
+    <!-- Balance Card -->
+    <div class="balance-card" style="background:#2d39a7;color:#fff;padding:18px 0 14px 0; margin-bottom:18px;">
+      <div class="balance-label" style="font-size:1.08em;margin-bottom:3px;">လက်ကျန်ငွေ</div>
+      <div class="balance-amount" id="balance-amount" style="font-size:2.1rem;font-weight:700;margin:6px 0 2px 0;line-height:1.1;">0</div>
+      <div class="balance-currency" style="font-size:1.1rem;font-weight:500;">ကျပ်</div>
+    </div>
+    <!-- Info Card -->
+    <div class="card info-card" style="padding-top:18px;">
+      <div class="section-title" style="font-size:1.12em;font-weight:700;color:#2d39a7;margin-bottom:10px;">အကောင့်အချက်အလက်များ</div>
+      <ul class="info-list" style="list-style:none;padding:0;margin:0;">
+        <li class="info-item" style="display:flex;align-items:center;padding:11px 0;border-bottom:1px solid #eee;">
+          <div class="info-icon" style="width:32px;height:32px;min-width:32px;background:#ecf0fa;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#2d39a7;margin-right:13px;font-size:1.12em;">
             <i class="fas fa-user"></i>
           </div>
-          <div class="profile-title">
-            <h1 class="profile-name" id="profile-name">-</h1>
-            <p class="profile-phone" id="profile-phone">-</p>
+          <div class="info-content" style="display:flex;flex-direction:column;gap:0;">
+            <div class="info-label" style="color:#888;font-size:0.98em;font-weight:500;">အမည်</div>
+            <div class="info-value" id="info-name" style="font-weight:600;font-size:1.06em;color:#222;">-</div>
           </div>
-        </div>
-      </div>
-      <div class="balance-card">
-        <div class="balance-label">လက်ကျန်ငွေ</div>
-        <div class="balance-amount" id="balance-amount">0</div>
-        <div class="balance-currency">ကျပ်</div>
-      </div>
-      
-      <div class="card">
-        <h2 class="section-title">အကောင့်အချက်အလက်များ</h2>
-        <ul class="info-list">
-          <li class="info-item">
-            <div class="info-icon">
-              <i class="fas fa-user"></i>
-            </div>
-            <div class="info-content">
-              <div class="info-label">အမည်</div>
-              <div class="info-value" id="info-name">-</div>
-            </div>
-          </li>
-          <li class="info-item">
-            <div class="info-icon">
-              <i class="fas fa-phone"></i>
-            </div>
-            <div class="info-content">
-              <div class="info-label">ဖုန်းနံပါတ်</div>
-              <div class="info-value" id="info-phone">-</div>
-            </div>
-          </li>
-          <li class="info-item">
-            <div class="info-icon">
-              <i class="fas fa-id-card"></i>
-            </div>
-            <div class="info-content">
-              <div class="info-label">Agent Code</div>
-              <div class="info-value" id="info-agent-code">-</div>
-            </div>
-          </li>
-        </ul>
-      </div>
-
-<!-- Affiliate / Referral Program Section -->
-<div class="card" id="affiliate-section" style="margin-top:18px;">
-  <h2 class="section-title">
-    <i class="fas fa-link"></i> Affiliate / Referral Program
-  </h2>
-  <div style="margin-bottom:7px;">
-    <strong>Referral Code:</strong>
-    <span id="referral-code" style="user-select:all;font-family:monospace;">-</span>
-    <button id="copy-referral-btn" title="Copy Code" style="margin-left:6px;">
-      <i class="fa fa-copy"></i>
-    </button>
-  </div>
-  <div style="margin-bottom:7px;">
-    <strong>Referral Link:</strong>
-    <span id="referral-link" style="user-select:all;font-size:0.98em;">-</span>
-    <button id="copy-referral-link-btn" title="Copy Link" style="margin-left:6px;">
-      <i class="fa fa-copy"></i>
-    </button>
-    <button id="share-referral-link-btn" title="Share Link" style="margin-left:6px;">
-      <i class="fa fa-share"></i>
-    </button>
-  </div>
-  <div style="margin-bottom:7px;">
-    <span>Referred Users: <span id="referral-count">0</span></span>
-    &nbsp;|&nbsp;
-    <span>Earned Bonus: <span id="referral-bonus">0</span> ကျပ်</span>
-  </div>
-  <div style="margin-bottom:7px;">
-    <span style="color:#1C7D1C;font-weight:bold;">
-      သင့် Referral Link မှတစ်ဆင့် ငွေသွင်းသူတစ်ဦးစီအတွက် <u>ကော်မရှင်ခ ၃%</u> ရရှိမည်။
-    </span>
-  </div>
-  <div id="referral-copy-success" style="display:none;color:green;font-size:0.97em;">Copied!</div>
-</div>
-<!-- End Affiliate / Referral Program Section -->
-
-
-      <div class="card">
-        <h2 class="section-title">စကားဝှက် ပြောင်းရန်</h2>
-        <div class="success-message" id="password-success-message" style="display:none;">
-          စကားဝှက် အောင်မြင်စွာ ပြောင်းလဲပြီးပါပြီ
-        </div>
-        <div class="error-message" id="password-error-message" style="display:none;"></div>
-        <form id="change-password-form">
-          <div class="form-group">
-            <label class="form-label" for="current-password">လက်ရှိ စကားဝှက်</label>
-            <input class="form-input" type="password" id="current-password" required>
+        </li>
+        <li class="info-item" style="display:flex;align-items:center;padding:11px 0;border-bottom:1px solid #eee;">
+          <div class="info-icon" style="width:32px;height:32px;min-width:32px;background:#ecf0fa;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#2d39a7;margin-right:13px;font-size:1.12em;">
+            <i class="fas fa-phone"></i>
           </div>
-          <div class="form-group">
-            <label class="form-label" for="new-password">စကားဝှက် အသစ်</label>
-            <input class="form-input" type="password" id="new-password" required minlength="6">
+          <div class="info-content" style="display:flex;flex-direction:column;gap:0;">
+            <div class="info-label" style="color:#888;font-size:0.98em;font-weight:500;">ဖုန်းနံပါတ်</div>
+            <div class="info-value" id="info-phone" style="font-weight:600;font-size:1.06em;color:#222;">-</div>
           </div>
-          <div class="form-group">
-            <label class="form-label" for="confirm-password">စကားဝှက် အသစ် အတည်ပြုရန်</label>
-            <input class="form-input" type="password" id="confirm-password" required minlength="6">
+        </li>
+        <li class="info-item" style="display:flex;align-items:center;padding:11px 0;">
+          <div class="info-icon" style="width:32px;height:32px;min-width:32px;background:#ecf0fa;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#2d39a7;margin-right:13px;font-size:1.12em;">
+            <i class="fas fa-id-card"></i>
           </div>
-          <button type="submit" class="form-button" id="password-submit-btn">စကားဝှက် ပြောင်းမည်</button>
-        </form>
-      </div>
-      <button id="logout-button" class="logout-button">
-        <i class="fas fa-sign-out-alt"></i> အကောင့်မှ ထွက်မည်
-      </button>
+          <div class="info-content" style="display:flex;flex-direction:column;gap:0;">
+            <div class="info-label" style="color:#888;font-size:0.98em;font-weight:500;">Agent Code</div>
+            <div class="info-value" id="info-agent-code" style="font-weight:600;font-size:1.06em;color:#222;">-</div>
+          </div>
+        </li>
+      </ul>
     </div>
+
+    <!-- Affiliate / Referral Program Section -->
+    <div class="card" id="affiliate-section" style="margin-top:18px;">
+      <h2 class="section-title" style="margin-bottom:12px;">
+        <i class="fas fa-link"></i> Affiliate / Referral Program
+      </h2>
+      <div style="margin-bottom:7px;">
+        <strong>Referral Code:</strong>
+        <span id="referral-code" style="user-select:all;font-family:monospace;">-</span>
+        <button id="copy-referral-btn" title="Copy Code" style="margin-left:6px;">
+          <i class="fa fa-copy"></i>
+        </button>
+      </div>
+      <div style="margin-bottom:7px;">
+        <strong>Referral Link:</strong>
+        <span id="referral-link" style="user-select:all;font-size:0.98em;">-</span>
+        <button id="copy-referral-link-btn" title="Copy Link" style="margin-left:6px;">
+          <i class="fa fa-copy"></i>
+        </button>
+        <button id="share-referral-link-btn" title="Share Link" style="margin-left:6px;">
+          <i class="fa fa-share"></i>
+        </button>
+      </div>
+      <div style="margin-bottom:7px;">
+        <span>Referred Users: <span id="referral-count">0</span></span>
+        &nbsp;|&nbsp;
+        <span>Earned Bonus: <span id="referral-bonus">0</span> ကျပ်</span>
+      </div>
+      <div style="margin-bottom:7px;">
+        <span style="color:#1C7D1C;font-weight:bold;">
+          သင့် Referral Link မှတစ်ဆင့် ငွေသွင်းသူတစ်ဦးစီအတွက် <u>ကော်မရှင်ခ ၃%</u> ရရှိမည်။
+        </span>
+      </div>
+      <div id="referral-copy-success" style="display:none;color:green;font-size:0.97em;">Copied!</div>
+    </div>
+    <!-- End Affiliate / Referral Program Section -->
+
+    <div class="card">
+      <h2 class="section-title">စကားဝှက် ပြောင်းရန်</h2>
+      <div class="success-message" id="password-success-message" style="display:none;">
+        စကားဝှက် အောင်မြင်စွာ ပြောင်းလဲပြီးပါပြီ
+      </div>
+      <div class="error-message" id="password-error-message" style="display:none;"></div>
+      <form id="change-password-form">
+        <div class="form-group">
+          <label class="form-label" for="current-password">လက်ရှိ စကားဝှက်</label>
+          <input class="form-input" type="password" id="current-password" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="new-password">စကားဝှက် အသစ်</label>
+          <input class="form-input" type="password" id="new-password" required minlength="6">
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="confirm-password">စကားဝှက် အသစ် အတည်ပြုရန်</label>
+          <input class="form-input" type="password" id="confirm-password" required minlength="6">
+        </div>
+        <button type="submit" class="form-button" id="password-submit-btn">စကားဝှက် ပြောင်းမည်</button>
+      </form>
+    </div>
+    <button id="logout-button" class="logout-button">
+      <i class="fas fa-sign-out-alt"></i> အကောင့်မှ ထွက်မည်
+    </button>
   </div>
+</div>
 
   <!-- ... (other code below unchanged) ... -->
 
@@ -328,46 +341,51 @@
         </form>
 
         <!-- Register Form -->
-        <form id="register-form" style="display:none;">
-          <div class="form-title">အသစ်အကောင့်ဖွင့်ရန်</div>
-          <div id="reg-success-msg" class="success-msg" style="display:none;"></div>
-          <div id="reg-error-msg" class="error-msg" style="display:none;"></div>
-          <div class="form-group">
-            <label class="form-label" for="reg-name">အမည်</label>
-            <input class="form-input" type="text" id="reg-name" name="name" placeholder="အမည်" required>
-            <div id="reg-name-error" class="field-error" style="display:none;"></div>
-          </div>
-          <div class="form-group">
-            <label class="form-label" for="reg-phone">ဖုန်းနံပါတ်</label>
-            <input class="form-input" type="tel" id="reg-phone" name="phone" placeholder="ဖုန်းနံပါတ် (09xxxxxxx)" required>
-            <div id="reg-phone-error" class="field-error" style="display:none;"></div>
-          </div>
-          <div class="form-group">
-            <label class="form-label" for="reg-password">စကားဝှက်</label>
-            <input class="form-input" type="password" id="reg-password" name="password" placeholder="စကားဝှက်" required>
-            <div id="reg-password-error" class="field-error" style="display:none;"></div>
-            <div class="password-requirements">
-              <div id="length-req" class="password-requirement requirement-unmet">
-                <i class="fas fa-circle"></i> အနည်းဆုံး စာလုံး ၆ လုံး
-              </div>
-              <div id="number-req" class="password-requirement requirement-unmet">
-                <i class="fas fa-circle"></i> ဂဏန်းတစ်လုံး ပါဝင်ရမည်
-              </div>
-              <div id="uppercase-req" class="password-requirement requirement-unmet">
-                <i class="fas fa-circle"></i> အင်္ဂလိပ်စာ အကြီး တစ်လုံး ပါဝင်လျှင် ပိုကောင်းသည်
-              </div>
-            </div>
-          </div>
-          <div class="form-group">
-            <label class="form-label" for="reg-referral_code">Referral Code <span class="optional-tip">(ရှိပါကသာ ထည့်ပါ)</span></label>
-            <input class="form-input" type="text" id="reg-referral_code" name="referral_code" placeholder="Referral Code (မရှိရင်ကျော်ပါ)">
-          </div>
-          <div class="form-checkbox-group">
-            <input type="checkbox" id="register-remember-me" class="form-checkbox">
-            <label for="register-remember-me" class="form-checkbox-label">အကောင့်မှတ်ထားရန်</label>
-          </div>
-          <button id="reg-submit-btn" class="form-btn" type="submit">အကောင့်ဖွင့်မည်</button>
-        </form>
+<form id="register-form" style="display:none;">
+  <div class="form-title">အသစ်အကောင့်ဖွင့်ရန်</div>
+  <div id="reg-success-msg" class="success-msg" style="display:none;"></div>
+  <div id="reg-error-msg" class="error-msg" style="display:none;"></div>
+  <div class="form-group">
+    <label class="form-label" for="reg-name">အမည်</label>
+    <input class="form-input" type="text" id="reg-name" name="name" placeholder="အမည်" required>
+    <div id="reg-name-error" class="field-error" style="display:none;"></div>
+  </div>
+  <div class="form-group">
+    <label class="form-label" for="reg-phone">ဖုန်းနံပါတ်</label>
+    <input class="form-input" type="tel" id="reg-phone" name="phone" placeholder="ဖုန်းနံပါတ် (09xxxxxxx)" required>
+    <div id="reg-phone-error" class="field-error" style="display:none;"></div>
+  </div>
+  <div class="form-group">
+    <label class="form-label" for="reg-password">စကားဝှက်</label>
+    <input class="form-input" type="password" id="reg-password" name="password" placeholder="စကားဝှက်" required>
+    <div id="reg-password-error" class="field-error" style="display:none;"></div>
+    <div class="password-requirements">
+      <div id="length-req" class="password-requirement requirement-unmet">
+        <i class="fas fa-circle"></i> အနည်းဆုံး စာလုံး ၆ လုံး
+      </div>
+      <div id="number-req" class="password-requirement requirement-unmet">
+        <i class="fas fa-circle"></i> ဂဏန်းတစ်လုံး ပါဝင်ရမည်
+      </div>
+      <div id="uppercase-req" class="password-requirement requirement-unmet">
+        <i class="fas fa-circle"></i> အင်္ဂလိပ်စာ အကြီး တစ်လုံး ပါဝင်လျှင် ပိုကောင်းသည်
+      </div>
+    </div>
+  </div>
+  <!-- Profile Photo Upload Field (NEW) -->
+  <div class="form-group">
+    <label class="form-label" for="reg-profile-photo">Profile Photo <span class="optional-tip">(မတင်လည်းရသည်)</span></label>
+    <input class="form-input" type="file" id="reg-profile-photo" name="profile_photo" accept="image/*">
+  </div>
+  <div class="form-group">
+    <label class="form-label" for="reg-referral_code">Referral Code <span class="optional-tip">(ရှိပါကသာ ထည့်ပါ)</span></label>
+    <input class="form-input" type="text" id="reg-referral_code" name="referral_code" placeholder="Referral Code (မရှိရင်ကျော်ပါ)">
+  </div>
+  <div class="form-checkbox-group">
+    <input type="checkbox" id="register-remember-me" class="form-checkbox">
+    <label for="register-remember-me" class="form-checkbox-label">အကောင့်မှတ်ထားရန်</label>
+  </div>
+  <button id="reg-submit-btn" class="form-btn" type="submit">အကောင့်ဖွင့်မည်</button>
+</form>
       </div>
     </div>
   </div>
