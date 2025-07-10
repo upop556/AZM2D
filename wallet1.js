@@ -182,25 +182,25 @@ function setWaveBalance(balance) {
   if (el) el.textContent = Number(balance || 0).toLocaleString();
 }
 
-// Helper: safely get phone from storage (localStorage only)
+// Helper: safely get phone from storage
 function getPhone() {
-  return localStorage.getItem('azm2d_phone') || '';
+  return (
+    localStorage.getItem('azm2d_phone') ||
+    sessionStorage.getItem('azm2d_phone') ||
+    ''
+  );
 }
 
 // Load wallet data from unified API
 function loadWalletData() {
   const phone = getPhone();
-  const token = localStorage.getItem('azm2d_token');
-  if (!phone || !token) {
+  if (!phone) {
     showNoLogin();
     return;
   }
   fetch('https://amazemm.xyz/api/wallet_api.php', {
     method: 'POST',
-    headers: { 
-      'Content-Type': 'application/x-www-form-urlencoded',
-      'Authorization': 'Bearer ' + token // <--- Token added for authorization!
-    },
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
     body: 'phone=' + encodeURIComponent(phone)
   })
     .then(res => res.json())
@@ -254,8 +254,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
       // Check phone before submit
       const phone = getPhone();
-      const token = localStorage.getItem('azm2d_token');
-      if(!phone || !token) {
+      if(!phone) {
         showError('withdraw-error', 'အကောင့်ဝင်ပါ။');
         return;
       }
@@ -287,7 +286,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
       fetch('https://amazemm.xyz/api/wallet_api.php', {
           method: 'POST',
-          headers: { 'Authorization': 'Bearer ' + token },
           body: formData
         })
         .then(r => r.json())
@@ -322,9 +320,9 @@ document.addEventListener('DOMContentLoaded', function() {
 
 // ---- WavePay Section Logic ----
 
-// Helper to get token from localStorage only (for Dai info)
+// Helper to get token from localStorage/sessionStorage (for Dai info)
 function getToken() {
-  return localStorage.getItem('azm2d_token');
+  return localStorage.getItem('azm2d_token') || sessionStorage.getItem('azm2d_token');
 }
 
 // Get Wave Dai phone and note from settings API
@@ -390,8 +388,7 @@ if (wmDepositForm) {
 
     // Check phone before submit
     const phone = getPhone();
-    const token = localStorage.getItem('azm2d_token');
-    if(!phone || !token) {
+    if(!phone) {
       showError('wm-deposit-error', 'အကောင့်ဝင်ပါ။');
       return;
     }
@@ -420,7 +417,6 @@ if (wmDepositForm) {
 
     fetch('https://amazemm.xyz/api/wallet_api.php', {
         method: 'POST',
-        headers: { 'Authorization': 'Bearer ' + token },
         body: formData
       })
       .then(r => r.json())
@@ -463,8 +459,7 @@ if (wmWithdrawForm) {
 
     // Check phone before submit
     const phone = getPhone();
-    const token = localStorage.getItem('azm2d_token');
-    if(!phone || !token) {
+    if(!phone) {
       showError('wm-withdraw-error', 'အကောင့်ဝင်ပါ။');
       return;
     }
@@ -497,7 +492,6 @@ if (wmWithdrawForm) {
 
     fetch('https://amazemm.xyz/api/wallet_api.php', {
         method: 'POST',
-        headers: { 'Authorization': 'Bearer ' + token },
         body: formData
       })
       .then(r => r.json())
