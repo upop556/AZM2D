@@ -63,7 +63,19 @@ function setupProfilePhotoUpload(apiUrl, userToken) {
       },
       body: formData
     })
-    .then(res => res.json())
+    .then(async res => {
+      // Robust error/content type checking
+      const contentType = res.headers.get("content-type");
+      if (!res.ok) {
+        let text = await res.text();
+        throw new Error(text || res.statusText);
+      }
+      if (contentType && contentType.includes("application/json")) {
+        return res.json();
+      } else {
+        throw new Error("Server did not return JSON");
+      }
+    })
     .then(data => {
       if (data.success && data.profile_photo) {
         avatarImg.src = data.profile_photo;
@@ -71,8 +83,8 @@ function setupProfilePhotoUpload(apiUrl, userToken) {
         alert(data.message || "ပုံတင်ခြင်း မအောင်မြင်ပါ။");
       }
     })
-    .catch(() => {
-      alert("ပုံတင်ခြင်း အဆင်မပြေပါ။");
+    .catch((err) => {
+      alert("ပုံတင်ခြင်း အဆင်မပြေပါ။ " + (err && err.message ? err.message : ""));
     });
   });
 }
