@@ -678,14 +678,20 @@ if(isset($_GET['success'])) {
         </div>
     </div>
 <script>
+// --- 2D Number Selection Logic ---
+
 // Clear selection on browser refresh/load
 window.addEventListener('load', function() {
     sessionStorage.removeItem('selected2d_1100');
+    selected = {};
+    updateGridSelections();
 });
 
+// DOM references
 const numbersGrid = document.getElementById('numbersGrid');
 let selected = JSON.parse(sessionStorage.getItem('selected2d_1100') || '{}');
 
+// Update grid UI based on selected numbers
 function updateGridSelections() {
     document.querySelectorAll('.number-item').forEach(item => {
         const num = item.getAttribute('data-number');
@@ -700,6 +706,7 @@ function updateGridSelections() {
     });
 }
 
+// Click selection
 numbersGrid.addEventListener('click', function(e) {
     const item = e.target.closest('.number-item');
     if (!item || item.classList.contains('disabled')) return;
@@ -713,6 +720,7 @@ numbersGrid.addEventListener('click', function(e) {
     updateGridSelections();
 });
 
+// Keyboard selection
 numbersGrid.addEventListener('keydown', function(e) {
     if ((e.key === "Enter" || e.key === " ") && e.target.classList.contains('number-item')) {
         e.preventDefault();
@@ -720,6 +728,7 @@ numbersGrid.addEventListener('keydown', function(e) {
     }
 });
 
+// Refresh balance and reverse selection
 document.getElementById('refreshBtn').addEventListener('click', function() {
     fetch(window.location.pathname + '?get_balance=1')
         .then(r => r.json())
@@ -773,7 +782,6 @@ function showModal(selectedNumbers, betAmount) {
         });
         modalNumbers.appendChild(span);
     });
-
     modalAmount.value = betAmount;
     updatePrizeAndTotal();
     modalBg.classList.add('active');
@@ -938,6 +946,7 @@ akhweBtn.addEventListener('click', function() {
     doQuickSelect('akhwe', val);
 });
 
+// Initial update on page load
 updateGridSelections();
 </script>
 </body>
