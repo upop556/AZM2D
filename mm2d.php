@@ -16,6 +16,14 @@ if (empty($_SESSION['user_id'])) {
 }
 $current_user = $_SESSION['user_id'] ?? null;
 
+// --- Closed session logic ---
+require_once __DIR__ . '/closed_session.php';
+$closedInfo = getSessionClosedInfo('Asia/Yangon', '11:00:00', '10:55:00');
+$is_betting_closed = $closedInfo['is_betting_closed'];
+$target_date_dt = $closedInfo['target_date'];
+$bet_date = $target_date_dt->format('Y-m-d');
+$display_date_info = $closedInfo['display_date_info'];
+
 // --- Get User Balance ---
 function getUserBalance($user_id) {
     $pdo = Db::getInstance()->getConnection();
@@ -35,8 +43,6 @@ while ($row_brakes = $stmt_brakes->fetch(PDO::FETCH_ASSOC)) {
 }
 
 // --- Already Bet Totals for Today (for brake progress) ---
-$now = new DateTime("now", new DateTimeZone('Asia/Yangon'));
-$bet_date = $now->format('Y-m-d');
 $current_totals = [];
 $stmt_current = $pdo->prepare('SELECT number, SUM(amount) as total_bet FROM lottery_bets WHERE bet_type = :type AND bet_date = :bet_date GROUP BY number');
 $stmt_current->execute([':type'=>'2D-1100', ':bet_date' => $bet_date]);
@@ -76,6 +82,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_bet'])) {
         exit;
     } elseif ($bet_amount < 100) {
         $message = 'အနည်းဆုံး ၁၀၀ ကျပ် ထိုးရပါမည်။';
+        $messageType = 'error';
+    } elseif ($is_betting_closed) {
+        $message = 'ထိုးချိန် ပြီးသွားပါပြီ။';
         $messageType = 'error';
     } else {
         $pdo->beginTransaction();
@@ -125,11 +134,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_bet'])) {
 }
 
 if(isset($_GET['success'])) {
-    $message = 'ထိုးပြီးပါပြီ။ သင်၏ ၂လုံးထိုးမှတ်တမ်းကို အောင်မြင်စွာ သိမ်းဆည်းပါသည်။';
+    $message = 'ထိုးပြီးပါပြီ။ သင်၏ ၂လုံးထိုးမှတ်တမ်းကို အောင်မြင်စွာ သိမ်းဆည်းပြီးပါပြီ။';
     $messageType = 'success';
 }
-
 ?>
+
 <!DOCTYPE html>
 <html lang="my">
 <head>
