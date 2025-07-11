@@ -24,8 +24,65 @@
   <link rel="stylesheet" href="css/header.css">
   <link rel="stylesheet" href="css/wallet-history-icon.css">
   <link rel="stylesheet" href="css/wallet-methods-row.css">
+  <link rel="stylesheet" href="css/ads.css">
+<link rel="stylesheet" href="css/menu-icon-large.css">
+  <style>
+    #main-login-btn-area {
+      margin: 28px 0 10px 0;
+      text-align: center;
+    }
+    #main-login-btn {
+      background: #1877f2;
+      color: #fff;
+      font-family: 'Poppins', 'Noto Sans Myanmar', sans-serif;
+      font-size: 1.18em;
+      font-weight: 700;
+      border: none;
+      border-radius: 12px;
+      padding: 15px 60px;
+      box-shadow: 0 4px 24px #1877f244;
+      letter-spacing: 0.7px;
+      cursor: pointer;
+      transition: background 0.2s, color 0.2s, box-shadow 0.2s, transform 0.1s;
+      outline: none;
+      margin-bottom: 7px;
+    }
+    #main-login-btn:hover,
+    #main-login-btn:focus {
+      background: #1256b3;
+      color: #fff;
+      transform: translateY(-1px) scale(1.04);
+      box-shadow: 0 6px 32px #1877f266;
+    }
+    @media (max-width: 600px) {
+      #main-login-btn-area {
+        margin: 15px 0 6px 0;
+      }
+      #main-login-btn {
+        font-size: 1em;
+        padding: 12px 18vw;
+        border-radius: 8px;
+      }
+    }
+    .menu-btn .menu-img-icon {
+      width: 32px;
+      height: 32px;
+      vertical-align: middle;
+      margin-right: 8px;
+      object-fit: contain;
+      display: inline-block;
+    }
+    .menu-btn .menu-img-icon img {
+      width: 32px;
+      height: 32px;
+      vertical-align: middle;
+      margin-right: 8px;
+      object-fit: contain;
+      display: inline-block;
+    }
+  </style>
 </head>
-<body>
+<body style="background-image: url('https://amazemm.xyz/images/bg-main.jpg'); background-size: cover; background-repeat: no-repeat; background-position: center center; background-attachment: fixed;">
   <!-- Fixed Header -->
   <div class="header" id="main-header">
     <div class="header-title">
@@ -33,8 +90,8 @@
       AZM2D Game
     </div>
     <div class="header-icon">
-      <a href="https://your-app-download-link.com" title="Download App" target="_blank">
-        <i class="fa fa-download"></i>
+      <a href="http://bit.ly/45Ovkuk" title="Download App" target="_blank">
+        <span style="font-size: 1.5em;">⬇️</span>
       </a>
     </div>
   </div>
@@ -46,40 +103,42 @@
         <img id="ad-banner-img" src="" alt="Ad Banner" />
         <div class="ad-banner-title" id="ad-banner-title"></div>
         <div class="ad-banner-desc" id="ad-banner-desc"></div>
+        <div id="ad-banner-marquee"></div>
       </div>
       <div class="subtitle">
         <i class="fas fa-wallet"></i> လက်ကျန်ငွေ <span id="user-balance">0</span> ကျပ်
       </div>
+      <div id="main-login-btn-area"></div>
       <div class="menu-grid">
-        <a href="a/2d_live_api.php" class="menu-btn">
-          <i class="fas fa-dice-two"></i>
+        <a href="b/2dnumber.php" class="menu-btn">
+          <span class="menu-img-icon"></span>
           2D
         </a>
-        <a href="a/3d.php" class="menu-btn">
-          <i class="fas fa-dice-three"></i>
+        <a href="https://amazemm.xyz/c/thai-lotto-results.php" class="menu-btn">
+          <span class="menu-img-icon"></span>
           3D
         </a>
         <a href="a/game.php" class="menu-btn">
-          <i class="fas fa-gamepad"></i>
+          <span class="menu-img-icon"></span>
           Game
         </a>
         <a href="a/36.php" class="menu-btn">
-          <i class="fas fa-dice-d6"></i>
+          <span class="menu-img-icon"></span>
           36 ကောင်
         </a>
         <a href="a/maung.php" class="menu-btn">
-          <i class="fas fa-horse"></i>
+          <span class="menu-img-icon"></span>
           မောင်း
         </a>
         <a href="a/boardi.php" class="menu-btn">
-          <i class="fas fa-table"></i>
+          <span class="menu-img-icon"></span>
           ဘော်ဒီ
         </a>
       </div>
     </div>
   </div>
-
-  <!-- Wallet Section -->
+  
+   <!-- Wallet Section -->
   <div class="wallet-container" id="wallet-container" style="display:none;">
     <a href="#" class="wallet-back" id="wallet-back" title="ပင်မစာမျက်နှာသို့">
       <i class="fa fa-arrow-left"></i>
@@ -125,88 +184,144 @@
     </div>
   </div>
 
-  <!-- Profile UI (hidden by default) -->
-  <div id="profile-ui" style="display:none;">
-    <div class="container">
-      <div class="spinner" id="loading-spinner"></div>
-      <div class="error-message" id="api-error-message" style="display:none;">
-        အချက်အလက်များ ရယူရန် မအောင်မြင်ပါ။
+  <!-- ... (other code above unchanged) ... -->
+
+<!-- Profile UI (hidden by default) -->
+<div id="profile-ui" style="display:none;">
+  <div class="container" style="max-width:420px;margin:auto;">
+    <div class="spinner" id="loading-spinner"></div>
+    <div class="error-message" id="api-error-message" style="display:none;">
+      အချက်အလက်များ ရယူရန် မအောင်မြင်ပါ။
+    </div>
+    <!-- Profile Card -->
+    <div class="card" style="padding-bottom:18px; position:relative;">
+      <div class="profile-header" style="gap:16px;">
+        <div class="profile-avatar" id="profile-avatar" style="min-width:68px; position:relative;">
+          <img src="images/default-avatar.png" id="profile-avatar-img" style="display:none; width:68px; height:68px; border-radius:50%; object-fit:cover; border:2px solid #ddd;" alt="Profile Photo"/>
+          <i class="fas fa-user" id="profile-avatar-icon"></i>
+          <!-- Profile Photo Edit Button -->
+          <label for="profile-photo-input" class="edit-avatar-btn" style="position:absolute; bottom:-2px; right:-2px; background:#fff; border-radius:50%; padding:4px; cursor:pointer; box-shadow:0 2px 8px rgba(0,0,0,0.13); border:1.5px solid #eee;">
+            <i class="fas fa-camera"></i>
+          </label>
+          <input type="file" id="profile-photo-input" accept="image/*" style="display:none;">
+        </div>
+        <div class="profile-title" style="display:flex;flex-direction:column;justify-content:center;">
+          <h1 class="profile-name" id="profile-name" style="margin:0 0 3px 0; font-size:1.15rem; font-weight:700; color:#2d39a7; letter-spacing:0.01em;">-</h1>
+          <p class="profile-phone" id="profile-phone" style="margin:0;color:#888;font-size:1rem;font-weight:500;">-</p>
+        </div>
       </div>
-      <div class="card">
-        <div class="profile-header">
-          <div class="profile-avatar" id="profile-avatar">
+      <div id="photo-upload-success" class="success-message" style="display:none;position:absolute;top:0;left:0;right:0;text-align:center;z-index:2;">
+        ပုံကို အောင်မြင်စွာ ပြောင်းလဲပြီးပါပြီ!
+      </div>
+      <div id="photo-upload-error" class="error-message" style="display:none;position:absolute;top:0;left:0;right:0;text-align:center;z-index:2;">
+        ပုံတင်ခြင်း မအောင်မြင်ပါ။
+      </div>
+    </div>
+    <!-- Balance Card -->
+    <div class="balance-card" style="background:#2d39a7;color:#fff;padding:18px 0 14px 0; margin-bottom:18px;">
+      <div class="balance-label" style="font-size:1.08em;margin-bottom:3px;">လက်ကျန်ငွေ</div>
+      <div class="balance-amount" id="balance-amount" style="font-size:2.1rem;font-weight:700;margin:6px 0 2px 0;line-height:1.1;">0</div>
+      <div class="balance-currency" style="font-size:1.1rem;font-weight:500;">ကျပ်</div>
+    </div>
+    <!-- Info Card -->
+    <div class="card info-card" style="padding-top:18px;">
+      <div class="section-title" style="font-size:1.12em;font-weight:700;color:#2d39a7;margin-bottom:10px;">အကောင့်အချက်အလက်များ</div>
+      <ul class="info-list" style="list-style:none;padding:0;margin:0;">
+        <li class="info-item" style="display:flex;align-items:center;padding:11px 0;border-bottom:1px solid #eee;">
+          <div class="info-icon" style="width:32px;height:32px;min-width:32px;background:#ecf0fa;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#2d39a7;margin-right:13px;font-size:1.12em;">
             <i class="fas fa-user"></i>
           </div>
-          <div class="profile-title">
-            <h1 class="profile-name" id="profile-name">-</h1>
-            <p class="profile-phone" id="profile-phone">-</p>
+          <div class="info-content" style="display:flex;flex-direction:column;gap:0;">
+            <div class="info-label" style="color:#888;font-size:0.98em;font-weight:500;">အမည်</div>
+            <div class="info-value" id="info-name" style="font-weight:600;font-size:1.06em;color:#222;">-</div>
           </div>
-        </div>
-      </div>
-      <div class="balance-card">
-        <div class="balance-label">လက်ကျန်ငွေ</div>
-        <div class="balance-amount" id="balance-amount">0</div>
-        <div class="balance-currency">ကျပ်</div>
-      </div>
-      <div class="card">
-        <h2 class="section-title">အကောင့်အချက်အလက်များ</h2>
-        <ul class="info-list">
-          <li class="info-item">
-            <div class="info-icon">
-              <i class="fas fa-user"></i>
-            </div>
-            <div class="info-content">
-              <div class="info-label">အမည်</div>
-              <div class="info-value" id="info-name">-</div>
-            </div>
-          </li>
-          <li class="info-item">
-            <div class="info-icon">
-              <i class="fas fa-phone"></i>
-            </div>
-            <div class="info-content">
-              <div class="info-label">ဖုန်းနံပါတ်</div>
-              <div class="info-value" id="info-phone">-</div>
-            </div>
-          </li>
-          <li class="info-item">
-            <div class="info-icon">
-              <i class="fas fa-id-card"></i>
-            </div>
-            <div class="info-content">
-              <div class="info-label">Agent Code</div>
-              <div class="info-value" id="info-agent-code">-</div>
-            </div>
-          </li>
-        </ul>
-      </div>
-      <div class="card">
-        <h2 class="section-title">စကားဝှက် ပြောင်းရန်</h2>
-        <div class="success-message" id="password-success-message" style="display:none;">
-          စကားဝှက် အောင်မြင်စွာ ပြောင်းလဲပြီးပါပြီ
-        </div>
-        <div class="error-message" id="password-error-message" style="display:none;"></div>
-        <form id="change-password-form">
-          <div class="form-group">
-            <label class="form-label" for="current-password">လက်ရှိ စကားဝှက်</label>
-            <input class="form-input" type="password" id="current-password" required>
+        </li>
+        <li class="info-item" style="display:flex;align-items:center;padding:11px 0;border-bottom:1px solid #eee;">
+          <div class="info-icon" style="width:32px;height:32px;min-width:32px;background:#ecf0fa;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#2d39a7;margin-right:13px;font-size:1.12em;">
+            <i class="fas fa-phone"></i>
           </div>
-          <div class="form-group">
-            <label class="form-label" for="new-password">စကားဝှက် အသစ်</label>
-            <input class="form-input" type="password" id="new-password" required minlength="6">
+          <div class="info-content" style="display:flex;flex-direction:column;gap:0;">
+            <div class="info-label" style="color:#888;font-size:0.98em;font-weight:500;">ဖုန်းနံပါတ်</div>
+            <div class="info-value" id="info-phone" style="font-weight:600;font-size:1.06em;color:#222;">-</div>
           </div>
-          <div class="form-group">
-            <label class="form-label" for="confirm-password">စကားဝှက် အသစ် အတည်ပြုရန်</label>
-            <input class="form-input" type="password" id="confirm-password" required minlength="6">
+        </li>
+        <li class="info-item" style="display:flex;align-items:center;padding:11px 0;">
+          <div class="info-icon" style="width:32px;height:32px;min-width:32px;background:#ecf0fa;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#2d39a7;margin-right:13px;font-size:1.12em;">
+            <i class="fas fa-id-card"></i>
           </div>
-          <button type="submit" class="form-button" id="password-submit-btn">စကားဝှက် ပြောင်းမည်</button>
-        </form>
-      </div>
-      <button id="logout-button" class="logout-button">
-        <i class="fas fa-sign-out-alt"></i> အကောင့်မှ ထွက်မည်
-      </button>
+          <div class="info-content" style="display:flex;flex-direction:column;gap:0;">
+            <div class="info-label" style="color:#888;font-size:0.98em;font-weight:500;">Agent Code</div>
+            <div class="info-value" id="info-agent-code" style="font-weight:600;font-size:1.06em;color:#222;">-</div>
+          </div>
+        </li>
+      </ul>
     </div>
+
+    <!-- Affiliate / Referral Program Section -->
+    <div class="card" id="affiliate-section" style="margin-top:18px;">
+      <h2 class="section-title" style="margin-bottom:12px;">
+        <i class="fas fa-link"></i> Affiliate / Referral Program
+      </h2>
+      <div style="margin-bottom:7px;">
+        <strong>Referral Code:</strong>
+        <span id="referral-code" style="user-select:all;font-family:monospace;">-</span>
+        <button id="copy-referral-btn" title="Copy Code" style="margin-left:6px;">
+          <i class="fa fa-copy"></i>
+        </button>
+      </div>
+      <div style="margin-bottom:7px;">
+        <strong>Referral Link:</strong>
+        <span id="referral-link" style="user-select:all;font-size:0.98em;">-</span>
+        <button id="copy-referral-link-btn" title="Copy Link" style="margin-left:6px;">
+          <i class="fa fa-copy"></i>
+        </button>
+        <button id="share-referral-link-btn" title="Share Link" style="margin-left:6px;">
+          <i class="fa fa-share"></i>
+        </button>
+      </div>
+      <div style="margin-bottom:7px;">
+        <span>Referred Users: <span id="referral-count">0</span></span>
+        &nbsp;|&nbsp;
+        <span>Earned Bonus: <span id="referral-bonus">0</span> ကျပ်</span>
+      </div>
+      <div style="margin-bottom:7px;">
+        <span style="color:#1C7D1C;font-weight:bold;">
+          သင့် Referral Link မှတစ်ဆင့် ငွေသွင်းကစားသူတစ်ဦးစီအတွက် <u>ကော်မရှင်ခ ၅%</u> ရရှိမည်။
+        </span>
+      </div>
+      <div id="referral-copy-success" style="display:none;color:green;font-size:0.97em;">Copied!</div>
+    </div>
+    <!-- End Affiliate / Referral Program Section -->
+
+    <div class="card">
+      <h2 class="section-title">စကားဝှက် ပြောင်းရန်</h2>
+      <div class="success-message" id="password-success-message" style="display:none;">
+        စကားဝှက် အောင်မြင်စွာ ပြောင်းလဲပြီးပါပြီ
+      </div>
+      <div class="error-message" id="password-error-message" style="display:none;"></div>
+      <form id="change-password-form">
+        <div class="form-group">
+          <label class="form-label" for="current-password">လက်ရှိ စကားဝှက်</label>
+          <input class="form-input" type="password" id="current-password" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="new-password">စကားဝှက် အသစ်</label>
+          <input class="form-input" type="password" id="new-password" required minlength="6">
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="confirm-password">စကားဝှက် အသစ် အတည်ပြုရန်</label>
+          <input class="form-input" type="password" id="confirm-password" required minlength="6">
+        </div>
+        <button type="submit" class="form-button" id="password-submit-btn">စကားဝှက် ပြောင်းမည်</button>
+      </form>
+    </div>
+    <button id="logout-button" class="logout-button">
+      <i class="fas fa-sign-out-alt"></i> အကောင့်မှ ထွက်မည်
+    </button>
   </div>
+</div>
+
+  <!-- ... (other code below unchanged) ... -->
 
   <!-- Login/Register UI (hidden by default) -->
   <div id="account-ui" style="display:none;">
@@ -238,43 +353,53 @@
           <button id="login-submit-btn" class="form-btn" type="submit">အကောင့်ဝင်မည်</button>
           <a href="#" onclick="alert('ဤလုပ်ဆောင်ချက်သည် လက်ရှိတွင် မရနိုင်သေးပါ။'); return false;" class="forgot-password">စကားဝှက်မေ့နေပါသလား?</a>
         </form>
+
         <!-- Register Form -->
-        <form id="register-form" style="display:none;">
-          <div class="form-title">အသစ်အကောင့်ဖွင့်ရန်</div>
-          <div id="reg-success-msg" class="success-msg" style="display:none;"></div>
-          <div id="reg-error-msg" class="error-msg" style="display:none;"></div>
-          <div class="form-group">
-            <label class="form-label" for="reg-name">အမည်</label>
-            <input class="form-input" type="text" id="reg-name" name="name" placeholder="အမည်" required>
-            <div id="reg-name-error" class="field-error" style="display:none;"></div>
-          </div>
-          <div class="form-group">
-            <label class="form-label" for="reg-phone">ဖုန်းနံပါတ်</label>
-            <input class="form-input" type="tel" id="reg-phone" name="phone" placeholder="ဖုန်းနံပါတ် (09xxxxxxx)" required>
-            <div id="reg-phone-error" class="field-error" style="display:none;"></div>
-          </div>
-          <div class="form-group">
-            <label class="form-label" for="reg-password">စကားဝှက်</label>
-            <input class="form-input" type="password" id="reg-password" name="password" placeholder="စကားဝှက်" required>
-            <div id="reg-password-error" class="field-error" style="display:none;"></div>
-            <div class="password-requirements">
-              <div id="length-req" class="password-requirement requirement-unmet">
-                <i class="fas fa-circle"></i> အနည်းဆုံး စာလုံး ၆ လုံး
-              </div>
-              <div id="number-req" class="password-requirement requirement-unmet">
-                <i class="fas fa-circle"></i> ဂဏန်းတစ်လုံး ပါဝင်ရမည်
-              </div>
-              <div id="uppercase-req" class="password-requirement requirement-unmet">
-                <i class="fas fa-circle"></i> အင်္ဂလိပ်စာ အကြီး တစ်လုံး ပါဝင်လျှင် ပိုကောင်းသည်
-              </div>
-            </div>
-          </div>
-          <div class="form-group">
-            <label class="form-label" for="reg-agent_code">Agent Code <span class="optional-tip">(ရှိပါကသာ ထည့်ပါ)</span></label>
-            <input class="form-input" type="text" id="reg-agent_code" name="agent_code" placeholder="Agent Code (မရှိရင်ကျော်ပါ)">
-          </div>
-          <button id="reg-submit-btn" class="form-btn" type="submit">အကောင့်ဖွင့်မည်</button>
-        </form>
+<form id="register-form" style="display:none;">
+  <div class="form-title">အသစ်အကောင့်ဖွင့်ရန်</div>
+  <div id="reg-success-msg" class="success-msg" style="display:none;"></div>
+  <div id="reg-error-msg" class="error-msg" style="display:none;"></div>
+  <div class="form-group">
+    <label class="form-label" for="reg-name">အမည်</label>
+    <input class="form-input" type="text" id="reg-name" name="name" placeholder="အမည်" required>
+    <div id="reg-name-error" class="field-error" style="display:none;"></div>
+  </div>
+  <div class="form-group">
+    <label class="form-label" for="reg-phone">ဖုန်းနံပါတ်</label>
+    <input class="form-input" type="tel" id="reg-phone" name="phone" placeholder="ဖုန်းနံပါတ် (09xxxxxxx)" required>
+    <div id="reg-phone-error" class="field-error" style="display:none;"></div>
+  </div>
+  <div class="form-group">
+    <label class="form-label" for="reg-password">စကားဝှက်</label>
+    <input class="form-input" type="password" id="reg-password" name="password" placeholder="စကားဝှက်" required>
+    <div id="reg-password-error" class="field-error" style="display:none;"></div>
+    <div class="password-requirements">
+      <div id="length-req" class="password-requirement requirement-unmet">
+        <i class="fas fa-circle"></i> အနည်းဆုံး စာလုံး ၆ လုံး
+      </div>
+      <div id="number-req" class="password-requirement requirement-unmet">
+        <i class="fas fa-circle"></i> ဂဏန်းတစ်လုံး ပါဝင်ရမည်
+      </div>
+      <div id="uppercase-req" class="password-requirement requirement-unmet">
+        <i class="fas fa-circle"></i> အင်္ဂလိပ်စာ အကြီး တစ်လုံး ပါဝင်လျှင် ပိုကောင်းသည်
+      </div>
+    </div>
+  </div>
+  <!-- Profile Photo Upload Field (NEW) -->
+  <div class="form-group">
+    <label class="form-label" for="reg-profile-photo">Profile Photo <span class="optional-tip">(မတင်လည်းရသည်)</span></label>
+    <input class="form-input" type="file" id="reg-profile-photo" name="profile_photo" accept="image/*">
+  </div>
+  <div class="form-group">
+    <label class="form-label" for="reg-referral_code">Referral Code <span class="optional-tip">(ရှိပါကသာ ထည့်ပါ)</span></label>
+    <input class="form-input" type="text" id="reg-referral_code" name="referral_code" placeholder="Referral Code (မရှိရင်ကျော်ပါ)">
+  </div>
+  <div class="form-checkbox-group">
+    <input type="checkbox" id="register-remember-me" class="form-checkbox">
+    <label for="register-remember-me" class="form-checkbox-label">အကောင့်မှတ်ထားရန်</label>
+  </div>
+  <button id="reg-submit-btn" class="form-btn" type="submit">အကောင့်ဖွင့်မည်</button>
+</form>
       </div>
     </div>
   </div>
@@ -296,183 +421,182 @@
     </div>
   </div>
 
-  <!-- KBZPay Section (with header & navbar) -->
-  <div class="kpay-container" id="kpay-container" style="display:none;">
-    <div class="header" style="background:#0974d0;">
-      <div class="header-title" style="color:#fff;">KBZPay</div>
-      <div class="header-icon">
-        <a href="#" id="kpay-back-btn" title="Back to Wallet">
-          <i class="fa fa-arrow-left" style="color:#fff;"></i>
-        </a>
-      </div>
-    </div>
-    <div class="kpay-title">
-      <i class="fab fa-cc-visa"></i> KBZPay ငွေသွင်း / ငွေထုတ်
-    </div>
-    <div class="kpay-balance">
-      လက်ကျန်ငွေ: <span id="kpay-user-balance">0</span> ကျပ်
-    </div>
-    <div class="tabs">
-      <button class="tab-btn active" id="tab-deposit">ငွေသွင်း</button>
-      <button class="tab-btn" id="tab-withdraw">ငွေထုတ်</button>
-    </div>
-    <!-- Deposit Form -->
-    <form class="kpay-form active" id="kpay-deposit-form" enctype="multipart/form-data" autocomplete="off">
-      <div class="kpay-label">ဒိုင် KBZPay ဖုန်းနံပါတ်</div>
-      <div class="kpay-admin-phone" id="admin-kpay-phone">09XXXXXXXXX</div>
-      <div class="kpay-note">
-        ဤ KBZPay ဖုန်းသို့ ငွေသွင်းပြီး Screenshot သို့မဟုတ် လုပ်ငန်းစဉ်နောက် ၆ လုံးထည့်ပါ။ <br>
-        Admin မှ အတည်ပြုလျှင်သာ ငွေသွင်းအောင်မြင်ပါမည်။
-      </div>
-      <label class="kpay-label" for="deposit-amount">ငွေသွင်း ပမာဏ (ကျပ်)</label>
-      <input class="kpay-input" type="number" min="1000" step="1000" id="deposit-amount" required placeholder="ဥပမာ - 5000">
-      <label class="kpay-label">Screenshot သို့မဟုတ် လုပ်ငန်းစဉ်နောက် ၆ လုံး</label>
-      <div class="kpay-upload" id="kpay-upload-box">
-        <input type="file" id="deposit-screenshot" accept="image/*" />
-        <span id="kpay-upload-text"><i class="fa fa-upload"></i> Screenshot တင်ရန် နှိပ်ပါ</span>
-        <div id="kpay-preview"></div>
-      </div>
-      <input class="kpay-input" type="text" id="deposit-txid" maxlength="6" pattern="[0-9A-Za-z]{6}" placeholder="လုပ်ငန်းစဉ်နောက် ၆ လုံး (မရှိရင်လျစ်ထားနိုင်သည်)">
-      <button class="kpay-btn" type="submit">အပ်နှံမှု တင်ပြမည်</button>
-      <div class="kpay-success" id="deposit-success"></div>
-      <div class="kpay-error" id="deposit-error"></div>
-    </form>
-    <!-- Withdraw Form -->
-    <form class="kpay-form" id="kpay-withdraw-form" autocomplete="off">
-      <div class="kpay-note">
-        ငွေထုတ်ရန် အောက်ပါအချက်အလက်များ ဖြည့်ပါ။ Admin အတည်ပြုမှသာ ငွေထုတ်နိုင်ပါသည်။
-      </div>
-      <label class="kpay-label" for="withdraw-amount">ထုတ်လိုသည့် ပမာဏ (ကျပ်)</label>
-      <input class="kpay-input" type="number" min="1000" step="1000" id="withdraw-amount" required placeholder="ဥပမာ - 5000">
-      <label class="kpay-label" for="withdraw-phone">ငွေလက်ခံမည့် KBZPay ဖုန်းနံပါတ်</label>
-      <input class="kpay-input" type="tel" id="withdraw-phone" required placeholder="ဖုန်းနံပါတ် (09...)">
-      <label class="kpay-label" for="withdraw-password">Password</label>
-      <input class="kpay-input" type="password" id="withdraw-password" required placeholder="သင့်အကောင့် စကားဝှက်">
-      <button class="kpay-btn" type="submit">ငွေထုတ်မှု တင်ပြမည်</button>
-      <div class="kpay-success" id="withdraw-success"></div>
-      <div class="kpay-error" id="withdraw-error"></div>
-    </form>
-    <!-- Actions -->
-    <div class="kpay-actions">
-      <span id="show-deposit" style="display:none;"><a href="#">ငွေသွင်းသို့ ပြန်သွားရန်</a></span>
-      <span id="show-withdraw"><a href="#">ငွေထုတ်သို့ ပြောင်းရန်</a></span>
-    </div>
-    <!-- Kpay navbar -->
-    <div class="navbar" id="kpay-navbar">
-      <a href="#" id="nav-home-kpay" class="active">
-        <i class="fas fa-home"></i>
-        <span>Home</span>
-      </a>
-      <a href="#" id="nav-wallet-kpay">
-        <i class="fas fa-wallet"></i>
-        <span>Wallet</span>
-      </a>
-      <a href="#" id="nav-help-kpay">
-        <i class="fas fa-question-circle"></i>
-        <span>Help</span>
-      </a>
-      <a href="#" id="nav-profile-kpay">
-        <i class="fas fa-user"></i>
-        <span>Profile</span>
+ <!-- KBZPay Section (with header & navbar) -->
+<div class="kpay-container" id="kpay-container" style="display:none;">
+  <div class="header" style="background:#0974d0;">
+    <div class="header-title" style="color:#fff;">KBZPay</div>
+    <div class="header-icon">
+      <a href="#" id="kpay-back-btn" title="Back to Wallet">
+        <i class="fa fa-arrow-left" style="color:#fff;"></i>
       </a>
     </div>
   </div>
-
-  <!-- WavePay Section (with header & navbar) -->
-  <div class="wave-container" id="wave-container" style="display:none;max-width:480px;margin:0 auto;">
-    <div class="header" style="background:#0974d0;">
-      <div class="header-title" style="color:#fff;">Wave Money</div>
-      <div class="header-icon">
-        <a href="#" id="wave-back-btn" title="Back to Wallet">
-          <i class="fa fa-arrow-left" style="color:#fff;"></i>
-        </a>
-      </div>
+  <div class="kpay-title">
+    <i class="fab fa-cc-visa"></i> KBZPay ငွေသွင်း / ငွေထုတ်
+  </div>
+  <div class="kpay-balance">
+    လက်ကျန်ငွေ: <span id="kpay-user-balance">0</span> ကျပ်
+  </div>
+  <div class="tabs">
+    <button class="tab-btn active" id="tab-deposit">ငွေသွင်း</button>
+    <button class="tab-btn" id="tab-withdraw">ငွေထုတ်</button>
+  </div>
+  <!-- Deposit Form -->
+  <form class="kpay-form active" id="kpay-deposit-form" enctype="multipart/form-data" autocomplete="off">
+    <div class="kpay-label">ဒိုင် KBZPay ဖုန်းနံပါတ်</div>
+    <div class="kpay-admin-phone" id="admin-kpay-phone">09XXXXXXXXX</div>
+    <div class="kpay-note">
+      ဤ KBZPay ဖုန်းသို့ ငွေသွင်းပြီး Screenshot သို့မဟုတ် လုပ်ငန်းစဉ်နောက် ၆ လုံးထည့်ပါ။ <br>
+      Admin မှ အတည်ပြုလျှင်သာ ငွေသွင်းအောင်မြင်ပါမည်။
     </div>
-    <main>
-      <!-- Balance Section -->
-      <section class="wm-section" style="text-align:center;">
-        <div class="wm-title"><i class="fas fa-wallet"></i> လက်ကျန်ငွေ</div>
-        <div class="wm-balance" id="wm-balance">0</div>
-        <div style="font-size:1em;">ကျပ်</div>
-      </section>
-      <!-- Dai Note -->
-      <section class="wm-section">
-        <div class="wm-title"><i class="fas fa-info-circle"></i> ဒိုင်မှတ်ချက်</div>
-        <div class="wm-note" id="wm-note">
-          အရေးကြီး: ငွေသွင်း/ထုတ်မှုသည် ဒိုင်လုပ်ဆောင်သည်။ Admin မှ အတည်ပြုမှသာ သင့်အကောင့်တွင် လက်ကျန်ငွေတိုး/လျော့မည်။ Admin မှ ပယ်ချပါက မူရင်း လက်ကျန်ငွေနှင့် ပြန်လည်ထပ်ပေါင်းမည်။
-        </div>
-      </section>
-      <!-- Tabs for Deposit/Withdraw -->
-      <section class="wm-section">
-        <div class="wm-tabs">
-          <button class="wm-tab-btn active" id="wm-tab-deposit">ငွေသွင်း</button>
-          <button class="wm-tab-btn" id="wm-tab-withdraw">ငွေထုတ်</button>
-        </div>
-        <!-- Deposit Form -->
-        <form id="wm-deposit-form" style="display:block;">
-          <div class="wm-form-group">
-            <label class="wm-label">ဒိုင် WavePay ဖုန်းနံပါတ်</label>
-            <div>
-              <span id="wm-dai-phone" style="font-weight:600;font-size:1.08em;">09XXXXXXXXX</span>
-              <button type="button" class="wm-copy-btn" id="wm-copy-dai-phone"><i class="fa fa-copy"></i> Copy</button>
-            </div>
-          </div>
-          <div class="wm-form-group">
-            <label class="wm-label" for="wm-deposit-amount">သွင်းမည့်ငွေပမာဏ (ကျပ်)</label>
-            <input type="number" min="1000" step="1000" class="wm-input" id="wm-deposit-amount" required placeholder="ဥပမာ - 5000">
-          </div>
-          <div class="wm-form-group">
-            <label class="wm-label" for="wm-deposit-screenshot">Screenshot သို့မဟုတ် လုပ်ငန်းစဉ် နောက်ဆုံး ၆ လုံး</label>
-            <input type="file" accept="image/*" id="wm-deposit-screenshot" style="margin-bottom:6px;">
-            <input type="text" maxlength="6" class="wm-input" id="wm-deposit-txid" placeholder="လုပ်ငန်းစဉ်နောက် ၆ လုံး (မရှိရင်လျစ်ထားနိုင်သည်)">
-          </div>
-          <button class="wm-btn" type="submit">အပ်နှံမှု တင်ပြမည်</button>
-          <div class="wm-success" id="wm-deposit-success" style="display:none;"></div>
-          <div class="wm-error" id="wm-deposit-error" style="display:none;"></div>
-        </form>
-        <!-- Withdraw Form -->
-        <form id="wm-withdraw-form" style="display:none;">
-          <div class="wm-form-group">
-            <label class="wm-label" for="wm-withdraw-phone">ငွေလက်ခံမည့် WavePay ဖုန်းနံပါတ်</label>
-            <input type="tel" class="wm-input" id="wm-withdraw-phone" required placeholder="ဖုန်းနံပါတ် (09...)">
-          </div>
-          <div class="wm-form-group">
-            <label class="wm-label" for="wm-withdraw-amount">ထုတ်ယူမည့်ငွေပမာဏ (ကျပ်)</label>
-            <input type="number" min="1000" step="1000" class="wm-input" id="wm-withdraw-amount" required placeholder="ဥပမာ - 5000">
-          </div>
-          <div class="wm-form-group">
-            <label class="wm-label" for="wm-withdraw-password">သင့်အကောင့် စကားဝှက်</label>
-            <input type="password" class="wm-input" id="wm-withdraw-password" required placeholder="စကားဝှက်">
-          </div>
-          <button class="wm-btn" type="submit">ငွေထုတ်မှု တင်ပြမည်</button>
-          <div class="wm-success" id="wm-withdraw-success" style="display:none;"></div>
-          <div class="wm-error" id="wm-withdraw-error" style="display:none;"></div>
-        </form>
-      </section>
-    </main>
-    <!-- WavePay navbar -->
-    <div class="navbar" id="wave-navbar">
-      <a href="#" id="nav-home-wave" class="active">
-        <i class="fas fa-home"></i>
-        <span>Home</span>
-      </a>
-      <a href="#" id="nav-wallet-wave">
-        <i class="fas fa-wallet"></i>
-        <span>Wallet</span>
-      </a>
-      <a href="#" id="nav-help-wave">
-        <i class="fas fa-question-circle"></i>
-        <span>Help</span>
-      </a>
-      <a href="#" id="nav-profile-wave">
-        <i class="fas fa-user"></i>
-        <span>Profile</span>
+    <label class="kpay-label" for="kpay-deposit-amount">ငွေသွင်း ပမာဏ (ကျပ်)</label>
+    <input class="kpay-input" type="number" min="1000" step="1000" id="kpay-deposit-amount" required placeholder="ဥပမာ - 5000">
+    <label class="kpay-label">Screenshot သို့မဟုတ် လုပ်ငန်းစဉ်နောက် ၆ လုံး</label>
+    <div class="kpay-upload" id="kpay-upload-box">
+      <input type="file" id="kpay-deposit-screenshot" accept="image/*" />
+      <span id="kpay-upload-text"><i class="fa fa-upload"></i> Screenshot တင်ရန် နှိပ်ပါ</span>
+      <div id="kpay-preview"></div>
+    </div>
+    <input class="kpay-input" type="text" id="kpay-deposit-txid" maxlength="6" pattern="[0-9A-Za-z]{6}" placeholder="လုပ်ငန်းစဉ်နောက် ၆ လုံး (မရှိရင်လျစ်ထားနိုင်သည်)">
+    <button class="kpay-btn" type="submit">အပ်နှံမှု တင်ပြမည်</button>
+    <div class="kpay-success" id="kpay-deposit-success"></div>
+    <div class="kpay-error" id="kpay-deposit-error"></div>
+  </form>
+  <!-- Withdraw Form -->
+  <form class="kpay-form" id="kpay-withdraw-form" autocomplete="off">
+    <div class="kpay-note">
+      ငွေထုတ်ရန် အောက်ပါအချက်အလက်များ ဖြည့်ပါ။ Admin အတည်ပြုမှသာ ငွေထုတ်နိုင်ပါသည်။
+    </div>
+    <label class="kpay-label" for="withdraw-amount">ထုတ်လိုသည့် ပမာဏ (ကျပ်)</label>
+    <input class="kpay-input" type="number" min="1000" step="1000" id="withdraw-amount" required placeholder="ဥပမာ - 5000">
+    <label class="kpay-label" for="withdraw-phone">ငွေလက်ခံမည့် KBZPay ဖုန်းနံပါတ်</label>
+    <input class="kpay-input" type="tel" id="withdraw-phone" required placeholder="ဖုန်းနံပါတ် (09...)">
+    <label class="kpay-label" for="withdraw-password">Password</label>
+    <input class="kpay-input" type="password" id="withdraw-password" required placeholder="သင့်အကောင့် စကားဝှက်">
+    <button class="kpay-btn" type="submit">ငွေထုတ်မှု တင်ပြမည်</button>
+    <div class="kpay-success" id="withdraw-success"></div>
+    <div class="kpay-error" id="withdraw-error"></div>
+  </form>
+  <!-- Actions -->
+  <div class="kpay-actions">
+    <span id="show-deposit" style="display:none;"><a href="#">ငွေသွင်းသို့ ပြန်သွားရန်</a></span>
+    <span id="show-withdraw"><a href="#">ငွေထုတ်သို့ ပြောင်းရန်</a></span>
+  </div>
+  <!-- Kpay navbar -->
+  <div class="navbar" id="kpay-navbar">
+    <a href="#" id="nav-home-kpay" class="active">
+      <i class="fas fa-home"></i>
+      <span>Home</span>
+    </a>
+    <a href="#" id="nav-wallet-kpay">
+      <i class="fas fa-wallet"></i>
+      <span>Wallet</span>
+    </a>
+    <a href="#" id="nav-help-kpay">
+      <i class="fas fa-question-circle"></i>
+      <span>Help</span>
+    </a>
+    <a href="#" id="nav-profile-kpay">
+      <i class="fas fa-user"></i>
+      <span>Profile</span>
+    </a>
+  </div>
+</div>
+
+<!-- WavePay Section (with header & navbar) -->
+<div class="wave-container" id="wave-container" style="display:none;max-width:480px;margin:0 auto;">
+  <div class="header" style="background:#0974d0;">
+    <div class="header-title" style="color:#fff;">Wave Money</div>
+    <div class="header-icon">
+      <a href="#" id="wave-back-btn" title="Back to Wallet">
+        <i class="fa fa-arrow-left" style="color:#fff;"></i>
       </a>
     </div>
   </div>
+  <main>
+    <!-- Balance Section -->
+    <section class="wm-section" style="text-align:center;">
+      <div class="wm-title"><i class="fas fa-wallet"></i> လက်ကျန်ငွေ</div>
+      <div class="wm-balance" id="wm-balance">0</div>
+      <div style="font-size:1em;">ကျပ်</div>
+    </section>
+    <!-- Dai Note -->
+    <section class="wm-section">
+      <div class="wm-title"><i class="fas fa-info-circle"></i> ဒိုင်မှတ်ချက်</div>
+      <div class="wm-note" id="wm-note">
+        အရေးကြီး: ငွေသွင်း/ထုတ်မှုသည် ဒိုင်လုပ်ဆောင်သည်။ Admin မှ အတည်ပြုမှသာ သင့်အကောင့်တွင် လက်ကျန်ငွေတိုး/လျော့မည်။ Admin မှ ပယ်ချပါက မူရင်း လက်ကျန်ငွေနှင့် ပြန်လည်ထပ်ပေါင်းမည်။
+      </div>
+    </section>
+    <!-- Tabs for Deposit/Withdraw -->
+    <section class="wm-section">
+      <div class="wm-tabs">
+        <button class="wm-tab-btn active" id="wm-tab-deposit">ငွေသွင်း</button>
+        <button class="wm-tab-btn" id="wm-tab-withdraw">ငွေထုတ်</button>
+      </div>
+      <!-- Deposit Form -->
+      <form id="wm-deposit-form" style="display:block;">
+        <div class="wm-form-group">
+          <label class="wm-label">ဒိုင် WavePay ဖုန်းနံပါတ်</label>
+          <div>
+            <span id="wm-dai-phone" style="font-weight:600;font-size:1.08em;">09XXXXXXXXX</span>
+            <button type="button" class="wm-copy-btn" id="wm-copy-dai-phone"><i class="fa fa-copy"></i> Copy</button>
+          </div>
+        </div>
+        <div class="wm-form-group">
+          <label class="wm-label" for="wm-deposit-amount">သွင်းမည့်ငွေပမာဏ (ကျပ်)</label>
+          <input type="number" min="1000" step="1000" class="wm-input" id="wm-deposit-amount" required placeholder="ဥပမာ - 5000">
+        </div>
+        <div class="wm-form-group">
+          <label class="wm-label" for="wm-deposit-screenshot">Screenshot သို့မဟုတ် လုပ်ငန်းစဉ် နောက်ဆုံး ၆ လုံး</label>
+          <input type="file" accept="image/*" id="wm-deposit-screenshot" style="margin-bottom:6px;">
+          <input type="text" maxlength="6" class="wm-input" id="wm-deposit-txid" placeholder="လုပ်ငန်းစဉ်နောက် ၆ လုံး (မရှိရင်လျစ်ထားနိုင်သည်)">
+        </div>
+        <button class="wm-btn" type="submit">အပ်နှံမှု တင်ပြမည်</button>
+        <div class="wm-success" id="wm-deposit-success" style="display:none;"></div>
+        <div class="wm-error" id="wm-deposit-error" style="display:none;"></div>
+      </form>
+      <!-- Withdraw Form -->
+      <form id="wm-withdraw-form" style="display:none;">
+        <div class="wm-form-group">
+          <label class="wm-label" for="wm-withdraw-phone">ငွေလက်ခံမည့် WavePay ဖုန်းနံပါတ်</label>
+          <input type="tel" class="wm-input" id="wm-withdraw-phone" required placeholder="ဖုန်းနံပါတ် (09...)">
+        </div>
+        <div class="wm-form-group">
+          <label class="wm-label" for="wm-withdraw-amount">ထုတ်ယူမည့်ငွေပမာဏ (ကျပ်)</label>
+          <input type="number" min="1000" step="1000" class="wm-input" id="wm-withdraw-amount" required placeholder="ဥပမာ - 5000">
+        </div>
+        <div class="wm-form-group">
+          <label class="wm-label" for="wm-withdraw-password">သင့်အကောင့် စကားဝှက်</label>
+          <input type="password" class="wm-input" id="wm-withdraw-password" required placeholder="စကားဝှက်">
+        </div>
+        <button class="wm-btn" type="submit">ငွေထုတ်မှု တင်ပြမည်</button>
+        <div class="wm-success" id="wm-withdraw-success" style="display:none;"></div>
+        <div class="wm-error" id="wm-withdraw-error" style="display:none;"></div>
+      </form>
+    </section>
+  </main>
+  <!-- WavePay navbar -->
+  <div class="navbar" id="wave-navbar">
+    <a href="#" id="nav-home-wave" class="active">
+      <i class="fas fa-home"></i>
+      <span>Home</span>
+    </a>
+    <a href="#" id="nav-wallet-wave">
+      <i class="fas fa-wallet"></i>
+      <span>Wallet</span>
+    </a>
+    <a href="#" id="nav-help-wave">
+      <i class="fas fa-question-circle"></i>
+      <span>Help</span>
+    </a>
+    <a href="#" id="nav-profile-wave">
+      <i class="fas fa-user"></i>
+      <span>Profile</span>
+    </a>
+  </div>
+</div>
 
-<!-- Bottom Navigation (always shown on main sections) -->
-  <div class="navbar" id="main-navbar">
+<div class="navbar" id="main-navbar">
     <a href="#" id="nav-home" class="active">
       <i class="fas fa-home"></i>
       <span>Home</span>
@@ -490,43 +614,116 @@
       <span>Profile</span>
     </a>
   </div>
-
-  <!-- Debug Toggle Button & Panel (for debugMode JS support) -->
   <button id="debug-toggle" style="display: none;">Debug</button>
   <div id="debug-panel" class="debug-panel" style="display:none;">
     <div id="debug-content"></div>
   </div>
+
   
-  <!-- JS Files -->
-  <script src="js/script.js"></script>
-  <script src="js/wallet1.js"></script>
+<script src="js/script.js"></script>
+<script src="js/ads.js"></script>
+<script src="js/wallet2.js"></script>
 <script src="js/wallet-transaction-history.js"></script>
-  
+<!-- KBZPay Tabs & Withdraw Handler (modular, keeps code clean) -->
+<script src="js/kpay-tabs-withdraw.js"></script>
+<script src="js/profile.js"></script>
+<script src="js/register.js"></script>
+<script src="js/wallet-kpay-wave.js"></script>
+<script src="js/kpay-wave_ok.js"></script>
+<script src="js/kpay-deposit.js"></script>
+<script src="js/menu-icons.js"></script>
+
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-  // menu-grid ထဲက Game မဟုတ်တဲ့ menu-btn အားလုံး disable လုပ်မယ်
-  var btns = document.querySelectorAll('.menu-grid a.menu-btn');
-  btns.forEach(function(btn) {
-    // Game ဆိုတဲ့စာပါမယ်ဆို skip
-    if (!btn.textContent.trim().includes('Game')) {
-      btn.addEventListener('click', function(e) {
-        e.preventDefault();
-        e.stopImmediatePropagation();
-        return false;
-      });
-      // Visual cue (CSS မသုံးပဲ JS နဲ့ပဲ)
-      btn.style.opacity = '0.45';
-      btn.style.cursor = 'not-allowed';
-      btn.style.filter = 'grayscale(60%)';
-      btn.setAttribute('tabindex', '-1');
-      btn.setAttribute('aria-disabled', 'true');
-      // Hover မပြောင်းအောင် event handler
-      btn.addEventListener('mouseenter', function(e) {
-        btn.style.textDecoration = 'none';
-      });
+  // --- Login button show/hide logic for main page, with auto refresh after login ---
+  document.addEventListener('DOMContentLoaded', function() {
+    function isLoggedIn() {
+      if (window.AUTH && typeof AUTH.isLoggedIn === "function") return AUTH.isLoggedIn();
+      return !!(localStorage.getItem('azm2d_token') || sessionStorage.getItem('azm2d_token'));
     }
+
+    function updateMainLoginBtn() {
+      var btnArea = document.getElementById('main-login-btn-area');
+      if (!btnArea) return;
+      if (!isLoggedIn()) {
+        btnArea.innerHTML = '<button id="main-login-btn">အကောင့်ဝင်ရန် Login</button>';
+      } else {
+        btnArea.innerHTML = '';
+      }
+      var btn = document.getElementById('main-login-btn');
+      if (btn) {
+        btn.onclick = function() {
+          document.getElementById('main-ui').style.display = 'none';
+          document.getElementById('account-ui').style.display = 'block';
+          document.getElementById('login-form').style.display = 'block';
+          document.getElementById('register-form').style.display = 'none';
+          document.getElementById('tab-login').classList.add('active');
+          document.getElementById('tab-register').classList.remove('active');
+        };
+      }
+    }
+
+    window.updateMainLoginBtn = updateMainLoginBtn;
+    updateMainLoginBtn();
+
+    // Patch legacy button update if it exists
+    if (window.updateLoginRegisterButtons) {
+      var oldUpd = window.updateLoginRegisterButtons;
+      window.updateLoginRegisterButtons = function() {
+        oldUpd();
+        updateMainLoginBtn();
+      };
+    }
+
+    // Auto-reload page after login (so UI is always fresh, button always hidden)
+    document.addEventListener('azm2d-login-success', function() {
+      updateMainLoginBtn();
+    });
+
+    // After logout, fully reload page for complete UI reset
+    document.addEventListener('azm2d-logout', function() {
+      updateMainLoginBtn();
+    });
+
+    // --- Initialize KBZPay Tabs & Withdraw Handler (calls only if defined) ---
+    if (typeof initKpayTabAndWithdraw === "function") initKpayTabAndWithdraw();
   });
-});
+
+  // --- Ensure login button updates when returning to home ---
+  function observeViewChanges() {
+    // You might already have a showView or similar, so this ensures button is updated
+    const originalShowView = window.showView;
+    window.showView = function(view) {
+      if (typeof originalShowView === 'function') originalShowView.apply(this, arguments);
+      if (view === 'home' && typeof updateMainLoginBtn === 'function') updateMainLoginBtn();
+    };
+  }
+  if (typeof window.showView === 'function') observeViewChanges();
+  else document.addEventListener('DOMContentLoaded', observeViewChanges);
+
+  // --- Disable non-active menu buttons in menu-grid except Game, 2D and 3D ---
+  document.addEventListener('DOMContentLoaded', function() {
+    var btns = document.querySelectorAll('.menu-grid a.menu-btn');
+    btns.forEach(function(btn) {
+      var text = btn.textContent.trim();
+      // Allow 'Game', '2D', and '3D' to be active
+      if (!(text.includes('Game') || text.includes('2D') || text.includes('3D'))) {
+        btn.addEventListener('click', function(e) {
+          e.preventDefault();
+          e.stopImmediatePropagation();
+          return false;
+        });
+        btn.style.opacity = '0.45';
+        btn.style.cursor = 'not-allowed';
+        btn.style.filter = 'grayscale(60%)';
+        btn.setAttribute('tabindex', '-1');
+        btn.setAttribute('aria-disabled', 'true');
+        btn.addEventListener('mouseenter', function(e) {
+          btn.style.textDecoration = 'none';
+        });
+      }
+    });
+  });
 </script>
+
 </body>
 </html>
