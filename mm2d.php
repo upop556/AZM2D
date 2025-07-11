@@ -7,6 +7,7 @@ error_reporting(E_ALL);
 
 session_start();
 require_once __DIR__ . '/db.php';
+require_once __DIR__ . '/referral_commission.php'; // <-- Include referral logic
 
 // --- Check Login ---
 if (empty($_SESSION['user_id'])) {
