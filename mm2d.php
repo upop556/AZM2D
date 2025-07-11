@@ -1,5 +1,8 @@
 <?php
-// 2D Number UI (00-99) for 11:00AM (မြန်မာစံတော်ချိန်), mobile UI, brake/limit control, balance in table, R button = reverse selection + balance refresh
+ini_set('display_errors', 1);
+ini_set('display_startup_errors', 1);
+error_reporting(E_ALL);
+// 2D Number UI (00-99) for 12:01PM (မြန်မာစံတော်ချိန်), mobile UI, brake/limit control, balance in table, R button = reverse selection + balance refresh
 
 ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
@@ -18,7 +21,7 @@ $current_user = $_SESSION['user_id'] ?? null;
 
 // --- Closed session logic ---
 require_once __DIR__ . '/closed_session.php';
-$closedInfo = getSessionClosedInfo('Asia/Yangon', '11:00:00', '10:55:00');
+$closedInfo = getSessionClosedInfo('Asia/Yangon', '12:01:00', '11:56:00');
 $is_betting_closed = $closedInfo['is_betting_closed'];
 $target_date_dt = $closedInfo['target_date'];
 $bet_date = $target_date_dt->format('Y-m-d');
@@ -45,7 +48,7 @@ while ($row_brakes = $stmt_brakes->fetch(PDO::FETCH_ASSOC)) {
 // --- Already Bet Totals for Today (for brake progress) ---
 $current_totals = [];
 $stmt_current = $pdo->prepare('SELECT number, SUM(amount) as total_bet FROM lottery_bets WHERE bet_type = :type AND bet_date = :bet_date GROUP BY number');
-$stmt_current->execute([':type'=>'2D-1100', ':bet_date' => $bet_date]);
+$stmt_current->execute([':type'=>'2D-1201', ':bet_date' => $bet_date]);
 while ($row_current = $stmt_current->fetch(PDO::FETCH_ASSOC)) {
     $current_totals[$row_current['number']] = (float)$row_current['total_bet'];
 }
@@ -103,7 +106,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_bet'])) {
                 $brake_limit = $brakes[$number] ?? -1;
                 if ($brake_limit != -1) {
                     $stmt_num_total = $pdo->prepare('SELECT SUM(amount) FROM lottery_bets WHERE bet_type = :type AND bet_date = :bet_date AND number = :number FOR UPDATE');
-                    $stmt_num_total->execute([':type'=> '2D-1100', ':bet_date' => $bet_date, ':number' => $number]);
+                    $stmt_num_total->execute([':type'=> '2D-1201', ':bet_date' => $bet_date, ':number' => $number]);
                     $current_bet_total_for_num = (float)($stmt_num_total->fetchColumn() ?? 0);
 
                     if (($current_bet_total_for_num + $bet_amount) > $brake_limit) {
@@ -118,7 +121,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_bet'])) {
 
             $insert_stmt = $pdo->prepare('INSERT INTO lottery_bets (user_id, bet_type, number, amount, bet_date, created_at) VALUES (:user_id, :bet_type, :number, :amount, :bet_date, NOW())');
             foreach ($selected_numbers as $number) {
-                $insert_stmt->execute([':user_id' => $current_user, ':bet_type' => '2D-1100', ':number' => $number, ':amount' => $bet_amount, ':bet_date' => $bet_date]);
+                $insert_stmt->execute([':user_id' => $current_user, ':bet_type' => '2D-1201', ':number' => $number, ':amount' => $bet_amount, ':bet_date' => $bet_date]);
             }
 
             $pdo->commit();
@@ -134,7 +137,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_bet'])) {
 }
 
 if(isset($_GET['success'])) {
-    $message = 'ထိုးပြီးပါပြီ။ သင်၏ ၂လုံးထိုးမှတ်တမ်းကို အောင်မြင်စွာ သိမ်းဆည်းပြီးပါပြီ။';
+    $message = 'ထိုးပြီးပါပြီ။ သင်၏ ၂လုံးထိုးမှတ်တမ်းကို အောင်မြင်စွာ သိမ်းဆည်းပ[...]
     $messageType = 'success';
 }
 ?>
@@ -144,7 +147,7 @@ if(isset($_GET['success'])) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0">
-    <title>AZM2D3D - 11:00AM</title>
+    <title>AZM2D3D - 12:01PM</title>
     <link rel="stylesheet" href="/css/variables.css">
     <link rel="stylesheet" href="/css/layout.css">
     <link rel="stylesheet" href="/css/header.css">
@@ -607,7 +610,7 @@ if(isset($_GET['success'])) {
         </div>
     </div>
     <div class="container">
-        <div class="time-badge">မြန်မာစံတော်ချိန် - မနက် ၁၁ နာရီ (11:00AM)</div>
+        <div class="time-badge">မြန်မာစံတော်ချိန် - နေ့လယ် ၁၂ နာရီ ၁ မိနစ် (12:01PM)<?= htmlspecialchars($display_date_info) ?></div>
         <div class="balance-table-wrap">
             <table class="balance-table" style="width:100%;table-layout:auto;">
                 <tr>
@@ -706,14 +709,14 @@ if(isset($_GET['success'])) {
 
 // Clear selection on browser refresh/load
 window.addEventListener('load', function() {
-    sessionStorage.removeItem('selected2d_1100');
+    sessionStorage.removeItem('selected2d_1201');
     selected = {};
     updateGridSelections();
 });
 
 // DOM references
 const numbersGrid = document.getElementById('numbersGrid');
-let selected = JSON.parse(sessionStorage.getItem('selected2d_1100') || '{}');
+let selected = JSON.parse(sessionStorage.getItem('selected2d_1201') || '{}');
 
 // Update grid UI based on selected numbers
 function updateGridSelections() {
@@ -740,7 +743,7 @@ numbersGrid.addEventListener('click', function(e) {
     } else {
         selected[num] = true;
     }
-    sessionStorage.setItem('selected2d_1100', JSON.stringify(selected));
+    sessionStorage.setItem('selected2d_1201', JSON.stringify(selected));
     updateGridSelections();
 });
 
@@ -772,7 +775,7 @@ document.getElementById('refreshBtn').addEventListener('click', function() {
         }
     });
     selected = newSelected;
-    sessionStorage.setItem('selected2d_1100', JSON.stringify(selected));
+    sessionStorage.setItem('selected2d_1201', JSON.stringify(selected));
     updateGridSelections();
 });
 
@@ -904,7 +907,7 @@ function doQuickSelect(type, extra) {
     modalQuickError.textContent = '';
     if (type === 'clear') {
         selected = {};
-        sessionStorage.setItem('selected2d_1100', JSON.stringify(selected));
+        sessionStorage.setItem('selected2d_1201', JSON.stringify(selected));
         updateGridSelections();
         modalQuickBg.classList.remove('active');
         return;
@@ -918,7 +921,7 @@ function doQuickSelect(type, extra) {
                     let num = item.getAttribute('data-number');
                     selected[num] = true;
                 });
-                sessionStorage.setItem('selected2d_1100', JSON.stringify(selected));
+                sessionStorage.setItem('selected2d_1201', JSON.stringify(selected));
                 updateGridSelections();
                 modalQuickBg.classList.remove('active');
             })
@@ -944,7 +947,7 @@ function doQuickSelect(type, extra) {
                         selected[num] = true;
                     }
                 });
-                sessionStorage.setItem('selected2d_1100', JSON.stringify(selected));
+                sessionStorage.setItem('selected2d_1201', JSON.stringify(selected));
                 updateGridSelections();
             }
             modalQuickBg.classList.remove('active');
