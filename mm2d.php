@@ -678,6 +678,11 @@ if(isset($_GET['success'])) {
         </div>
     </div>
 <script>
+// Clear selection on browser refresh/load
+window.addEventListener('load', function() {
+    sessionStorage.removeItem('selected2d_1100');
+});
+
 const numbersGrid = document.getElementById('numbersGrid');
 let selected = JSON.parse(sessionStorage.getItem('selected2d_1100') || '{}');
 
