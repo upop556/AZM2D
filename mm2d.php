@@ -776,6 +776,12 @@ if(isset($_GET['success'])) {
             border-radius: 7px;
             border: 1px solid #ccc;
         }
+     .action-btn-group {
+    display: flex;
+    justify-content: center;
+    gap: 12px;
+    margin-bottom: 15px;
+}
     </style>
 </head>
 <body>
@@ -789,41 +795,42 @@ if(isset($_GET['success'])) {
             <a href="/index.html" class="back-btn"><i class="bi bi-arrow-left"></i> </a>
         </div>
     </div>
-    <div class="container">
-        <div class="time-badge">မြန်မာစံတော်ချိန် - မနက် ၁၁ နာရီ (11:00AM)</div>
-        <!-- Balance table with R, "ထိုးမည်" and Quick select button -->
-        <div class="balance-table-wrap">
-            <form method="post" id="betFormTableBtn" autocomplete="off" style="width:100%;">
-                <table class="balance-table" style="width:100%;table-layout:auto;">
-                    <tr>
-                        <td class="wallet"><i class="bi bi-wallet2"></i></td>
-                        <td>
-                            လက်ကျန်ငွေ:
-                            <span class="balance-amount" id="Balance"><?= number_format($user_balance) ?></span>
-                            <span>ကျပ်</span>
-                        </td>
-                        <td style="padding:0;">
-                            <button class="refresh-btn" type="button" id="refreshBtn" title="Refresh balance & reverse">
-                                R
-                            </button>
-                        </td>
-                        <td style="padding:0;">
-                            <button type="button" id="betTableTrigger" class="bet-form-btn-table" style="padding:6px 13px;font-size:0.98em;border-radius:7px;">
-                                ထိုးမည်
-                            </button>
-                            <button type="button" id="quickSelectTrigger" class="quick-select-btn">
-                                <i class="bi bi-lightning-charge"></i> အမြန်ရွေး
-                            </button>
-                        </td>
-                    </tr>
-                </table>
-            </form>
-        </div>
-        <?php if ($message && $messageType != "success"): // hide "ထိုးပြီးပါပြီ..." (success) ?>
-        <div class="message <?= htmlspecialchars($messageType) ?>">
-            <?= htmlspecialchars($message) ?>
-        </div>
-        <?php endif; ?>
+    ...
+<div class="container">
+    <div class="time-badge">မြန်မာစံတော်ချိန် - မနက် ၁၁ နာရီ (11:00AM)</div>
+    <!-- Balance table only -->
+    <div class="balance-table-wrap">
+        <table class="balance-table" style="width:100%;table-layout:auto;">
+            <tr>
+                <td class="wallet"><i class="bi bi-wallet2"></i></td>
+                <td>
+                    လက်ကျန်ငွေ:
+                    <span class="balance-amount" id="Balance"><?= number_format($user_balance) ?></span>
+                    <span>ကျပ်</span>
+                </td>
+            </tr>
+        </table>
+    </div>
+
+    <!-- ခလုပ်များကို Balance Table အောက်သို့ထုတ်ထည့်ပါ -->
+    <div class="action-btn-group" style="display:flex;justify-content:center;gap:12px;margin-bottom:15px;">
+        <button class="refresh-btn" type="button" id="refreshBtn" title="Refresh balance & reverse">
+            R
+        </button>
+        <button type="button" id="betTableTrigger" class="bet-form-btn-table" style="padding:6px 13px;font-size:0.98em;border-radius:7px;">
+            ထိုးမည်
+        </button>
+        <button type="button" id="quickSelectTrigger" class="quick-select-btn">
+            <i class="bi bi-lightning-charge"></i> အမြန်ရွေး
+        </button>
+    </div>
+
+    <?php if ($message && $messageType != "success"): // hide "ထိုးပြီးပါပြီ..." (success) ?>
+    <div class="message <?= htmlspecialchars($messageType) ?>">
+        <?= htmlspecialchars($message) ?>
+    </div>
+    <?php endif; ?>
+...
         <!-- Hidden submit form for final confirmation -->
         <form method="post" id="betFormFinal" style="display:none;"></form>
         <!-- Hidden old form and main input (still used in popup, but not on main UI) -->
