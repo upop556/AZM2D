@@ -487,5 +487,3 @@ setInterval(updateBettingStatus, 15000);
 </script>
 </body>
 </html>
-
-
