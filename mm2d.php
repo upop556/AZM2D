@@ -603,7 +603,7 @@ if(isset($_GET['success'])) {
             AZM2D3D GAME
         </div>
         <div class="header-right">
-            <a href="/index.html" class="back-btn"><i class="bi bi-arrow-left"></i> </a>
+            <a href="/b/2dnumber.php" class="back-btn"><i class="bi bi-arrow-left"></i> </a>
         </div>
     </div>
     <div class="container">
