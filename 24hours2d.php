@@ -4,86 +4,72 @@ ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
 error_reporting(E_ALL);
 
-// 24hours2d.php
 session_start();
 date_default_timezone_set('Asia/Yangon');
 
 require_once __DIR__ . '/db.php';
 
-// FIX: Get PDO connection from Db class
-$pdo = Db::getInstance()->getConnection();
+// --- Check Login ---
+if (empty($_SESSION['user_id'])) {
+    header('Location: /index.html');
+    exit;
+}
+$current_user = $_SESSION['user_id'] ?? null;
 
-$now = time();
+// --- Get User Balance ---
+function getUserBalance($user_id) {
+    $pdo = Db::getInstance()->getConnection();
+    $stmt = $pdo->prepare('SELECT balance FROM users WHERE id = :uid');
+    $stmt->execute([':uid' => $user_id]);
+    $row = $stmt->fetch();
+    return $row ? (int)$row['balance'] : 0;
+}
+$user_balance = getUserBalance($current_user);
 
-// နောက်ဆုံး update လုပ်ချိန် စစ်
-$stmt = $pdo->query("SELECT set_value, value, UNIX_TIMESTAMP(updated_at) as updated_ts, updated_at, time10, time13, time15, time18, time19, time20 FROM set_value WHERE id = 1");
-$row = $stmt->fetch(PDO::FETCH_ASSOC);
+// --- Get latest main value and hourly slots (dummy for now) ---
+function getMainValueRow() {
+    $pdo = Db::getInstance()->getConnection();
+    $stmt = $pdo->prepare('SELECT mainVALUE, updated_at FROM mainvalue ORDER BY updated_at DESC LIMIT 1');
+    $stmt->execute();
+    return $stmt->fetch(PDO::FETCH_ASSOC) ?: ['mainVALUE' => '--', 'updated_at' => date("Y-m-d H:i:s")];
+}
+$row = getMainValueRow();
 
-$should_update = true;
-if ($row && isset($row['updated_ts'])) {
-    $last_update = intval($row['updated_ts']);
-    if (($now - $last_update) < 4) {
-        $should_update = false;
+// --- Hourly slots result (dummy, should fetch from DB or file) ---
+function getHourlyResults() {
+    // You should fetch from DB: SELECT * FROM hourly_results WHERE date = CURRENT_DATE()
+    // Here, we just return empty for demo, slot: timeHH, value: 'N/A'
+    $results = [];
+    for ($h = 0; $h < 24; $h++) {
+        $slot_key = 'time' . str_pad($h, 2, '0', STR_PAD_LEFT);
+        $results[$slot_key] = [
+            'value' => 'N/A',
+            'updated_at' => '--'
+        ];
     }
+    return $results;
+}
+$hourly_results = getHourlyResults();
+
+// --- AJAX endpoint for latest value ---
+if (isset($_GET['ajax']) && $_GET['ajax'] == '1') {
+    $mainVALUE = $row['mainVALUE'] ?? '--';
+    // 12-hour format for Myanmar timezone, with correct AM/PM
+    $updated_at = date("d/m/Y h:i:s A", strtotime($row['updated_at'] ?? date("Y-m-d H:i:s")));
+    header('Content-Type: application/json');
+    echo json_encode([
+        "mainVALUE" => $mainVALUE,
+        "updated_at" => $updated_at
+    ]);
+    exit;
 }
 
-if ($should_update) {
-    $new_set = mt_rand(31000, 32000) + mt_rand(0,99)/100;
-    $new_value = mt_rand(8000, 9000) + mt_rand(0,99)/100;
-    $stmt2 = $pdo->prepare("UPDATE set_value SET set_value = ?, value = ?, updated_at = NOW() WHERE id = 1");
-    $stmt2->execute([$new_set, $new_value]);
-    // ပြန် select (updated_at ကိုပါယူ)
-    $stmt = $pdo->query("SELECT set_value, value, UNIX_TIMESTAMP(updated_at) as updated_ts, updated_at, time10, time13, time15, time18, time19, time20 FROM set_value WHERE id = 1");
-    $row = $stmt->fetch(PDO::FETCH_ASSOC);
+// --- Helper function for MM 12hr format ---
+// Fix: Use 'a' for lowercase am/pm and strtoupper for consistency
+function mm_hour_label($hour) {
+    $t = DateTime::createFromFormat('!H', $hour);
+    return $t->format('h:00 ') . strtoupper($t->format('a'));
 }
-
-// Helper for 2D: always return last 2 digits, pad with 0 if needed
-function get2d($val) {
-    $val = preg_replace('/[^\d]/', '', $val);
-    return strlen($val) >= 2 ? substr($val, -2) : str_pad($val, 2, "0", STR_PAD_LEFT);
-}
-
-// For today's slots, only show value if the slot time is reached, otherwise show '--'
-function slot_reached($slot_time_str) {
-    date_default_timezone_set('Asia/Yangon');
-    $now = time();
-    $today = date('Y-m-d');
-    $slot_time = strtotime($today . ' ' . $slot_time_str);
-    return $now >= $slot_time;
-}
-
-// Define slot time boundaries
-$slot_times = [
-    'time10' => '10:00',
-    'time13' => '13:00',
-    'time15' => '15:00',
-    'time18' => '18:00',
-    'time19' => '19:00',
-    'time20' => '20:00',
-];
-
-// Main value calculation (keep as-is, or update if you want 2D-style)
-$set = ($row && isset($row['set_value'])) ? number_format((float)$row['set_value'], 2, '.', '') : '0.00';
-$value = ($row && isset($row['value'])) ? number_format((float)$row['value'], 2, '.', '') : '0.00';
-
-$just_digits_set = preg_replace('/[^\d]/', '', $set);
-$set_last_digit = (strlen($just_digits_set) > 0) ? substr($just_digits_set, -1) : '0';
-
-$just_digits_val = preg_replace('/[^\d]/', '', $value);
-$value_special_digit = (strlen($just_digits_val) >= 4) ? substr($just_digits_val, 3, 1) : '0';
-
-$mainVALUE = $set_last_digit . $value_special_digit;
-$updated_at = ($row && isset($row['updated_at'])) ? date("d/m/Y H:i:s", strtotime($row['updated_at'])) : date("d/m/Y H:i:s");
-
-// Ensure slot fields are always 2D string, but only show value if slot time is reached, else '--'
-function safeStr2d_with_slot($v, $slot_key, $slot_times) {
-    if (!isset($slot_times[$slot_key]) || !slot_reached($slot_times[$slot_key])) {
-        return '--';
-    }
-    return (isset($v) && $v !== null && $v !== '') ? get2d($v) : '--';
-}
-
-// --- UI HTML Output ---
 ?>
 <!DOCTYPE html>
 <html lang="my">
@@ -91,7 +77,6 @@ function safeStr2d_with_slot($v, $slot_key, $slot_times) {
     <meta charset="UTF-8">
     <title>24 Hours 2D Live</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <!-- Main app styles for UI consistency -->
     <link rel="stylesheet" href="/css/variables.css">
     <link rel="stylesheet" href="/css/layout.css">
     <link rel="stylesheet" href="/css/header.css">
@@ -107,157 +92,209 @@ function safeStr2d_with_slot($v, $slot_key, $slot_times) {
         html, body { height: 100%; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif; }
         body { min-height: 100vh; box-sizing: border-box; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; padding-top: 115px; padding-bottom: 120px; }
         .container { width: 100%; max-width: 420px; margin: 0 auto; padding: 0 15px; box-sizing: border-box; }
+        .balance-panel { margin: 16px auto 20px auto; background: var(--primary); color: #fff; border-radius: 13px; box-shadow: 0 4px 15px rgba(25, 118, 210, 0.25); padding: 15px 20px; font-size: 1.2em;}
+        .balance-panel .bi-wallet2 { font-size: 1.3em; margin-right: 10px; }
         .card { background: var(--card-bg); border-radius: 18px; box-shadow: 0 4px 25px rgba(0,0,0,0.08); padding: 20px; width: 100%; text-align: center; margin: 0 auto 25px auto; box-sizing: border-box; }
         .section-title { font-size: 1.15em; font-weight: 600; color: var(--text-dark); margin-bottom: 15px; text-align: left; }
-        .mainvalue-large { font-size: 4em; font-weight: bold; color: var(--accent); letter-spacing: 0.05em; margin-bottom: 0.2em; min-height: 1.2em; line-height: 1.2; }
+        .mainvalue-large { font-size: 6.6em; font-weight: bold; color: var(--accent); letter-spacing: 0.05em; margin-bottom: 0.2em; min-height: 1.2em; line-height: 1.2; transition: opacity 0.4s; }
         .updated-row { text-align: center; font-size: 0.95em; color: var(--text-light); margin-bottom: 1em; }
-        .live-stats { display: flex; justify-content: space-around; margin-top: 1em; padding-top: 1em; border-top: 1px solid var(--border-color); }
-        .stat-item { text-align: center; }
-        .stat-label { display: block; color: var(--text-light); font-size: 0.9em; margin-bottom: 4px; }
-        .stat-value { font-weight: 500; font-size: 1.1em; color: var(--text-dark); }
-        .history-grid { display: grid; grid-template-columns: 1fr; gap: 12px; margin-bottom: 50px; }
-        .history-card { display: flex; justify-content: space-between; align-items: center; background: var(--card-bg); border-radius: 12px; padding: 12px 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
-        .history-left { text-align: left; }
-        .history-right { text-align: right; color: #555; font-size: 0.95em; }
-        .history-time { color: var(--primary); font-weight: bold; margin-bottom: 4px; }
-        .history-main-value { font-size: 2em; font-weight: bold; }
-        .history-detail { line-height: 1.4; }
-        /* Header fixes for overlay */
-        .header {
+        .hourly-grid { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 12px; margin-bottom: 50px; }
+        .hourly-card { display: flex; flex-direction: column; justify-content: center; align-items: center; background: var(--card-bg); border-radius: 12px; padding: 10px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+        .hour-label { color: var(--primary); font-weight: bold; margin-bottom: 4px; }
+        .hour-value { font-size: 1.6em; font-weight: bold; }
+        .hour-detail { line-height: 1.2; font-size: 0.95em; color: #555; }
+        @media (max-width: 600px) {
+            .hourly-grid { grid-template-columns: 1fr 1fr; }
+            .mainvalue-large { font-size: 3.3em; }
+        }
+        .bet-btn-fixed {
             position: fixed;
-            top: 0;
             left: 0;
             right: 0;
-            height: 110px;
-            background: linear-gradient(90deg, #1877f2 60%, #1153a6 120%);
-            color: #fff;
-            z-index: 1100;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 0 36px;
-            border-bottom-left-radius: 24px;
-            border-bottom-right-radius: 24px;
-            box-shadow: 0 6px 32px rgba(24,119,242,0.13), 0 1.5px 0 #e2e7ef;
-            transition: box-shadow 0.18s, height 0.18s;
-        }
-        .header-logo {
-            height: 52px;
-            width: 52px;
-            border-radius: 12px;
-            box-shadow: 0 2px 8px #0002;
-            background: #fff5;
-            object-fit: contain;
-            margin-right: 16px;
-        }
-        .header-title {
-            font-family: 'Poppins', 'Noto Sans Myanmar', sans-serif;
-            font-size: 2.2em;
-            font-weight: 700;
-            color: #fff;
-            letter-spacing: 1.5px;
-            text-transform: uppercase;
-            padding-left: 18px;
-            text-shadow: 0 4px 16px rgba(33, 56, 118, 0.15);
-            display: flex;
-            align-items: center;
-            gap: 16px;
-        }
-        .header-right {
-            display: flex;
-            align-items: center;
-            height: 100%;
-        }
-        .back-btn {
-            display: flex;
-            align-items: center;
-            color: #1976d2;
-            text-decoration: none;
-            padding: 8px 15px;
-            border-radius: 8px;
-            background: #fff;
-            font-size: 1.09em;
-            font-weight: 600;
-            margin-left: 20px;
-            margin-right: 0;
-            box-shadow: 0 2px 8px #1877f218;
+            bottom: 0;
+            width: 100%;
+            max-width: 420px;
+            margin: auto;
+            background: var(--warning, #ffae42);
+            color: #333;
+            font-size: 1.18em;
+            font-weight: bold;
+            border-radius: 0 0 18px 18px;
+            box-shadow: 0 -2px 18px #bbb;
+            padding: 18px 0 14px 0;
+            text-align: center;
+            z-index: 1200;
+            cursor: pointer;
             transition: background 0.18s;
-            border: none;
         }
-        .back-btn:hover { background: #e3f2fd; }
-        .back-btn i { margin-right: 6px; }
+        .bet-btn-fixed:hover {
+            background: #ffd98b;
+        }
+        .bet-hour-btn {
+            margin: 7px 0;
+            width: 100%;
+            padding: 10px 0;
+            font-size: 1em;
+            background: linear-gradient(90deg, #ffae42, #ffd98b);
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: background 0.18s;
+        }
+        .bet-hour-btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            color: #888;
+        }
+        .bet-popup-bg { 
+            display: none; 
+            position: fixed; left:0; top:0; width:100vw; height:100vh; 
+            background: rgba(32,20,20,0.29); 
+            z-index: 2000;
+        }
+        .bet-popup { 
+            position: fixed; 
+            left:0; right:0; 
+            bottom: 0; 
+            max-width: 420px; 
+            margin: auto; 
+            background: #fff; 
+            border-radius: 18px 18px 0 0; 
+            box-shadow: 0 -2px 18px #bbb; 
+            padding: 32px 18px 38px 18px; 
+            animation: popupUp 0.22s;
+            height: 50vh;
+            min-height: 320px;
+            max-height: 60vh;
+            overflow-y: auto;
+        }
+        @keyframes popupUp { from { transform: translateY(100%);} to { transform: translateY(0);} }
+        .bet-popup-title { font-size: 1.15em; font-weight: 600; color: var(--text-dark); margin-bottom: 15px; text-align: center; }
+        .bet-popup-close { position: absolute; top: 10px; right: 18px; font-size: 1.3em; color: #c33; background: none; border: none; cursor: pointer;}
         @media (max-width: 600px) {
-            .header {
-                height: 74px;
-                padding: 0 10px;
-                border-bottom-left-radius: 14px;
-                border-bottom-right-radius: 14px;
-            }
-            .header-title {
-                font-size: 1.35em;
-                padding-left: 4px;
-                gap: 8px;
-            }
-            .header-logo {
-                height: 36px;
-                width: 36px;
+            .bet-popup {
+                height: 55vh;
+                min-height: 220px;
+                max-height: 70vh;
             }
         }
     </style>
+    <script>
+    // Auto refresh latest update from backend every 4 seconds
+    function refreshLatestUpdate() {
+        fetch(window.location.pathname + '?ajax=1')
+        .then(res => res.json())
+        .then(data => {
+            window.latestMainVALUE = data.mainVALUE;
+            document.getElementById('updated-row').innerText = "Updated: " + data.updated_at;
+            document.getElementById('mainvalue-large').innerText = window.latestMainVALUE;
+        });
+    }
+    window.addEventListener('DOMContentLoaded', function(){
+        window.latestMainVALUE = document.getElementById('mainvalue-large').innerText.trim();
+        setInterval(refreshLatestUpdate, 4000);
+    });
+
+    // Bet popup logic
+    function showBetPopup() {
+        document.getElementById('betPopupBg').style.display = 'block';
+        renderBetHourBtns();
+    }
+    function hideBetPopup() {
+        document.getElementById('betPopupBg').style.display = 'none';
+    }
+
+    // Helper for MM 12hr format
+    function mmHourLabel(hour) {
+        let h = hour % 12;
+        if (h === 0) h = 12;
+        let suffix = hour < 12 ? 'AM' : 'PM';
+        return h.toString().padStart(2, '0') + ':00 ' + suffix;
+    }
+
+    // Render 24 hour buttons (no hidden hours, always 24 hours displayed)
+    function renderBetHourBtns() {
+        const betHourBtnsDiv = document.getElementById('betHourBtns');
+        betHourBtnsDiv.innerHTML = '';
+        const now = new Date();
+        const mmtOffsetMinutes = 390; // UTC+6:30
+        const mmtNow = new Date(now.getTime() + (mmtOffsetMinutes * 60 * 1000) - (now.getTimezoneOffset() * 60 * 1000));
+        const currHour = mmtNow.getHours();
+        const currMin = mmtNow.getMinutes();
+
+        for (let h = 0; h < 24; h++) {
+            let hourLabel = mmHourLabel(h);
+            let slotKey = 'time' + h.toString().padStart(2, '0');
+            // Betting closes 3 min before the hour slot
+            let cutoffHour = h;
+            let cutoffMin = 57; // 3 min before next hour
+            let disabled = false;
+            if (currHour > cutoffHour || (currHour === cutoffHour && currMin >= cutoffMin)) {
+                disabled = true;
+            }
+            let btn = document.createElement('button');
+            btn.className = 'bet-hour-btn';
+            btn.textContent = hourLabel + ' အတွက်ထိုးမည်';
+            btn.disabled = disabled;
+            btn.onclick = function() {
+                if (!disabled) {
+                    window.location.href = 'bet.php?hour=' + slotKey;
+                }
+            };
+            betHourBtnsDiv.appendChild(btn);
+        }
+    }
+    </script>
 </head>
 <body>
-    <!-- Main UI Header (consistent with main app, no download icon) -->
     <div class="header" id="main-header">
         <div class="header-title">
             <img src="/images/azm-logo.png" alt="Logo" class="header-logo" />
-            24 Hours 2D Game
+            AZM2D3D Game
         </div>
         <div class="header-right">
-            <a href="/index.html" class="back-btn"><i class="bi bi-arrow-left"></i> Back</a>
+            <a href="/index.html" class="back-btn"><i class="bi bi-arrow-left"></i> </a>
         </div>
     </div>
     <div class="container">
-        <div class="card">
-            <div class="section-title">Live Data</div>
-            <div class="mainvalue-large"><?= htmlspecialchars($mainVALUE) ?></div>
-            <div class="updated-row">Updated: <?= htmlspecialchars($updated_at) ?></div>
-            <div class="live-stats">
-                <div class="stat-item">
-                    <span class="stat-label">SET</span>
-                    <span class="stat-value"><?= htmlspecialchars($set) ?></span>
-                </div>
-                <div class="stat-item">
-                    <span class="stat-label">Value</span>
-                    <span class="stat-value"><?= htmlspecialchars($value) ?></span>
-                </div>
+        <div class="balance-panel">
+            <i class="bi bi-wallet2"></i>
+            လက်ကျန်ငွေ: <span id="Balance"><?= number_format($user_balance) ?></span> ကျပ်
+        </div>
+        <div class="card" id="latest-update-card">
+            <div class="section-title">Latest Update</div>
+            <div class="mainvalue-large" id="mainvalue-large">
+                <?= htmlspecialchars($row['mainVALUE'] ?? '--') ?>
+            </div>
+            <div class="updated-row" id="updated-row">
+                Updated: <?= htmlspecialchars(date("d/m/Y h:i:s A", strtotime($row['updated_at'] ?? date("Y-m-d H:i:s")))) ?>
             </div>
         </div>
-        <div class="section-title">Today’s 2D Results</div>
-        <div class="history-grid">
+        <div class="section-title">၂၄ နာရီအတွက် 2D Results</div>
+        <div class="hourly-grid">
             <?php
-            $slot_labels = [
-                'time10' => '10:00 AM',
-                'time13' => '1:00 PM',
-                'time15' => '3:00 PM',
-                'time18' => '6:00 PM',
-                'time19' => '7:00 PM',
-                'time20' => '8:00 PM',
-            ];
-            foreach ($slot_labels as $k => $label) {
-                $val = safeStr2d_with_slot($row[$k] ?? null, $k, $slot_times);
-                $color = $val !== '--' ? 'var(--accent)' : '#999';
-                echo '<div class="history-card">';
-                echo    '<div class="history-left">';
-                echo        '<div class="history-time">'.htmlspecialchars($label).'</div>';
-                echo        '<div class="history-main-value" style="color:'.$color.';">'.htmlspecialchars($val).'</div>';
-                echo    '</div>';
-                echo    '<div class="history-right">';
-                echo        '<div class="history-detail"><strong>Slot:</strong> '.htmlspecialchars($k).'</div>';
-                echo    '</div>';
+            foreach ($hourly_results as $slot_key => $data) {
+                $h = intval(substr($slot_key, 4, 2));
+                $label = mm_hour_label($h);
+                $color = $data['value'] !== 'N/A' ? 'var(--accent)' : '#999';
+                echo '<div class="hourly-card">';
+                echo    '<div class="hour-label">' . htmlspecialchars($label) . '</div>';
+                echo    '<div class="hour-value" style="color:' . $color . ';">' . htmlspecialchars($data['value']) . '</div>';
+                echo    '<div class="hour-detail">Slot: ' . htmlspecialchars($slot_key) . '</div>';
                 echo '</div>';
             }
             ?>
         </div>
     </div>
+    <!-- Fixed Bet Button -->
+    <div class="bet-btn-fixed" onclick="showBetPopup()">၂၄ နာရီထိုးမည်</div>
+    <div id="betPopupBg" class="bet-popup-bg" onclick="hideBetPopup()">
+        <div class="bet-popup" onclick="event.stopPropagation()">
+            <button class="bet-popup-close" onclick="hideBetPopup()">&times;</button>
+            <div class="bet-popup-title">ထိုးမည့်အချိန် (၃ မိနစ်အလို ပိတ်မည်)</div>
+            <div id="betHourBtns"></div>
+        </div>
+    </div>
 </body>
-</html>
+</html>  
