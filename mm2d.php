@@ -579,6 +579,21 @@ if(isset($_GET['success'])) {
         @media (max-width: 370px) {
             .number-item { font-size: 0.93em; }
         }
+
+.balance-table-wrap {
+    position: sticky;
+    top: 80px; /* header height + margin */
+    z-index: 1200;
+    background: #fff;
+    padding-top: 3px;
+}
+.action-btn-group {
+    position: sticky;
+    top: 140px; /* adjust below balance-table */
+    z-index: 1200;
+    background: #fff;
+    padding-bottom: 8px;
+}
     </style>
 </head>
 <body>
