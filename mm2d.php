@@ -71,7 +71,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_bet'])) {
     $bet_amount = (int)($_POST['bet_amount'] ?? 0);
 
     if (empty($selected_numbers)) {
-        // No need to show error message, just do nothing or reload
         header("Location: " . $_SERVER['PHP_SELF']);
         exit;
     } elseif ($bet_amount < 100) {
@@ -80,7 +79,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_bet'])) {
     } else {
         $pdo->beginTransaction();
         try {
-            // Check user balance
             $total_this_bet = $bet_amount * count($selected_numbers);
 
             $stmt_user = $pdo->prepare('SELECT balance FROM users WHERE id = :uid FOR UPDATE');
@@ -91,7 +89,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_bet'])) {
                 throw new Exception('လက်ကျန်ငွေ မလုံလောက်ပါ။');
             }
 
-            // Check individual brakes again within the transaction
             foreach ($selected_numbers as $number) {
                 $brake_limit = $brakes[$number] ?? -1;
                 if ($brake_limit != -1) {
@@ -127,7 +124,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_bet'])) {
 }
 
 if(isset($_GET['success'])) {
-    $message = 'ထိုးပြီးပါပြီ။ သင်၏ ၂လုံးထိုးမှတ်တမ်းကို အောင်မြင်စွာ သိမ်းဆည်းပြီးပါပြီ။';
+    $message = 'ထိုးပြီးပါပြီ။ သင်၏ ၂လုံးထိုးမှတ်တမ်းကို အောင်မြင်စွာ သိမ်းဆည်းပါသည်။';
     $messageType = 'success';
 }
 
@@ -257,10 +254,12 @@ if(isset($_GET['success'])) {
             background: #fff;
             color: var(--primary, #3498db);
             border: none;
-            border-radius: 7px;
-            font-size: 1.09em;
+            border-radius: 6px;
+            font-size: 1em;
             font-weight: 600;
-            padding: 4px 13px;
+            padding: 3px 8px;
+            min-width: 32px;
+            min-height: 32px;
             margin-left: 10px;
             cursor: pointer;
             box-shadow: 0 2px 8px #1877f218;
@@ -270,6 +269,43 @@ if(isset($_GET['success'])) {
             background: #e3f2fd;
             color: #1153a6;
         }
+        .action-btn-group {
+            display: flex;
+            justify-content: center;
+            gap: 12px;
+            margin-bottom: 15px;
+        }
+        .quick-select-btn {
+            background: #e3f2fd;
+            color: #1877f2;
+            border-radius: 7px;
+            border: none;
+            font-weight: 600;
+            padding: 5px 13px;
+            font-size: 1em;
+            cursor: pointer;
+            transition: background 0.18s, color 0.18s;
+        }
+        .quick-select-btn:hover {
+            background: #d0e0fa;
+            color: #1153a6;
+        }
+        .bet-form-btn-table {
+            background: #1877f2;
+            color: #fff;
+            border: none;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.18s;
+            box-shadow: 0 2px 8px #1877f218;
+            line-height: 1.1;
+            min-width: 55px;
+            min-height: 32px;
+            border-radius: 7px;
+            padding: 6px 13px;
+            font-size: 0.98em;
+        }
+        .bet-form-btn-table:hover { background: #1153a6; }
         .numbers-title {
             font-size: 1.13em;
             color: var(--primary, #3498db);
@@ -348,136 +384,6 @@ if(isset($_GET['success'])) {
             letter-spacing: 1px;
             box-shadow: 0 1px 4px #f39c1240;
         }
-        .bet-form-section { margin-top: 16px; }
-        .bet-form-inputs {
-            display: flex; align-items: center; gap: 12px;
-            justify-content: center;
-            margin-bottom: 10px;
-        }
-        .bet-form-inputs label {
-            font-weight: bold;
-            font-size: 1.06em;
-        }
-        .bet-form-inputs input[type=number] {
-            width: 100px;
-            padding: 7px 5px;
-            border: 1px solid #ddd;
-            border-radius: 6px;
-            font-size: 1.09em;
-        }
-        .bet-form-btn {
-            display: inline-block;
-            padding: 10px 20px;
-            background-color: var(--primary, #3498db);
-            color: white;
-            border: none;
-            border-radius: 6px;
-            cursor: pointer;
-            font-size: 1em;
-            font-weight: bold;
-            margin: 10px auto 0 auto;
-            width: 100%;
-        }
-        .bet-form-btn:disabled { background: #95a5a6; cursor: not-allowed; }
-        .message { padding: 12px; border-radius: 5px; margin-bottom: 20px; text-align: center; }
-        .message.error { background-color: #fbeae5; color: #e74c3c; border: 1px solid #f7c5bc; }
-        .message.success { background-color: #e6f7ee; color: #2ecc71; border: 1px solid #c8ebd7; }
-        @media (max-width: 600px) {
-            .container {
-                max-width: 100vw;
-                border-radius: 0;
-                padding: 6px 0 10px 0;
-                margin-top: 74px;
-                box-shadow: none;
-            }
-            .balance-table td { padding: 9px 7px 8px 7px; }
-            .numbers-grid {
-                grid-template-columns: repeat(5, 1fr);
-                grid-template-rows: repeat(20, 1fr);
-                gap: 8px 3px;
-            }
-            .number-item {
-                font-size: 1em;
-                padding: 8px 0;
-                border-radius: 6px;
-            }
-            .header {
-                height: 74px;
-            }
-            .header-title {
-                font-size: 1.02em;
-                padding-left: 4px;
-                gap: 8px;
-            }
-            .header-logo {
-                height: 36px; width: 36px;
-            }
-            .back-btn {
-                padding: 5px 10px;
-                font-size: 0.97em;
-                left: 7px;
-                top: 7px;
-            }
-            .time-badge { font-size: 0.93em; padding: 3px 8px 2px 8px;}
-        }
-        @media (max-width: 370px) {
-            .number-item { font-size: 0.93em; }
-        }
-        /* ... (all your previous CSS unchanged) ... */
-        .bet-amount-table-input {
-            width: 90px;
-            padding: 6px 5px;
-            border: 1px solid #ddd;
-            border-radius: 6px;
-            font-size: 1.09em;
-            margin-left: 10px;
-            margin-right: 5px;
-            text-align: right;
-            font-family: inherit;
-        }
-        .bet-form-btn-table {
-            background: #1877f2;
-            color: #fff;
-            border: none;
-            font-weight: 600;
-            cursor: pointer;
-            transition: background 0.18s;
-            box-shadow: 0 2px 8px #1877f218;
-            line-height: 1.1;
-            min-width: 55px;
-            min-height: 32px;
-        }
-        .bet-form-btn-table:hover { background: #1153a6; }
-        /* Hide big bet form's margin if present */
-        #betForm { margin-bottom: 0 !important; display: none !important; }
-        /* ... original styles unchanged ... */
-        .bet-amount-table-input {
-            width: 90px;
-            padding: 6px 5px;
-            border: 1px solid #ddd;
-            border-radius: 6px;
-            font-size: 1.09em;
-            margin-left: 10px;
-            margin-right: 5px;
-            text-align: right;
-            font-family: inherit;
-        }
-        .bet-form-btn-table {
-            background: #1877f2;
-            color: #fff;
-            border: none;
-            font-weight: 600;
-            cursor: pointer;
-            transition: background 0.18s;
-            box-shadow: 0 2px 8px #1877f218;
-            line-height: 1.1;
-            min-width: 55px;
-            min-height: 32px;
-        }
-        .bet-form-btn-table:hover { background: #1153a6; }
-        /* Hide big bet form's margin if present */
-        #betForm { margin-bottom: 0 !important; display: none !important; }
-        /* Modal styles */
         .modal-confirm-bg {
             position: fixed;
             z-index: 20000;
@@ -583,133 +489,6 @@ if(isset($_GET['success'])) {
             color: #999; font-size: 1.4em; background: none; border: none; cursor: pointer;
         }
         .modal-confirm-close:hover { color: #1976d2;}
-        /* ... (existing styles unchanged) ... */
-        .bet-amount-table-input {
-            width: 90px;
-            padding: 6px 5px;
-            border: 1px solid #ddd;
-            border-radius: 6px;
-            font-size: 1.09em;
-            margin-left: 10px;
-            margin-right: 5px;
-            text-align: right;
-            font-family: inherit;
-        }
-        .bet-form-btn-table {
-            background: #1877f2;
-            color: #fff;
-            border: none;
-            font-weight: 600;
-            cursor: pointer;
-            transition: background 0.18s;
-            box-shadow: 0 2px 8px #1877f218;
-            line-height: 1.1;
-            min-width: 55px;
-            min-height: 32px;
-        }
-        .bet-form-btn-table:hover { background: #1153a6; }
-        .quick-select-btn {
-            background: #e3f2fd;
-            color: #1877f2;
-            border-radius: 7px;
-            border: none;
-            font-weight: 600;
-            padding: 5px 13px;
-            margin-left: 8px;
-            font-size: 1em;
-            cursor: pointer;
-            transition: background 0.18s, color 0.18s;
-        }
-        .quick-select-btn:hover {
-            background: #d0e0fa;
-            color: #1153a6;
-        }
-        #betForm { display: none !important; }
-        .modal-confirm-bg {
-            /* ... (modal styles unchanged) ... */
-            position: fixed;
-            z-index: 20000;
-            left: 0; top: 0; right: 0; bottom: 0;
-            background: rgba(36, 56, 90, 0.18);
-            display: none;
-            align-items: center;
-            justify-content: center;
-        }
-        .modal-confirm-bg.active { display: flex; }
-        /* ... (rest unchanged) ... */
-        /* Quick select popup modal */
-        .modal-quick-bg {
-            position: fixed;
-            z-index: 20100;
-            left: 0; top: 0; right: 0; bottom: 0;
-            background: rgba(36, 56, 90, 0.18);
-            display: none;
-            align-items: center;
-            justify-content: center;
-        }
-        .modal-quick-bg.active { display: flex; }
-        .modal-quick-box {
-            background: #fff;
-            border-radius: 17px;
-            box-shadow: 0 12px 32px #0002;
-            max-width: 98vw;
-            min-width: 230px;
-            width: 94vw;
-            max-width: 360px;
-            padding: 17px 14px 12px 14px;
-            position: relative;
-        }
-        .modal-quick-title {
-            font-weight: bold;
-            font-size: 1.09em;
-            color: #1976d2;
-            margin-bottom: 10px;
-            letter-spacing: .7px;
-        }
-        .modal-quick-btns {
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-            margin-bottom: 7px;
-        }
-        .modal-quick-btn {
-            background: #e3f2fd;
-            color: #1976d2;
-            border: none;
-            border-radius: 8px;
-            font-weight: 600;
-            font-size: 1.09em;
-            padding: 8px 0;
-            cursor: pointer;
-            transition: background 0.18s, color 0.18s;
-        }
-        .modal-quick-btn:hover {
-            background: #1877f2;
-            color: #fff;
-        }
-        .modal-quick-close {
-            position: absolute; right: 9px; top: 7px;
-            color: #999; font-size: 1.25em; background: none; border: none; cursor: pointer;
-        }
-        .modal-quick-close:hover { color: #1976d2;}
-        /* ... (all your original CSS unchanged) ... */
-        .quick-select-btn {
-            background: #e3f2fd;
-            color: #1877f2;
-            border-radius: 7px;
-            border: none;
-            font-weight: 600;
-            padding: 5px 13px;
-            margin-left: 8px;
-            font-size: 1em;
-            cursor: pointer;
-            transition: background 0.18s, color 0.18s;
-        }
-        .quick-select-btn:hover {
-            background: #d0e0fa;
-            color: #1153a6;
-        }
-        /* Quick Select Modal */
         .modal-quick-bg {
             position: fixed;
             z-index: 20100;
@@ -776,16 +555,23 @@ if(isset($_GET['success'])) {
             border-radius: 7px;
             border: 1px solid #ccc;
         }
-     .action-btn-group {
-    display: flex;
-    justify-content: center;
-    gap: 12px;
-    margin-bottom: 15px;
-}
+        @media (max-width: 600px) {
+            .container { max-width: 100vw; border-radius: 0; padding: 6px 0 10px 0; margin-top: 74px; box-shadow: none; }
+            .balance-table td { padding: 9px 7px 8px 7px; }
+            .numbers-grid { grid-template-columns: repeat(5, 1fr); grid-template-rows: repeat(20, 1fr); gap: 8px 3px; }
+            .number-item { font-size: 1em; padding: 8px 0; border-radius: 6px; }
+            .header { height: 74px; }
+            .header-title { font-size: 1.02em; padding-left: 4px; gap: 8px; }
+            .header-logo { height: 36px; width: 36px; }
+            .back-btn { padding: 5px 10px; font-size: 0.97em; left: 7px; top: 7px; }
+            .time-badge { font-size: 0.93em; padding: 3px 8px 2px 8px;}
+        }
+        @media (max-width: 370px) {
+            .number-item { font-size: 0.93em; }
+        }
     </style>
 </head>
 <body>
-    <!-- Consistent header and back button -->
     <div class="header">
         <div class="header-title">
             <img src="/images/azm-logo.png" alt="Logo" class="header-logo" />
@@ -795,51 +581,31 @@ if(isset($_GET['success'])) {
             <a href="/index.html" class="back-btn"><i class="bi bi-arrow-left"></i> </a>
         </div>
     </div>
-    ...
-<div class="container">
-    <div class="time-badge">မြန်မာစံတော်ချိန် - မနက် ၁၁ နာရီ (11:00AM)</div>
-    <!-- Balance table only -->
-    <div class="balance-table-wrap">
-        <table class="balance-table" style="width:100%;table-layout:auto;">
-            <tr>
-                <td class="wallet"><i class="bi bi-wallet2"></i></td>
-                <td>
-                    လက်ကျန်ငွေ:
-                    <span class="balance-amount" id="Balance"><?= number_format($user_balance) ?></span>
-                    <span>ကျပ်</span>
-                </td>
-            </tr>
-        </table>
-    </div>
-
-    <!-- ခလုပ်များကို Balance Table အောက်သို့ထုတ်ထည့်ပါ -->
-    <div class="action-btn-group" style="display:flex;justify-content:center;gap:12px;margin-bottom:15px;">
-        <button class="refresh-btn" type="button" id="refreshBtn" title="Refresh balance & reverse">
-            R
-        </button>
-        <button type="button" id="betTableTrigger" class="bet-form-btn-table" style="padding:6px 13px;font-size:0.98em;border-radius:7px;">
-            ထိုးမည်
-        </button>
-        <button type="button" id="quickSelectTrigger" class="quick-select-btn">
-            <i class="bi bi-lightning-charge"></i> အမြန်ရွေး
-        </button>
-    </div>
-
-    <?php if ($message && $messageType != "success"): // hide "ထိုးပြီးပါပြီ..." (success) ?>
-    <div class="message <?= htmlspecialchars($messageType) ?>">
-        <?= htmlspecialchars($message) ?>
-    </div>
-    <?php endif; ?>
-...
-        <!-- Hidden submit form for final confirmation -->
+    <div class="container">
+        <div class="time-badge">မြန်မာစံတော်ချိန် - မနက် ၁၁ နာရီ (11:00AM)</div>
+        <div class="balance-table-wrap">
+            <table class="balance-table" style="width:100%;table-layout:auto;">
+                <tr>
+                    <td class="wallet"><i class="bi bi-wallet2"></i></td>
+                    <td>
+                        လက်ကျန်ငွေ:
+                        <span class="balance-amount" id="Balance"><?= number_format($user_balance) ?></span>
+                        <span>ကျပ်</span>
+                        <button class="refresh-btn" type="button" id="refreshBtn" title="Refresh balance & reverse">R</button>
+                    </td>
+                </tr>
+            </table>
+        </div>
+        <div class="action-btn-group">
+            <button type="button" id="betTableTrigger" class="bet-form-btn-table">ထိုးမည်</button>
+            <button type="button" id="quickSelectTrigger" class="quick-select-btn"><i class="bi bi-lightning-charge"></i> အမြန်ရွေး</button>
+        </div>
+        <?php if ($message && $messageType != "success"): ?>
+        <div class="message <?= htmlspecialchars($messageType) ?>">
+            <?= htmlspecialchars($message) ?>
+        </div>
+        <?php endif; ?>
         <form method="post" id="betFormFinal" style="display:none;"></form>
-        <!-- Hidden old form and main input (still used in popup, but not on main UI) -->
-        <form method="post" id="betForm" class="bet-form-section" autocomplete="off" style="margin-bottom:0;display:none;">
-            <div class="bet-form-inputs">
-                <label for="bet_amount">တစ်ကွက်လျှင် ထိုးငွေ:</label>
-                <input type="number" id="bet_amount" name="bet_amount" min="100" value="100" required>
-            </div>
-        </form>
         <div class="numbers-title"></div>
         <div class="numbers-grid" id="numbersGrid">
             <?php foreach ($numbers as $num): 
@@ -911,7 +677,6 @@ if(isset($_GET['success'])) {
         </div>
     </div>
 <script>
-   // Selection logic with sessionStorage
 const numbersGrid = document.getElementById('numbersGrid');
 let selected = JSON.parse(sessionStorage.getItem('selected2d_1100') || '{}');
 
@@ -949,7 +714,6 @@ numbersGrid.addEventListener('keydown', function(e) {
     }
 });
 
-// R button: refresh balance AND reverse selected numbers
 document.getElementById('refreshBtn').addEventListener('click', function() {
     fetch(window.location.pathname + '?get_balance=1')
         .then(r => r.json())
@@ -983,7 +747,6 @@ const modalAmount = document.getElementById('modalConfirmAmount');
 const modalTotal = document.getElementById('modalConfirmTotal');
 const modalPrize = document.getElementById('modalConfirmPrize');
 const betTableTrigger = document.getElementById('betTableTrigger');
-const betFormTableBtn = document.getElementById('betFormTableBtn');
 const betFormFinal = document.getElementById('betFormFinal');
 
 function showModal(selectedNumbers, betAmount) {
@@ -1036,7 +799,7 @@ betTableTrigger.addEventListener('click', function(e) {
         const btn = document.querySelector(`.number-item[data-number="${num}"]`);
         return btn && !btn.classList.contains('disabled');
     });
-    let amount = 100; // Default value. User can only choose in the popup now.
+    let amount = 100;
     if (nums.length === 0) return;
     showModal(nums, amount);
 });
@@ -1082,9 +845,6 @@ window.addEventListener('keydown', function(e) {
     }
 });
 
-// Table form submit (should not submit directly, only via modal confirm)
-betFormTableBtn.addEventListener('submit', function(e) { e.preventDefault(); });
-
 // ---- Quick Select Popup Logic ----
 const quickSelectTrigger = document.getElementById('quickSelectTrigger');
 const modalQuickBg = document.getElementById('modalQuickBg');
@@ -1102,11 +862,9 @@ modalQuickClose.onclick = function() {
     modalQuickBg.classList.remove('active');
 };
 
-// Quick select actions
 function doQuickSelect(type, extra) {
     modalQuickError.textContent = '';
     if (type === 'clear') {
-        // Clear selection
         selected = {};
         sessionStorage.setItem('selected2d_1100', JSON.stringify(selected));
         updateGridSelections();
@@ -1114,7 +872,6 @@ function doQuickSelect(type, extra) {
         return;
     }
     if (type === 'all') {
-        // All available numbers (not braked)
         fetch('/b/quick_select_api.php?type=even')
             .then(resp => resp.json())
             .then(_data => {
@@ -1143,7 +900,6 @@ function doQuickSelect(type, extra) {
             }
             if (data.numbers && Array.isArray(data.numbers)) {
                 selected = {};
-                // Exclude fully braked numbers (brake1 array)
                 let braked = Array.isArray(data.brake1) ? new Set(data.brake1) : new Set();
                 data.numbers.forEach(num => {
                     if (!braked.has(num)) {
@@ -1176,7 +932,6 @@ akhweBtn.addEventListener('click', function() {
     doQuickSelect('akhwe', val);
 });
 
-// On load
 updateGridSelections();
 </script>
 </body>
