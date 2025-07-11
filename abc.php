@@ -1,5 +1,5 @@
 <?php  
-// 11am_2d.php - 11AM only version (no Global Brake) - Adds blood bar for individual brake (သွေးအားတန်း)
+// 1201_2d.php - 12:01PM only version (no Global Brake) - Adds blood bar for individual brake (သွေးအားတန်း)
 error_reporting(E_ALL);
 ini_set('display_errors', 1);
 
@@ -28,9 +28,9 @@ if (!empty($_SESSION['user_id'])) {
 }
 
 // --- Session Details ---
-$time = '11:00:00';
-$display_time = '11:00 AM';
-$session_time_key = '11:00';
+$time = '12:01:00';
+$display_time = '12:01 PM';
+$session_time_key = '12:01';
 
 // --- Myanmar Time Detection ---
 $mm_timezone = new DateTimeZone('Asia/Yangon');
@@ -47,8 +47,8 @@ if ($current_time_mm >= '17:00:00') {
 }
 $target_day_of_week = $target_date_dt->format('w'); // 0=Sun, 6=Sat
 
-// --- Session closing time for 11 AM session ---
-$closing_time = '10:55:00';
+// --- Session closing time for 12:01 PM session ---
+$closing_time = '11:56:00';
 
 // --- Check if betting is closed ---
 $is_betting_day_weekend = ($target_day_of_week == 0 || $target_day_of_week == 6);
