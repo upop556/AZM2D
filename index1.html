@@ -238,3 +238,93 @@ function previewProfileImg(event) {
         img.src = URL.createObjectURL(event.target.files[0]);
     }
 }
+
+
+
+
+
+<?php
+ini_set('display_errors', 1);
+error_reporting(E_ALL);
+header('Content-Type: application/json');
+
+// Correct way to include db.php
+require_once '../db.php';
+
+// Get input data
+$input = json_decode(file_get_contents("php://input"), true);
+
+// Debug: log the input for troubleshooting unknown action issues
+// Remove this after debugging
+file_put_contents(__DIR__ . '/debug_input.txt', print_r($input, true));
+
+$action = $input['action'] ?? '';
+
+// Login action
+if ($action == 'login') {
+    $phone = $input['phone'] ?? '';
+    $password = $input['password'] ?? '';
+    $stmt = $pdo->prepare("SELECT * FROM users WHERE phone = ?");
+    $stmt->execute([$phone]);
+    $user = $stmt->fetch();
+    if ($user && password_verify($password, $user['password'])) {
+        $token = bin2hex(random_bytes(32));
+        $pdo->prepare("UPDATE users SET token=? WHERE id=?")->execute([$token, $user['id']]);
+        echo json_encode([
+            "success"=>true,
+            "token"=>$token,
+            "user"=>["id"=>$user['id'], "name"=>$user['name'], "phone"=>$user['phone']]
+        ]);
+    } else {
+        echo json_encode(["success"=>false,"message"=>"ဖုန်းနံပါတ် သို့ စကားဝှက် မှားနေပါတယ်"]);
+    }
+    exit;
+}
+
+// Signup action
+if ($action == 'signup') {
+    $name = $input['name'] ?? '';
+    $phone = $input['phone'] ?? '';
+    $password = $input['password'] ?? '';
+    $referral = $input['referral'] ?? '';
+    $profile_img = $input['profile_img'] ?? '';
+
+    // Check for duplicate phone
+    $stmt = $pdo->prepare("SELECT id FROM users WHERE phone = ?");
+    $stmt->execute([$phone]);
+    if ($stmt->fetch()) {
+        echo json_encode(["success"=>false,"message"=>"ဖုန်းနံပါတ်သည် အသုံးပြုပြီးသား"]);
+        exit;
+    }
+
+    $password_hash = password_hash($password, PASSWORD_DEFAULT);
+    $token = bin2hex(random_bytes(32));
+    $stmt = $pdo->prepare("INSERT INTO users (name, phone, password, referral, profile_img, token) VALUES(?,?,?,?,?,?)");
+    $stmt->execute([$name, $phone, $password_hash, $referral, $profile_img, $token]);
+
+    echo json_encode([
+        "success"=>true,
+        "token"=>$token,
+        "user"=>["id"=>$pdo->lastInsertId(), "name"=>$name, "phone"=>$phone]
+    ]);
+    exit;
+}
+
+// Get info action
+if ($action == 'getinfo') {
+    $token = $input['token'] ?? '';
+    $stmt = $pdo->prepare("SELECT id, name, phone, referral, profile_img FROM users WHERE token=?");
+    $stmt->execute([$token]);
+    $user = $stmt->fetch();
+    if ($user) {
+        echo json_encode(["success"=>true,"user"=>$user]);
+    } else {
+        echo json_encode(["success"=>false,"message"=>"အကောင့်ဝင်ထားခြင်းမရှိပါ"]);
+    }
+    exit;
+}
+
+// Unknown action
+echo json_encode(["success"=>false,"message"=>"Unknown action"]);
+exit;
+?>
