@@ -32,7 +32,6 @@ function getSharedMainValue() {
     $now = time();
     $cache_lifetime = 4; // seconds
 
-    // If cache file exists and not expired, use it
     if (file_exists($cache_file)) {
         $data = json_decode(file_get_contents($cache_file), true);
         if (isset($data['mainVALUE'], $data['timestamp'], $data['updated_at'])) {
@@ -42,7 +41,6 @@ function getSharedMainValue() {
         }
     }
 
-    // Otherwise, generate new value and save
     $mainVALUE = str_pad(mt_rand(0, 99), 2, '0', STR_PAD_LEFT);
     $updated_at = date("d/m/Y h:i:s A");
     $data = [
@@ -70,6 +68,27 @@ function getHourlyResults() {
 }
 $hourly_results = getHourlyResults();
 
+// --- Helper function for MM 12hr format ---
+function mm_hour_label($hour) {
+    // $hour is 0-23
+    $h = $hour % 12;
+    if ($h == 0) $h = 12;
+    $suffix = ($hour >= 12) ? 'PM' : 'AM';
+    return sprintf('%02d:00 %s', $h, $suffix);
+}
+
+// --- Helper function for betting cutoff (server side accurate) ---
+function isBetEnabled($slot_hour) {
+    $now = new DateTime("now", new DateTimeZone("Asia/Yangon"));
+    $current_hour = (int)$now->format('H');
+    $current_min = (int)$now->format('i');
+    // Betting closes 3 min before the hour slot
+    if ($current_hour > $slot_hour || ($current_hour == $slot_hour && $current_min >= 57)) {
+        return false; // Disabled
+    }
+    return true; // Enabled
+}
+
 // --- AJAX endpoint for latest value ---
 if (isset($_GET['ajax']) && $_GET['ajax'] == '1') {
     $data = getSharedMainValue();
@@ -79,15 +98,6 @@ if (isset($_GET['ajax']) && $_GET['ajax'] == '1') {
         "updated_at" => $data['updated_at']
     ]);
     exit;
-}
-
-// --- Helper function for MM 12hr format (FIXED!) ---
-function mm_hour_label($hour) {
-    // $hour is 0-23
-    $h = $hour % 12;
-    if ($h == 0) $h = 12;
-    $suffix = ($hour >= 12) ? 'PM' : 'AM';
-    return sprintf('%02d:00 %s', $h, $suffix);
 }
 ?>
 <!DOCTYPE html>
@@ -224,7 +234,7 @@ function mm_hour_label($hour) {
         document.getElementById('betPopupBg').style.display = 'none';
     }
 
-    // Helper for MM 12hr format (FIXED! must match PHP logic)
+    // Helper for MM 12hr format (must match PHP logic)
     function mmHourLabel(hour) {
         let h = hour % 12;
         if (h === 0) h = 12;
@@ -232,32 +242,27 @@ function mm_hour_label($hour) {
         return h.toString().padStart(2, '0') + ':00 ' + suffix;
     }
 
-    // Render 24 hour buttons (no hidden hours, always 24 hours displayed)
+    // Render 24 hour buttons (disabled by server, not client time)
     function renderBetHourBtns() {
         const betHourBtnsDiv = document.getElementById('betHourBtns');
         betHourBtnsDiv.innerHTML = '';
-        const now = new Date();
-        const mmtOffsetMinutes = 390; // UTC+6:30
-        const mmtNow = new Date(now.getTime() + (mmtOffsetMinutes * 60 * 1000) - (now.getTimezoneOffset() * 60 * 1000));
-        const currHour = mmtNow.getHours();
-        const currMin = mmtNow.getMinutes();
-
+        <?php
+        $bet_status = [];
+        for ($h = 0; $h < 24; $h++) {
+            $bet_status[$h] = isBetEnabled($h);
+        }
+        echo "const betEnabledArr = " . json_encode($bet_status) . ";";
+        ?>
         for (let h = 0; h < 24; h++) {
             let hourLabel = mmHourLabel(h);
             let slotKey = 'time' + h.toString().padStart(2, '0');
-            // Betting closes 3 min before the hour slot
-            let cutoffHour = h;
-            let cutoffMin = 57; // 3 min before next hour
-            let disabled = false;
-            if (currHour > cutoffHour || (currHour === cutoffHour && currMin >= cutoffMin)) {
-                disabled = true;
-            }
+            let enabled = betEnabledArr[h];
             let btn = document.createElement('button');
             btn.className = 'bet-hour-btn';
             btn.textContent = hourLabel + ' အတွက်ထိုးမည်';
-            btn.disabled = disabled;
+            btn.disabled = !enabled;
             btn.onclick = function() {
-                if (!disabled) {
+                if (enabled) {
                     window.location.href = 'bet.php?hour=' + slotKey;
                 }
             };
@@ -316,4 +321,4 @@ function mm_hour_label($hour) {
         </div>
     </div>
 </body>
-</html>  
+</html>
