@@ -82,3 +82,159 @@
 <script src="marlar/account.js"></script>
 </body>
 </html>
+
+
+
+
+
+// Helper: Set cookie (expires in days)
+function setCookie(name, value, days) {
+    let expires = "";
+    if (days) {
+        const d = new Date();
+        d.setTime(d.getTime() + (days*24*60*60*1000));
+        expires = ";expires=" + d.toUTCString();
+    }
+    document.cookie = name + "=" + encodeURIComponent(value) + expires + ";path=/";
+}
+
+// Helper: Get cookie by name
+function getCookie(name) {
+    const cookies = document.cookie.split(';');
+    for(let cookie of cookies) {
+        const [k, v] = cookie.trim().split('=');
+        if (k === name) return decodeURIComponent(v || "");
+    }
+    return null;
+}
+
+// Show Error
+function showError(msg) {
+    alert(msg);
+}
+
+// Login Form Submit
+document.getElementById('login-form').onsubmit = async function(e){
+    e.preventDefault();
+    const phone = document.getElementById('login-phone').value.trim();
+    const password = document.getElementById('login-password').value;
+
+    try {
+        const res = await fetch('/api/account.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action: 'login', phone, password })
+        });
+        if (!res.ok) {
+            showError("Server error: " + res.status);
+            return;
+        }
+        const data = await res.json();
+
+        if (data.success) {
+            setCookie('account_token', data.token, 7);
+            alert("Login success!");
+            location.reload();
+        } else {
+            showError(data.message || "Login failed");
+        }
+    } catch (err) {
+        showError("Network error");
+    }
+};
+
+// Signup Form Submit
+document.getElementById('signup-form').onsubmit = function(e){
+    e.preventDefault();
+    const name = document.getElementById('signup-name').value.trim();
+    const phone = document.getElementById('signup-phone').value.trim();
+    const password = document.getElementById('signup-password').value;
+    const referral = document.getElementById('signup-referral').value.trim();
+    const imgInput = document.getElementById('signup-profile-img');
+    let profile_img = "";
+
+    // If image is selected, read as base64
+    if (imgInput.files && imgInput.files[0]) {
+        const reader = new FileReader();
+        reader.onload = function(evt) {
+            profile_img = evt.target.result;
+            signupSubmit(name, phone, password, referral, profile_img);
+        };
+        reader.onerror = function() {
+            showError("Profile image read failed");
+            signupSubmit(name, phone, password, referral, "");
+        };
+        reader.readAsDataURL(imgInput.files[0]);
+    } else {
+        signupSubmit(name, phone, password, referral, profile_img);
+    }
+};
+
+async function signupSubmit(name, phone, password, referral, profile_img) {
+    try {
+        const res = await fetch('/api/account.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action: 'signup', name, phone, password, referral, profile_img })
+        });
+        if (!res.ok) {
+            showError("Server error: " + res.status);
+            return;
+        }
+        const data = await res.json();
+
+        console.log("Signup response:", data); // Debug
+
+        if (data.success) {
+            setCookie('account_token', data.token, 7);
+            alert("Signup success!");
+            location.reload();
+        } else {
+            showError(data.message || "Signup failed");
+        }
+    } catch (err) {
+        showError("Network error");
+    }
+}
+
+// Get logged-in user info from cookie
+async function getAccountInfo() {
+    const token = getCookie('account_token');
+    if (!token) return null;
+
+    try {
+        const res = await fetch('/api/account.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action: 'getinfo', token })
+        });
+        if (!res.ok) {
+            // Optionally handle server error
+            return null;
+        }
+        const data = await res.json();
+        if (data.success) return data.user;
+        return null;
+    } catch (err) {
+        return null;
+    }
+}
+
+// Example: On page load, check login
+window.addEventListener('DOMContentLoaded', async function() {
+    const user = await getAccountInfo();
+    if (user) {
+        // Example: Show user's name
+        // document.getElementById('profileName').innerText = user.name;
+        // Example: Hide login button if needed
+        // document.getElementById('show-login').style.display = 'none';
+    }
+});
+
+// Profile image preview
+function previewProfileImg(event) {
+    const img = document.getElementById('profile-img-preview');
+    if(event.target.files && event.target.files[0]) {
+        img.src = URL.createObjectURL(event.target.files[0]);
+    }
+}
