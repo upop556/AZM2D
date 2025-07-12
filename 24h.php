@@ -78,12 +78,13 @@ function mm_hour_label($hour) {
 }
 
 // --- Helper function for betting cutoff (server side accurate) ---
+// FIXED LOGIC: Betting closes as soon as the hour is reached (i.e. betting for 12:00 PM closes at 12:00 PM)
 function isBetEnabled($slot_hour) {
     $now = new DateTime("now", new DateTimeZone("Asia/Yangon"));
     $current_hour = (int)$now->format('H');
     $current_min = (int)$now->format('i');
-    // Betting closes 3 min before the hour slot
-    if ($current_hour > $slot_hour || ($current_hour == $slot_hour && $current_min >= 57)) {
+    // Betting closes as soon as the hour is reached
+    if ($current_hour >= $slot_hour) {
         return false; // Disabled
     }
     return true; // Enabled
@@ -121,14 +122,14 @@ if (isset($_GET['ajax']) && $_GET['ajax'] == '1') {
         html, body { height: 100%; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif; }
         body { min-height: 100vh; box-sizing: border-box; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; padding-top: 115px; padding-bottom: 120px; }
         .container { width: 100%; max-width: 420px; margin: 0 auto; padding: 0 15px; box-sizing: border-box; }
-        .balance-panel { margin: 16px auto 20px auto; background: var(--primary); color: #fff; border-radius: 13px; box-shadow: 0 4px 15px rgba(25, 118, 210, 0.25); padding: 15px 20px; font-size: 1.2em; }
+        .balance-panel { margin: 16px auto 20px auto; background: var(--primary); color: #fff; border-radius: 13px; box-shadow: 0 4px 15px rgba(25, 118, 210, 0.25); padding: 15px 20px; font-size: 1.2em;}
         .balance-panel .bi-wallet2 { font-size: 1.3em; margin-right: 10px; }
         .card { background: var(--card-bg); border-radius: 18px; box-shadow: 0 4px 25px rgba(0,0,0,0.08); padding: 20px; width: 100%; text-align: center; margin: 0 auto 25px auto; box-sizing: border-box; }
         .section-title { font-size: 1.15em; font-weight: 600; color: var(--text-dark); margin-bottom: 15px; text-align: left; }
         .mainvalue-large { font-size: 6.6em; font-weight: bold; color: var(--accent); letter-spacing: 0.05em; margin-bottom: 0.2em; min-height: 1.2em; line-height: 1.2; transition: opacity 0.4s; }
         .updated-row { text-align: center; font-size: 0.95em; color: var(--text-light); margin-bottom: 1em; }
         .hourly-grid { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 12px; margin-bottom: 50px; }
-        .hourly-card { display: flex; flex-direction: column; justify-content: center; align-items: center; background: var(--card-bg); border-radius: 12px; padding: 10px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.04); }
+        .hourly-card { display: flex; flex-direction: column; justify-content: center; align-items: center; background: var(--card-bg); border-radius: 12px; padding: 10px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
         .hour-label { color: var(--primary); font-weight: bold; margin-bottom: 4px; }
         .hour-value { font-size: 1.6em; font-weight: bold; }
         .hour-detail { line-height: 1.2; font-size: 0.95em; color: #555; }
@@ -316,7 +317,7 @@ if (isset($_GET['ajax']) && $_GET['ajax'] == '1') {
     <div id="betPopupBg" class="bet-popup-bg" onclick="hideBetPopup()">
         <div class="bet-popup" onclick="event.stopPropagation()">
             <button class="bet-popup-close" onclick="hideBetPopup()">&times;</button>
-            <div class="bet-popup-title">ထိုးမည့်အချိန် (၃ မိနစ်အလို ပိတ်မည်)</div>
+            <div class="bet-popup-title">ထိုးမည့်အချိန် (အချိန်တိတိရောက်သောအခါ ပိတ်မည်)</div>
             <div id="betHourBtns"></div>
         </div>
     </div>
