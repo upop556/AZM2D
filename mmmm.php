@@ -26,19 +26,38 @@ function getUserBalance($user_id) {
 }
 $user_balance = getUserBalance($current_user);
 
-// --- Get latest main value and hourly slots (dummy for now) ---
-function getMainValueRow() {
-    $pdo = Db::getInstance()->getConnection();
-    $stmt = $pdo->prepare('SELECT mainVALUE, updated_at FROM mainvalue ORDER BY updated_at DESC LIMIT 1');
-    $stmt->execute();
-    return $stmt->fetch(PDO::FETCH_ASSOC) ?: ['mainVALUE' => '--', 'updated_at' => date("Y-m-d H:i:s")];
+// --- Shared random value for Latest Update (4 seconds cycle, file cache) ---
+function getSharedMainValue() {
+    $cache_file = __DIR__ . '/mainvalue_cache.json';
+    $now = time();
+    $cache_lifetime = 4; // seconds
+
+    // If cache file exists and not expired, use it
+    if (file_exists($cache_file)) {
+        $data = json_decode(file_get_contents($cache_file), true);
+        if (isset($data['mainVALUE'], $data['timestamp'], $data['updated_at'])) {
+            if ($now - $data['timestamp'] < $cache_lifetime) {
+                return $data;
+            }
+        }
+    }
+
+    // Otherwise, generate new value and save
+    $mainVALUE = str_pad(mt_rand(0, 99), 2, '0', STR_PAD_LEFT);
+    $updated_at = date("d/m/Y h:i:s A");
+    $data = [
+        'mainVALUE' => $mainVALUE,
+        'updated_at' => $updated_at,
+        'timestamp' => $now
+    ];
+    file_put_contents($cache_file, json_encode($data));
+    return $data;
 }
-$row = getMainValueRow();
+
+$row = getSharedMainValue();
 
 // --- Hourly slots result (dummy, should fetch from DB or file) ---
 function getHourlyResults() {
-    // You should fetch from DB: SELECT * FROM hourly_results WHERE date = CURRENT_DATE()
-    // Here, we just return empty for demo, slot: timeHH, value: 'N/A'
     $results = [];
     for ($h = 0; $h < 24; $h++) {
         $slot_key = 'time' . str_pad($h, 2, '0', STR_PAD_LEFT);
@@ -53,14 +72,11 @@ $hourly_results = getHourlyResults();
 
 // --- AJAX endpoint for latest value ---
 if (isset($_GET['ajax']) && $_GET['ajax'] == '1') {
-    // Generate a random number between 00 and 99 for every request
-    $mainVALUE = str_pad(mt_rand(0, 99), 2, '0', STR_PAD_LEFT);
-    // Get current Myanmar time
-    $updated_at = date("d/m/Y h:i:s A");
+    $data = getSharedMainValue();
     header('Content-Type: application/json');
     echo json_encode([
-        "mainVALUE" => $mainVALUE,
-        "updated_at" => $updated_at
+        "mainVALUE" => $data['mainVALUE'],
+        "updated_at" => $data['updated_at']
     ]);
     exit;
 }
@@ -205,11 +221,19 @@ function mm_hour_label($hour) {
         document.getElementById('betPopupBg').style.display = 'none';
     }
 
-    // Helper for MM 12hr format
+    // Get current Myanmar time regardless of device timezone
+    function getMyanmarNow() {
+        const now = new Date();
+        // Get UTC time, then add 6.5 hours for MM time
+        const utc = now.getTime() + (now.getTimezoneOffset() * 60000);
+        return new Date(utc + (6.5 * 60 * 60 * 1000));
+    }
+
+    // Myanmar hour label (12-hour format, correct AM/PM)
     function mmHourLabel(hour) {
         let h = hour % 12;
         if (h === 0) h = 12;
-        let suffix = hour < 12 ? 'AM' : 'PM';
+        let suffix = (hour < 12) ? 'AM' : 'PM';
         return h.toString().padStart(2, '0') + ':00 ' + suffix;
     }
 
@@ -217,9 +241,7 @@ function mm_hour_label($hour) {
     function renderBetHourBtns() {
         const betHourBtnsDiv = document.getElementById('betHourBtns');
         betHourBtnsDiv.innerHTML = '';
-        const now = new Date();
-        const mmtOffsetMinutes = 390; // UTC+6:30
-        const mmtNow = new Date(now.getTime() + (mmtOffsetMinutes * 60 * 1000) - (now.getTimezoneOffset() * 60 * 1000));
+        const mmtNow = getMyanmarNow();
         const currHour = mmtNow.getHours();
         const currMin = mmtNow.getMinutes();
 
@@ -245,7 +267,7 @@ function mm_hour_label($hour) {
             betHourBtnsDiv.appendChild(btn);
         }
     }
-    </script>
+</script>
 </head>
 <body>
     <div class="header" id="main-header">
@@ -268,7 +290,7 @@ function mm_hour_label($hour) {
                 <?= htmlspecialchars($row['mainVALUE'] ?? '--') ?>
             </div>
             <div class="updated-row" id="updated-row">
-                Updated: <?= htmlspecialchars(date("d/m/Y h:i:s A", strtotime($row['updated_at'] ?? date("Y-m-d H:i:s")))) ?>
+                Updated: <?= htmlspecialchars($row['updated_at'] ?? '--') ?>
             </div>
         </div>
         <div class="section-title">၂၄ နာရီအတွက် 2D Results</div>
