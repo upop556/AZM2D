@@ -26,7 +26,7 @@ function getUserBalance($user_id) {
 }
 $user_balance = getUserBalance($current_user);
 
-// --- Get latest main value and hourly slots (dummy for now) ---
+// --- Get latest main value and hourly slots ---
 function getMainValueRow() {
     $pdo = Db::getInstance()->getConnection();
     $stmt = $pdo->prepare('SELECT mainVALUE, updated_at FROM mainvalue ORDER BY updated_at DESC LIMIT 1');
@@ -35,7 +35,7 @@ function getMainValueRow() {
 }
 $row = getMainValueRow();
 
-// --- Hourly slots result (dummy, should fetch from DB or file) ---
+// --- Hourly slots result (should fetch from DB or file) ---
 function getHourlyResults() {
     // You should fetch from DB: SELECT * FROM hourly_results WHERE date = CURRENT_DATE()
     // Here, we just return empty for demo, slot: timeHH, value: 'N/A'
@@ -54,8 +54,9 @@ $hourly_results = getHourlyResults();
 // --- AJAX endpoint for latest value ---
 if (isset($_GET['ajax']) && $_GET['ajax'] == '1') {
     $mainVALUE = $row['mainVALUE'] ?? '--';
-    // 12-hour format for Myanmar timezone, with correct AM/PM
-    $updated_at = date("d/m/Y h:i:s A", strtotime($row['updated_at'] ?? date("Y-m-d H:i:s")));
+    // Correct Myanmar 12-hour format with AM/PM
+    $dt = new DateTime($row['updated_at'] ?? date("Y-m-d H:i:s"), new DateTimeZone('Asia/Yangon'));
+    $updated_at = $dt->format("d/m/Y h:i:s A");
     header('Content-Type: application/json');
     echo json_encode([
         "mainVALUE" => $mainVALUE,
@@ -65,10 +66,10 @@ if (isset($_GET['ajax']) && $_GET['ajax'] == '1') {
 }
 
 // --- Helper function for MM 12hr format ---
-// Fix: Use 'a' for lowercase am/pm and strtoupper for consistency
+// Always show correct AM/PM using DateTimeZone
 function mm_hour_label($hour) {
-    $t = DateTime::createFromFormat('!H', $hour);
-    return $t->format('h:00 ') . strtoupper($t->format('a'));
+    $dt = new DateTime(sprintf('%02d:00:00', $hour), new DateTimeZone('Asia/Yangon'));
+    return $dt->format('h:00 A'); // e.g., 01:00 PM
 }
 ?>
 <!DOCTYPE html>
@@ -92,14 +93,14 @@ function mm_hour_label($hour) {
         html, body { height: 100%; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif; }
         body { min-height: 100vh; box-sizing: border-box; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; padding-top: 115px; padding-bottom: 120px; }
         .container { width: 100%; max-width: 420px; margin: 0 auto; padding: 0 15px; box-sizing: border-box; }
-        .balance-panel { margin: 16px auto 20px auto; background: var(--primary); color: #fff; border-radius: 13px; box-shadow: 0 4px 15px rgba(25, 118, 210, 0.25); padding: 15px 20px; font-size: 1.2em;}
+        .balance-panel { margin: 16px auto 20px auto; background: var(--primary); color: #fff; border-radius: 13px; box-shadow: 0 4px 15px rgba(25, 118, 210, 0.25); padding: 15px 20px; font-size: 1.2em; }
         .balance-panel .bi-wallet2 { font-size: 1.3em; margin-right: 10px; }
         .card { background: var(--card-bg); border-radius: 18px; box-shadow: 0 4px 25px rgba(0,0,0,0.08); padding: 20px; width: 100%; text-align: center; margin: 0 auto 25px auto; box-sizing: border-box; }
         .section-title { font-size: 1.15em; font-weight: 600; color: var(--text-dark); margin-bottom: 15px; text-align: left; }
         .mainvalue-large { font-size: 6.6em; font-weight: bold; color: var(--accent); letter-spacing: 0.05em; margin-bottom: 0.2em; min-height: 1.2em; line-height: 1.2; transition: opacity 0.4s; }
         .updated-row { text-align: center; font-size: 0.95em; color: var(--text-light); margin-bottom: 1em; }
         .hourly-grid { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 12px; margin-bottom: 50px; }
-        .hourly-card { display: flex; flex-direction: column; justify-content: center; align-items: center; background: var(--card-bg); border-radius: 12px; padding: 10px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+        .hourly-card { display: flex; flex-direction: column; justify-content: center; align-items: center; background: var(--card-bg); border-radius: 12px; padding: 10px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.12); }
         .hour-label { color: var(--primary); font-weight: bold; margin-bottom: 4px; }
         .hour-value { font-size: 1.6em; font-weight: bold; }
         .hour-detail { line-height: 1.2; font-size: 0.95em; color: #555; }
@@ -205,21 +206,28 @@ function mm_hour_label($hour) {
         document.getElementById('betPopupBg').style.display = 'none';
     }
 
-    // Helper for MM 12hr format
+    // Myanmar hour label (12-hour format, correct AM/PM)
     function mmHourLabel(hour) {
         let h = hour % 12;
         if (h === 0) h = 12;
-        let suffix = hour < 12 ? 'AM' : 'PM';
+        let suffix = (hour < 12) ? 'AM' : 'PM';
         return h.toString().padStart(2, '0') + ':00 ' + suffix;
+    }
+
+    // Get current Myanmar time regardless of device timezone
+    function getMyanmarNow() {
+        // Get the time in UTC milliseconds
+        const now = new Date();
+        // UTC time + 6.5 hours (Myanmar)
+        return new Date(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), now.getUTCHours() + 6, now.getUTCMinutes() + 30, now.getUTCSeconds(), now.getUTCMilliseconds());
     }
 
     // Render 24 hour buttons (no hidden hours, always 24 hours displayed)
     function renderBetHourBtns() {
         const betHourBtnsDiv = document.getElementById('betHourBtns');
         betHourBtnsDiv.innerHTML = '';
-        const now = new Date();
-        const mmtOffsetMinutes = 390; // UTC+6:30
-        const mmtNow = new Date(now.getTime() + (mmtOffsetMinutes * 60 * 1000) - (now.getTimezoneOffset() * 60 * 1000));
+        // Use Myanmar real time
+        const mmtNow = getMyanmarNow();
         const currHour = mmtNow.getHours();
         const currMin = mmtNow.getMinutes();
 
@@ -245,7 +253,7 @@ function mm_hour_label($hour) {
             betHourBtnsDiv.appendChild(btn);
         }
     }
-    </script>
+</script>
 </head>
 <body>
     <div class="header" id="main-header">
@@ -268,7 +276,11 @@ function mm_hour_label($hour) {
                 <?= htmlspecialchars($row['mainVALUE'] ?? '--') ?>
             </div>
             <div class="updated-row" id="updated-row">
-                Updated: <?= htmlspecialchars(date("d/m/Y h:i:s A", strtotime($row['updated_at'] ?? date("Y-m-d H:i:s")))) ?>
+                Updated: 
+                <?php
+                $dt = new DateTime($row['updated_at'] ?? date("Y-m-d H:i:s"), new DateTimeZone('Asia/Yangon'));
+                echo htmlspecialchars($dt->format("d/m/Y h:i:s A"));
+                ?>
             </div>
         </div>
         <div class="section-title">၂၄ နာရီအတွက် 2D Results</div>
@@ -297,4 +309,4 @@ function mm_hour_label($hour) {
         </div>
     </div>
 </body>
-</html>  
+</html>
