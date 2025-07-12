@@ -26,7 +26,7 @@ function getUserBalance($user_id) {
 }
 $user_balance = getUserBalance($current_user);
 
-// --- Get latest main value and hourly slots ---
+// --- Get latest main value and hourly slots (dummy for now) ---
 function getMainValueRow() {
     $pdo = Db::getInstance()->getConnection();
     $stmt = $pdo->prepare('SELECT mainVALUE, updated_at FROM mainvalue ORDER BY updated_at DESC LIMIT 1');
@@ -35,7 +35,7 @@ function getMainValueRow() {
 }
 $row = getMainValueRow();
 
-// --- Hourly slots result (should fetch from DB or file) ---
+// --- Hourly slots result (dummy, should fetch from DB or file) ---
 function getHourlyResults() {
     // You should fetch from DB: SELECT * FROM hourly_results WHERE date = CURRENT_DATE()
     // Here, we just return empty for demo, slot: timeHH, value: 'N/A'
@@ -53,10 +53,10 @@ $hourly_results = getHourlyResults();
 
 // --- AJAX endpoint for latest value ---
 if (isset($_GET['ajax']) && $_GET['ajax'] == '1') {
-    $mainVALUE = $row['mainVALUE'] ?? '--';
-    // Correct Myanmar 12-hour format with AM/PM
-    $dt = new DateTime($row['updated_at'] ?? date("Y-m-d H:i:s"), new DateTimeZone('Asia/Yangon'));
-    $updated_at = $dt->format("d/m/Y h:i:s A");
+    // Generate a random number between 00 and 99 for every request
+    $mainVALUE = str_pad(mt_rand(0, 99), 2, '0', STR_PAD_LEFT);
+    // Get current Myanmar time
+    $updated_at = date("d/m/Y h:i:s A");
     header('Content-Type: application/json');
     echo json_encode([
         "mainVALUE" => $mainVALUE,
@@ -66,10 +66,9 @@ if (isset($_GET['ajax']) && $_GET['ajax'] == '1') {
 }
 
 // --- Helper function for MM 12hr format ---
-// Always show correct AM/PM using DateTimeZone
 function mm_hour_label($hour) {
-    $dt = new DateTime(sprintf('%02d:00:00', $hour), new DateTimeZone('Asia/Yangon'));
-    return $dt->format('h:00 A'); // e.g., 01:00 PM
+    $t = DateTime::createFromFormat('!H', $hour);
+    return $t->format('h:00 ') . strtoupper($t->format('a'));
 }
 ?>
 <!DOCTYPE html>
@@ -100,7 +99,7 @@ function mm_hour_label($hour) {
         .mainvalue-large { font-size: 6.6em; font-weight: bold; color: var(--accent); letter-spacing: 0.05em; margin-bottom: 0.2em; min-height: 1.2em; line-height: 1.2; transition: opacity 0.4s; }
         .updated-row { text-align: center; font-size: 0.95em; color: var(--text-light); margin-bottom: 1em; }
         .hourly-grid { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 12px; margin-bottom: 50px; }
-        .hourly-card { display: flex; flex-direction: column; justify-content: center; align-items: center; background: var(--card-bg); border-radius: 12px; padding: 10px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.12); }
+        .hourly-card { display: flex; flex-direction: column; justify-content: center; align-items: center; background: var(--card-bg); border-radius: 12px; padding: 10px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.04); }
         .hour-label { color: var(--primary); font-weight: bold; margin-bottom: 4px; }
         .hour-value { font-size: 1.6em; font-weight: bold; }
         .hour-detail { line-height: 1.2; font-size: 0.95em; color: #555; }
@@ -206,53 +205,47 @@ function mm_hour_label($hour) {
         document.getElementById('betPopupBg').style.display = 'none';
     }
 
-    // Get current Myanmar time regardless of device timezone
-    function getMyanmarNow() {
-        const now = new Date();
-        // Get UTC time, then add 6.5 hours for MM time
-        const utc = now.getTime() + (now.getTimezoneOffset() * 60000);
-        return new Date(utc + (6.5 * 60 * 60 * 1000));
-    }
-
-    // Myanmar hour label (12-hour format, correct AM/PM)
+    // Helper for MM 12hr format
     function mmHourLabel(hour) {
         let h = hour % 12;
         if (h === 0) h = 12;
-        let suffix = (hour < 12) ? 'AM' : 'PM';
+        let suffix = hour < 12 ? 'AM' : 'PM';
         return h.toString().padStart(2, '0') + ':00 ' + suffix;
     }
 
     // Render 24 hour buttons (no hidden hours, always 24 hours displayed)
     function renderBetHourBtns() {
-    const betHourBtnsDiv = document.getElementById('betHourBtns');
-    betHourBtnsDiv.innerHTML = '';
-    const mmtNow = getMyanmarNow();
-    const currHour = mmtNow.getHours();
-    const currMin = mmtNow.getMinutes();
+        const betHourBtnsDiv = document.getElementById('betHourBtns');
+        betHourBtnsDiv.innerHTML = '';
+        const now = new Date();
+        const mmtOffsetMinutes = 390; // UTC+6:30
+        const mmtNow = new Date(now.getTime() + (mmtOffsetMinutes * 60 * 1000) - (now.getTimezoneOffset() * 60 * 1000));
+        const currHour = mmtNow.getHours();
+        const currMin = mmtNow.getMinutes();
 
-    for (let h = 0; h < 24; h++) {
-        let hourLabel = mmHourLabel(h);
-        let slotKey = 'time' + h.toString().padStart(2, '0');
-        // Betting closes 3 min before the hour slot (e.g., for 07:00AM, closes at 06:57AM)
-        let cutoffHour = h - 1;
-        let cutoffMin = 57;
-        let disabled = false;
-        if (currHour > cutoffHour || (currHour === cutoffHour && currMin >= cutoffMin)) {
-            disabled = true;
-        }
-        let btn = document.createElement('button');
-        btn.className = 'bet-hour-btn';
-        btn.textContent = hourLabel + ' အတွက်ထိုးမည်';
-        btn.disabled = disabled;
-        btn.onclick = function() {
-            if (!disabled) {
-                window.location.href = 'bet.php?hour=' + slotKey;
+        for (let h = 0; h < 24; h++) {
+            let hourLabel = mmHourLabel(h);
+            let slotKey = 'time' + h.toString().padStart(2, '0');
+            // Betting closes 3 min before the hour slot
+            let cutoffHour = h;
+            let cutoffMin = 57; // 3 min before next hour
+            let disabled = false;
+            if (currHour > cutoffHour || (currHour === cutoffHour && currMin >= cutoffMin)) {
+                disabled = true;
             }
-        };
-        betHourBtnsDiv.appendChild(btn);
+            let btn = document.createElement('button');
+            btn.className = 'bet-hour-btn';
+            btn.textContent = hourLabel + ' အတွက်ထိုးမည်';
+            btn.disabled = disabled;
+            btn.onclick = function() {
+                if (!disabled) {
+                    window.location.href = 'bet.php?hour=' + slotKey;
+                }
+            };
+            betHourBtnsDiv.appendChild(btn);
+        }
     }
-}
-</script>
+    </script>
 </head>
 <body>
     <div class="header" id="main-header">
@@ -275,11 +268,7 @@ function mm_hour_label($hour) {
                 <?= htmlspecialchars($row['mainVALUE'] ?? '--') ?>
             </div>
             <div class="updated-row" id="updated-row">
-                Updated: 
-                <?php
-                $dt = new DateTime($row['updated_at'] ?? date("Y-m-d H:i:s"), new DateTimeZone('Asia/Yangon'));
-                echo htmlspecialchars($dt->format("d/m/Y h:i:s A"));
-                ?>
+                Updated: <?= htmlspecialchars(date("d/m/Y h:i:s A", strtotime($row['updated_at'] ?? date("Y-m-d H:i:s")))) ?>
             </div>
         </div>
         <div class="section-title">၂၄ နာရီအတွက် 2D Results</div>
@@ -308,4 +297,4 @@ function mm_hour_label($hour) {
         </div>
     </div>
 </body>
-</html>
+</html>  
