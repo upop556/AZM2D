@@ -55,6 +55,7 @@ function getSharedMainValue() {
 $row = getSharedMainValue();
 
 // --- Save Latest Update to Current Hourly Slot (auto-update table) ---
+// FIX: Only update for current hour, never overwrite past hour data!
 function saveLatestResultToHourly($number, $datetime = null) {
     $pdo = Db::getInstance()->getConnection();
     if ($datetime === null) {
@@ -65,22 +66,34 @@ function saveLatestResultToHourly($number, $datetime = null) {
     $hour = (int)$now->format('H');
     $slot_key = 'time' . str_pad($hour, 2, '0', STR_PAD_LEFT);
     $updated_at = $now->format('Y-m-d H:i:s');
-    $stmt = $pdo->prepare('REPLACE INTO hourly_results (slot_key, value, updated_at) VALUES (:slot_key, :value, :updated_at)');
-    $stmt->execute([
-        ':slot_key' => $slot_key,
-        ':value' => $number,
-        ':updated_at' => $updated_at
-    ]);
+
+    // Only update current hour; do not change past hour data!
+    $today = date('Y-m-d');
+    $current_hour = (int)date('H');
+    if ($hour === $current_hour) {
+        // Check if already exists (do not overwrite if already set for this hour)
+        $stmt_check = $pdo->prepare("SELECT value FROM hourly_results WHERE slot_key = :slot_key AND DATE(updated_at) = :today");
+        $stmt_check->execute([':slot_key' => $slot_key, ':today' => $today]);
+        $row = $stmt_check->fetch();
+        if (!$row) {
+            // Only insert if not already exists
+            $stmt = $pdo->prepare('REPLACE INTO hourly_results (slot_key, value, updated_at) VALUES (:slot_key, :value, :updated_at)');
+            $stmt->execute([
+                ':slot_key' => $slot_key,
+                ':value' => $number,
+                ':updated_at' => $updated_at
+            ]);
+        }
+    }
 }
 
 // --- AUTO: Update hourly table with latest value every 4 seconds ---
-$row = getSharedMainValue();
 if (!empty($row['mainVALUE'])) {
     saveLatestResultToHourly($row['mainVALUE'], $row['updated_at']);
 }
 
 // --- Hourly slots result (fetch from DB or fill fake data for remaining) ---
-// FIX: Only fake for PAST hours, not for future hours
+// FAKE data for past hours should NOT change or update after the hour is done!
 function getHourlyResultsWithFake() {
     $pdo = Db::getInstance()->getConnection();
     $results = [];
@@ -98,16 +111,25 @@ function getHourlyResultsWithFake() {
         ];
     }
 
-    // Fill all 24 slots, use DB or fake for remaining PAST (today)
+    // Deterministic FAKE data for past hours (not random every time!)
+    $fake_numbers = [];
+    $seed = intval(date('Ymd'));
+    mt_srand($seed);
+    for ($h = 0; $h < 24; $h++) {
+        $fake_numbers[$h] = str_pad(mt_rand(0,99), 2, '0', STR_PAD_LEFT);
+    }
+    mt_srand(); // reset random seed
+
+    // Fill all 24 slots
     for ($h = 0; $h < 24; $h++) {
         $slot_key = 'time' . str_pad($h, 2, '0', STR_PAD_LEFT);
         if (isset($db_results[$slot_key])) {
             $results[$slot_key] = $db_results[$slot_key];
         } else {
-            // FAKE only for past hours (current_hour > h)
             if ($h < $current_hour) {
+                // Use deterministic fake number, will NOT change every reload
                 $results[$slot_key] = [
-                    'value' => str_pad(mt_rand(0, 99), 2, '0', STR_PAD_LEFT),
+                    'value' => $fake_numbers[$h],
                     'updated_at' => $today . ' ' . str_pad($h, 2, '0', STR_PAD_LEFT) . ':00:00'
                 ];
             } else {
@@ -189,6 +211,17 @@ if (isset($_GET['ajax']) && $_GET['ajax'] == '1') {
         @media (max-width: 600px) {
             .hourly-grid { grid-template-columns: 1fr 1fr; }
             .mainvalue-large { font-size: 3.3em; }
+        }
+        .menu-row { display: flex; flex-direction: row; align-items: stretch; justify-content: space-between; gap: 10px; margin-bottom: 25px; }
+        .menu-btn { flex: 1 1 0; background: #f8f5ff; border-radius: 12px; text-align: center; padding: 13px 5px 10px 5px; cursor: pointer; box-shadow: 0 2px 8px rgba(0,0,0,0.06); border: 1px solid #e5e4ff; }
+        .menu-btn:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
+        .menu-btn i { font-size: 1.8em !important; margin-bottom: 5px; display:inline-block; vertical-align:middle;}
+        .menu-label { font-size: 0.95em; color: #4a4773; font-weight: 500; }
+        /* menu row responsive */
+        @media (max-width: 600px) {
+            .menu-row { gap: 5px; margin-bottom: 18px; }
+            .menu-btn { font-size: 0.93em; padding: 9px 2px 7px 2px; }
+            .menu-btn i { font-size: 1.8em !important; }
         }
         .bet-btn-fixed {
             position: fixed;
@@ -340,6 +373,7 @@ if (isset($_GET['ajax']) && $_GET['ajax'] == '1') {
             <i class="bi bi-wallet2"></i>
             လက်ကျန်ငွေ: <span id="Balance"><?= number_format($user_balance) ?></span> ကျပ်
         </div>
+        
         <div class="card" id="latest-update-card">
             <div class="section-title">Latest Update</div>
             <div class="mainvalue-large" id="mainvalue-large">
@@ -349,6 +383,18 @@ if (isset($_GET['ajax']) && $_GET['ajax'] == '1') {
                 Updated: <?= htmlspecialchars($row['updated_at'] ?? '--') ?>
             </div>
         </div>
+
+        <div class="menu-row">
+            <a href="bet_record.php" class="menu-btn">
+                <i class="bi bi-file-earmark-text"></i>
+                <span class="menu-label">မှတ်တမ်း</span>
+            </a>
+            <a href="winner.php" class="menu-btn">
+                <i class="bi bi-award"></i>
+                <span class="menu-label">ကံထူးရှင်</span>
+            </a>
+        </div>
+
         <div class="section-title">၂၄ နာရီအတွက် 2D Results</div>
         <div class="hourly-grid">
             <?php
