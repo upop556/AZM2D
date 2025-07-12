@@ -206,6 +206,14 @@ function mm_hour_label($hour) {
         document.getElementById('betPopupBg').style.display = 'none';
     }
 
+    // Get current Myanmar time regardless of device timezone
+    function getMyanmarNow() {
+        const now = new Date();
+        // Get UTC time, then add 6.5 hours for MM time
+        const utc = now.getTime() + (now.getTimezoneOffset() * 60000);
+        return new Date(utc + (6.5 * 60 * 60 * 1000));
+    }
+
     // Myanmar hour label (12-hour format, correct AM/PM)
     function mmHourLabel(hour) {
         let h = hour % 12;
@@ -214,45 +222,36 @@ function mm_hour_label($hour) {
         return h.toString().padStart(2, '0') + ':00 ' + suffix;
     }
 
-    // Get current Myanmar time regardless of device timezone
-    function getMyanmarNow() {
-        // Get the time in UTC milliseconds
-        const now = new Date();
-        // UTC time + 6.5 hours (Myanmar)
-        return new Date(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), now.getUTCHours() + 6, now.getUTCMinutes() + 30, now.getUTCSeconds(), now.getUTCMilliseconds());
-    }
-
     // Render 24 hour buttons (no hidden hours, always 24 hours displayed)
     function renderBetHourBtns() {
-        const betHourBtnsDiv = document.getElementById('betHourBtns');
-        betHourBtnsDiv.innerHTML = '';
-        // Use Myanmar real time
-        const mmtNow = getMyanmarNow();
-        const currHour = mmtNow.getHours();
-        const currMin = mmtNow.getMinutes();
+    const betHourBtnsDiv = document.getElementById('betHourBtns');
+    betHourBtnsDiv.innerHTML = '';
+    const mmtNow = getMyanmarNow();
+    const currHour = mmtNow.getHours();
+    const currMin = mmtNow.getMinutes();
 
-        for (let h = 0; h < 24; h++) {
-            let hourLabel = mmHourLabel(h);
-            let slotKey = 'time' + h.toString().padStart(2, '0');
-            // Betting closes 3 min before the hour slot
-            let cutoffHour = h;
-            let cutoffMin = 57; // 3 min before next hour
-            let disabled = false;
-            if (currHour > cutoffHour || (currHour === cutoffHour && currMin >= cutoffMin)) {
-                disabled = true;
-            }
-            let btn = document.createElement('button');
-            btn.className = 'bet-hour-btn';
-            btn.textContent = hourLabel + ' အတွက်ထိုးမည်';
-            btn.disabled = disabled;
-            btn.onclick = function() {
-                if (!disabled) {
-                    window.location.href = 'bet.php?hour=' + slotKey;
-                }
-            };
-            betHourBtnsDiv.appendChild(btn);
+    for (let h = 0; h < 24; h++) {
+        let hourLabel = mmHourLabel(h);
+        let slotKey = 'time' + h.toString().padStart(2, '0');
+        // Betting closes 3 min before the hour slot (e.g., for 07:00AM, closes at 06:57AM)
+        let cutoffHour = h - 1;
+        let cutoffMin = 57;
+        let disabled = false;
+        if (currHour > cutoffHour || (currHour === cutoffHour && currMin >= cutoffMin)) {
+            disabled = true;
         }
+        let btn = document.createElement('button');
+        btn.className = 'bet-hour-btn';
+        btn.textContent = hourLabel + ' အတွက်ထိုးမည်';
+        btn.disabled = disabled;
+        btn.onclick = function() {
+            if (!disabled) {
+                window.location.href = 'bet.php?hour=' + slotKey;
+            }
+        };
+        betHourBtnsDiv.appendChild(btn);
     }
+}
 </script>
 </head>
 <body>
