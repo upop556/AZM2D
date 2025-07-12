@@ -81,10 +81,13 @@ if (isset($_GET['ajax']) && $_GET['ajax'] == '1') {
     exit;
 }
 
-// --- Helper function for MM 12hr format ---
+// --- Helper function for MM 12hr format (FIXED!) ---
 function mm_hour_label($hour) {
-    $t = DateTime::createFromFormat('!H', $hour);
-    return $t->format('h:00 ') . strtoupper($t->format('a'));
+    // $hour is 0-23
+    $h = $hour % 12;
+    if ($h == 0) $h = 12;
+    $suffix = ($hour >= 12) ? 'PM' : 'AM';
+    return sprintf('%02d:00 %s', $h, $suffix);
 }
 ?>
 <!DOCTYPE html>
@@ -221,11 +224,11 @@ function mm_hour_label($hour) {
         document.getElementById('betPopupBg').style.display = 'none';
     }
 
-    // Helper for MM 12hr format
+    // Helper for MM 12hr format (FIXED! must match PHP logic)
     function mmHourLabel(hour) {
         let h = hour % 12;
         if (h === 0) h = 12;
-        let suffix = hour < 12 ? 'AM' : 'PM';
+        let suffix = hour >= 12 ? 'PM' : 'AM';
         return h.toString().padStart(2, '0') + ':00 ' + suffix;
     }
 
