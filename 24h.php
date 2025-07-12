@@ -79,28 +79,47 @@ if (!empty($row['mainVALUE'])) {
     saveLatestResultToHourly($row['mainVALUE'], $row['updated_at']);
 }
 
-// --- Hourly slots result (fetch from DB) ---
-function getHourlyResults() {
+// --- Hourly slots result (fetch from DB or fill fake data for remaining) ---
+function getHourlyResultsWithFake() {
     $pdo = Db::getInstance()->getConnection();
     $results = [];
-    for ($h = 0; $h < 24; $h++) {
-        $slot_key = 'time' . str_pad($h, 2, '0', STR_PAD_LEFT);
-        $results[$slot_key] = [
-            'value' => 'N/A',
-            'updated_at' => '--'
+    $today = date('Y-m-d');
+    $current_hour = (int)date('H');
+
+    // Get real results from DB
+    $stmt = $pdo->prepare("SELECT slot_key, value, updated_at FROM hourly_results WHERE DATE(updated_at) = :today");
+    $stmt->execute([':today' => $today]);
+    $db_results = [];
+    while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+        $db_results[$row['slot_key']] = [
+            'value' => $row['value'],
+            'updated_at' => $row['updated_at']
         ];
     }
-    $stmt = $pdo->query('SELECT slot_key, value, updated_at FROM hourly_results');
-    while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
-        $slot_key = $row['slot_key'];
-        if (isset($results[$slot_key])) {
-            $results[$slot_key]['value'] = $row['value'];
-            $results[$slot_key]['updated_at'] = $row['updated_at'];
+
+    // Fill all 24 slots, use DB or fake for remaining future (today)
+    for ($h = 0; $h < 24; $h++) {
+        $slot_key = 'time' . str_pad($h, 2, '0', STR_PAD_LEFT);
+        if (isset($db_results[$slot_key])) {
+            $results[$slot_key] = $db_results[$slot_key];
+        } else {
+            // If slot is in the future, fill with FAKE data for today only
+            if ($h > $current_hour) {
+                $results[$slot_key] = [
+                    'value' => str_pad(mt_rand(0, 99), 2, '0', STR_PAD_LEFT),
+                    'updated_at' => $today . ' ' . str_pad($h, 2, '0', STR_PAD_LEFT) . ':00:00'
+                ];
+            } else {
+                $results[$slot_key] = [
+                    'value' => 'N/A',
+                    'updated_at' => '--'
+                ];
+            }
         }
     }
     return $results;
 }
-$hourly_results = getHourlyResults();
+$hourly_results = getHourlyResultsWithFake();
 
 // --- Helper function for MM 12hr format ---
 function mm_hour_label($hour) {
