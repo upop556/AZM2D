@@ -221,19 +221,11 @@ function mm_hour_label($hour) {
         document.getElementById('betPopupBg').style.display = 'none';
     }
 
-    // Get current Myanmar time regardless of device timezone
-    function getMyanmarNow() {
-        const now = new Date();
-        // Get UTC time, then add 6.5 hours for MM time
-        const utc = now.getTime() + (now.getTimezoneOffset() * 60000);
-        return new Date(utc + (6.5 * 60 * 60 * 1000));
-    }
-
-    // Myanmar hour label (12-hour format, correct AM/PM)
+    // Helper for MM 12hr format
     function mmHourLabel(hour) {
         let h = hour % 12;
         if (h === 0) h = 12;
-        let suffix = (hour < 12) ? 'AM' : 'PM';
+        let suffix = hour < 12 ? 'AM' : 'PM';
         return h.toString().padStart(2, '0') + ':00 ' + suffix;
     }
 
@@ -241,7 +233,9 @@ function mm_hour_label($hour) {
     function renderBetHourBtns() {
         const betHourBtnsDiv = document.getElementById('betHourBtns');
         betHourBtnsDiv.innerHTML = '';
-        const mmtNow = getMyanmarNow();
+        const now = new Date();
+        const mmtOffsetMinutes = 390; // UTC+6:30
+        const mmtNow = new Date(now.getTime() + (mmtOffsetMinutes * 60 * 1000) - (now.getTimezoneOffset() * 60 * 1000));
         const currHour = mmtNow.getHours();
         const currMin = mmtNow.getMinutes();
 
@@ -267,7 +261,7 @@ function mm_hour_label($hour) {
             betHourBtnsDiv.appendChild(btn);
         }
     }
-</script>
+    </script>
 </head>
 <body>
     <div class="header" id="main-header">
