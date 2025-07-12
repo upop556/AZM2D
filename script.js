@@ -118,7 +118,6 @@ function showTab(tab) {
   document.querySelectorAll('.form-input').forEach(e => e.classList.remove('error'));
 }
 
-// Load ad banner
 function loadAdBanner() {
   fetch('https://amazemm.xyz/api/ad_banner_api.php')
     .then(response => {
@@ -130,6 +129,13 @@ function loadAdBanner() {
         document.getElementById('ad-banner-img').src = data.banner.image_url;
         document.getElementById('ad-banner-title').style.display = "none";
         document.getElementById('ad-banner-desc').style.display = "none";
+        // Marquee message inside ad banner
+        if (data.marquee_message) {
+          document.getElementById('ad-banner-marquee').innerHTML =
+            `<marquee scrollamount="5" behavior="scroll" direction="left">${data.marquee_message}</marquee>`;
+        } else {
+          document.getElementById('ad-banner-marquee').innerHTML = '';
+        }
       }
     })
     .catch(error => {
@@ -751,4 +757,4 @@ document.addEventListener('DOMContentLoaded', function() {
     document.body.appendChild(debugPanel);
   }
   initApp();
-});
+}); 
