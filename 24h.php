@@ -42,7 +42,7 @@ function getSharedMainValue() {
     }
 
     $mainVALUE = str_pad(mt_rand(0, 99), 2, '0', STR_PAD_LEFT);
-    $updated_at = date("d/m/Y h:i:s A");
+    $updated_at = date("Y-m-d H:i:s");
     $data = [
         'mainVALUE' => $mainVALUE,
         'updated_at' => $updated_at,
@@ -54,8 +54,34 @@ function getSharedMainValue() {
 
 $row = getSharedMainValue();
 
-// --- Hourly slots result (dummy, should fetch from DB or file) ---
+// --- Save Latest Update to Current Hourly Slot (auto-update table) ---
+function saveLatestResultToHourly($number, $datetime = null) {
+    $pdo = Db::getInstance()->getConnection();
+    if ($datetime === null) {
+        $now = new DateTime("now", new DateTimeZone("Asia/Yangon"));
+    } else {
+        $now = new DateTime($datetime, new DateTimeZone("Asia/Yangon"));
+    }
+    $hour = (int)$now->format('H');
+    $slot_key = 'time' . str_pad($hour, 2, '0', STR_PAD_LEFT);
+    $updated_at = $now->format('Y-m-d H:i:s');
+    $stmt = $pdo->prepare('REPLACE INTO hourly_results (slot_key, value, updated_at) VALUES (:slot_key, :value, :updated_at)');
+    $stmt->execute([
+        ':slot_key' => $slot_key,
+        ':value' => $number,
+        ':updated_at' => $updated_at
+    ]);
+}
+
+// --- AUTO: Update hourly table with latest value every 4 seconds ---
+$row = getSharedMainValue();
+if (!empty($row['mainVALUE'])) {
+    saveLatestResultToHourly($row['mainVALUE'], $row['updated_at']);
+}
+
+// --- Hourly slots result (fetch from DB) ---
 function getHourlyResults() {
+    $pdo = Db::getInstance()->getConnection();
     $results = [];
     for ($h = 0; $h < 24; $h++) {
         $slot_key = 'time' . str_pad($h, 2, '0', STR_PAD_LEFT);
@@ -63,6 +89,14 @@ function getHourlyResults() {
             'value' => 'N/A',
             'updated_at' => '--'
         ];
+    }
+    $stmt = $pdo->query('SELECT slot_key, value, updated_at FROM hourly_results');
+    while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+        $slot_key = $row['slot_key'];
+        if (isset($results[$slot_key])) {
+            $results[$slot_key]['value'] = $row['value'];
+            $results[$slot_key]['updated_at'] = $row['updated_at'];
+        }
     }
     return $results;
 }
@@ -78,11 +112,9 @@ function mm_hour_label($hour) {
 }
 
 // --- Helper function for betting cutoff (server side accurate) ---
-// FIXED LOGIC: Betting closes as soon as the hour is reached (i.e. betting for 12:00 PM closes at 12:00 PM)
 function isBetEnabled($slot_hour) {
     $now = new DateTime("now", new DateTimeZone("Asia/Yangon"));
     $current_hour = (int)$now->format('H');
-    $current_min = (int)$now->format('i');
     // Betting closes as soon as the hour is reached
     if ($current_hour >= $slot_hour) {
         return false; // Disabled
