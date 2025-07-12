@@ -24,6 +24,7 @@
             --navbar-padding-h: 0;
             --login-btn-bg: #27ae60;
             --login-btn-hover-bg: #218c53;
+            --container-radius: 20px;
         }
         html, body {
             margin: 0;
@@ -86,7 +87,6 @@
         .mode-btn:hover, .mode-btn:focus {
             background: var(--btn-hover-bg);
         }
-
         /* Login button styles */
         .login-btn {
             display: block;
@@ -147,107 +147,15 @@
             min-width: 1.35em;
             text-align: center;
         }
-        /* Responsive overrides */
-        @media (max-width: 900px) {
-            .container {
-                max-width: 96vw;
-            }
-        }
-        @media (max-width: 600px) {
-            :root {
-                --navbar-height: 56px;
-                --navbar-icon-size: 1.1em;
-                --navbar-font-size: 1em;
-                --navbar-padding-v: 10px;
-            }
-            .header {
-                font-size: 1.5em;
-                padding-left: 12px;
-            }
-            .ad-banner {
-                font-size: 1em;
-                padding: 0;
-                width: 98vw;
-                height: 110px;
-            }
-            .button-row {
-                gap: 16px;
-                margin-bottom: 36px;
-            }
-            .mode-btn {
-                width: 140px;
-                height: 140px;
-                font-size: 2.5em;
-            }
-            .login-btn {
-                font-size: 1.2em;
-                padding: 13px 34px;
-                border-radius: 13px;
-                margin-bottom: 22px;
-            }
-            .container {
-                max-width: 99vw;
-                padding: 9px 2vw 14px 2vw;
-            }
-            .navbar a {
-                font-size: var(--navbar-font-size);
-                padding: 6px 8px;
-                height: 36px;
-            }
-        }
-        @media (max-width: 500px) {
-            .container {
-                max-width: 99vw;
-                padding: 6px 1vw 12px 1vw;
-                border-radius: 9px;
-            }
-        }
-    </style>
-</head>
-<body>
-    <div class="header">Global2d3d</div>
-    <div class="ad-banner">Ad Banner</div>
-    <button class="login-btn"><i class="fa-solid fa-right-to-bracket"></i> Login</button>
-    <div class="button-row">
-        <button class="mode-btn" title="Switch to 2D mode">2D</button>
-        <button class="mode-btn" title="Switch to 3D mode">3D</button>
-    </div>
-    <div class="navbar">
-        <a href="#" class="active"><i class="fa-solid fa-house"></i> Home</a>
-        <a href="#"><i class="fa-solid fa-wallet"></i> Wallet</a>
-        <a href="#"><i class="fa-solid fa-circle-question"></i> Help</a>
-        <a href="#"><i class="fa-solid fa-user"></i> Profile</a>
-    </div>
-</body>
-</html>
-
-
-
-
-
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Account Signup / Login</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <!-- Font Awesome CDN for icons -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
-    <style>
-        body {
-            font-family: 'Segoe UI', Arial, sans-serif;
-            background: linear-gradient(to bottom, #7ed6a7 0%, #e8a96b 100%);
-            min-height: 100vh;
-            margin: 0;
-            padding: 0;
-        }
-        .container {
+        /* --- Login Page/Navbar --- */
+        .login-container {
             max-width: 420px;
             margin: 56px auto 0 auto;
             background: #fff;
-            border-radius: 20px;
+            border-radius: var(--container-radius);
             box-shadow: 0 6px 24px rgba(0,0,0,0.09);
             padding: 32px 24px 28px 24px;
+            display: none;
         }
         .tabs {
             display: flex;
@@ -343,24 +251,121 @@
             font-weight: 500;
             cursor: pointer;
         }
-        @media (max-width: 500px) {
-            .container {
-                max-width: 98vw;
-                padding: 19px 7vw 18px 7vw;
+        .login-navbar {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: var(--navbar-height);
+            background: var(--navbar-bg);
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            padding: var(--navbar-padding-v) var(--navbar-padding-h);
+            box-shadow: 0 -2px 12px rgba(0,0,0,0.06);
+            z-index: 10;
+        }
+        .login-navbar a {
+            color: var(--white);
+            font-size: var(--navbar-font-size);
+            text-decoration: none;
+            letter-spacing: 1.5px;
+            border-radius: 10px;
+            padding: 8px 18px;
+            transition: background 0.18s, color 0.18s;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            height: 48px;
+            box-sizing: border-box;
+        }
+        .login-navbar a.active, .login-navbar a:hover {
+            background: var(--navbar-active-bg);
+            color: #333;
+        }
+        .login-navbar i {
+            font-size: var(--navbar-icon-size);
+            min-width: 1.35em;
+            text-align: center;
+        }
+        @media (max-width: 900px) {
+            .container, .login-container {
+                max-width: 96vw;
             }
-            .tab-btn {
+        }
+        @media (max-width: 600px) {
+            :root {
+                --navbar-height: 56px;
+                --navbar-icon-size: 1.1em;
+                --navbar-font-size: 1em;
+                --navbar-padding-v: 10px;
+            }
+            .header {
+                font-size: 1.5em;
+                padding-left: 12px;
+            }
+            .ad-banner {
                 font-size: 1em;
-                padding: 11px 0;
+                padding: 0;
+                width: 98vw;
+                height: 110px;
+            }
+            .button-row {
+                gap: 16px;
+                margin-bottom: 36px;
+            }
+            .mode-btn {
+                width: 140px;
+                height: 140px;
+                font-size: 2.5em;
+            }
+            .login-btn {
+                font-size: 1.2em;
+                padding: 13px 34px;
+                border-radius: 13px;
+                margin-bottom: 22px;
+            }
+            .container, .login-container {
+                max-width: 99vw;
+                padding: 9px 2vw 14px 2vw;
+                border-radius: 13px;
+            }
+            .navbar a, .login-navbar a {
+                font-size: var(--navbar-font-size);
+                padding: 6px 8px;
+                height: 36px;
+            }
+        }
+        @media (max-width: 500px) {
+            .container, .login-container {
+                max-width: 99vw;
+                padding: 6px 1vw 12px 1vw;
+                border-radius: 9px;
             }
         }
     </style>
 </head>
 <body>
-    <div class="container">
+    <div id="main-page">
+        <div class="header">Global2d3d</div>
+        <div class="ad-banner">Ad Banner</div>
+        <button class="login-btn" id="show-login"><i class="fa-solid fa-right-to-bracket"></i> Login</button>
+        <div class="button-row">
+            <button class="mode-btn" title="Switch to 2D mode">2D</button>
+            <button class="mode-btn" title="Switch to 3D mode">3D</button>
+        </div>
+        <div class="navbar" id="main-navbar">
+            <a href="#" class="active"><i class="fa-solid fa-house"></i> Home</a>
+            <a href="#"><i class="fa-solid fa-wallet"></i> Wallet</a>
+            <a href="#"><i class="fa-solid fa-circle-question"></i> Help</a>
+            <a href="#"><i class="fa-solid fa-user"></i> Profile</a>
+        </div>
+    </div>
+    <!-- Login/Signup UI -->
+    <div class="login-container" id="login-container">
         <div class="tabs">
-            <!-- Login Tab (left) -->
             <button class="tab-btn active" onclick="switchTab('login')">အကောင့်ဝင် (Login)</button>
-            <!-- Signup Tab (right) -->
             <button class="tab-btn" onclick="switchTab('signup')">အကောင့်ဖွင့် (Signup)</button>
         </div>
         <!-- Login Form -->
@@ -402,6 +407,13 @@
             <button type="submit" class="submit-btn">အကောင့်ဖွင့်မည်</button>
             <div class="login-link">အကောင့်ရှိပြီလား? <a onclick="switchTab('login')">Login</a></div>
         </form>
+        <!-- Login/Navbar (same style as main) -->
+        <div class="login-navbar" id="login-navbar">
+            <a href="#" class="active"><i class="fa-solid fa-house"></i> Home</a>
+            <a href="#"><i class="fa-solid fa-wallet"></i> Wallet</a>
+            <a href="#"><i class="fa-solid fa-circle-question"></i> Help</a>
+            <a href="#"><i class="fa-solid fa-user"></i> Profile</a>
+        </div>
     </div>
     <script>
         function switchTab(tab) {
@@ -430,6 +442,16 @@
             e.preventDefault();
             alert('Login submitted!');
         }
+        // Show login/signup UI with its navbar, hide main content/navbar
+        document.getElementById('show-login').onclick = function() {
+            document.getElementById('main-page').style.display = 'none';
+            document.getElementById('login-container').style.display = 'block';
+        };
+        // For demo: clicking Home on login-navbar returns to main page
+        document.querySelector('#login-navbar a').onclick = function() {
+            document.getElementById('login-container').style.display = 'none';
+            document.getElementById('main-page').style.display = 'block';
+        };
     </script>
 </body>
-</html>
+</html>   
