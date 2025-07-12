@@ -22,6 +22,8 @@
             --navbar-font-size: 1.35em;
             --navbar-padding-v: 16px;
             --navbar-padding-h: 0;
+            --login-btn-bg: #27ae60;
+            --login-btn-hover-bg: #218c53;
         }
         html, body {
             margin: 0;
@@ -84,178 +86,27 @@
         .mode-btn:hover, .mode-btn:focus {
             background: var(--btn-hover-bg);
         }
-        /* --- Login/Register Modal --- */
-        .modal-bg {
-            display: none;
-            position: fixed;
-            z-index: 20;
-            left: 0; top: 0; width: 100vw; height: 100vh;
-            background: rgba(0,0,0,0.13);
-            justify-content: center;
-            align-items: center;
-        }
-        .modal-bg.active {
-            display: flex;
-        }
-        .container {
-            width: 100%;
-            max-width: 400px;
-            margin: 0 auto;
-            background: #fff;
-            border-radius: 14px;
-            box-shadow: 0 4px 32px #1877f244;
-            padding: 18px 10px 18px 10px;
-            position: relative;
-        }
-        .close-modal-btn {
-            position: absolute;
-            right: 16px;
-            top: 14px;
-            background: transparent;
-            border: none;
-            font-size: 1.6em;
-            color: #c0392b;
-            cursor: pointer;
-            outline: none;
-        }
-        .tab-group {
-            display: flex;
-            border-radius: 10px;
-            overflow: hidden;
-            margin-bottom: 14px;
-        }
-        .tab-btn {
-            flex: 1;
-            padding: 11px 0;
-            font-size: 1em;
-            font-weight: 600;
-            background: #e8a96b;
-            color: #444;
-            border: none;
-            cursor: pointer;
-            outline: none;
-            transition: background 0.18s, color 0.18s;
-        }
-        .tab-btn.active {
-            background: #7ed6a7;
-            color: #1c2833;
-        }
-        .form-wrapper {
-            margin-top: 10px;
-        }
-        .form-title {
-            font-size: 1.09em;
-            font-weight: 600;
-            margin-bottom: 13px;
-            color: #1877f2;
-            text-align: center;
-        }
-        .form-group {
-            margin-bottom: 10px;
-        }
-        .form-label {
-            display: block;
-            margin-bottom: 5px;
-            color: #333;
-            font-weight: 500;
-            font-size: 1em;
-        }
-        .form-input {
-            width: 100%;
-            padding: 9px 10px;
-            border-radius: 6px;
-            border: 1px solid #ccc;
-            font-size: 1em;
-            box-sizing: border-box;
-            transition: border 0.15s, box-shadow 0.15s;
-        }
-        .form-input:focus {
-            outline: none;
-            border-color: #1877f2;
-            box-shadow: 0 0 0 2px #1877f233;
-        }
-        .form-btn {
-            width: 100%;
-            background: #1877f2;
-            color: #fff;
-            font-size: 1.1em;
-            font-weight: 700;
-            border: none;
-            border-radius: 7px;
-            padding: 12px 0;
-            cursor: pointer;
-            margin-top: 8px;
-            transition: background 0.18s;
-        }
-        .form-btn:hover {
-            background: #1256b3;
-        }
-        .success-msg, .error-msg {
-            text-align: center;
-            font-size: 1em;
-            margin-bottom: 10px;
-            padding: 6px;
-            border-radius: 6px;
-        }
-        .success-msg {
-            background: #e8f5e9;
-            color: #388e3c;
-        }
-        .error-msg {
-            background: #ffebee;
-            color: #c0392b;
-        }
-        .field-error {
-            color: #c0392b;
-            font-size: 0.98em;
-            margin-top: 2px;
-        }
-        .form-checkbox-group {
-            margin-bottom: 10px;
-            display: flex;
-            align-items: center;
-            gap: 7px;
-        }
-        .form-checkbox-label {
-            font-size: 0.99em;
-            color: #444;
-        }
-        .optional-tip {
-            color: #888;
-            font-size: 0.95em;
-        }
-        .password-requirements {
-            margin-top: 5px;
-            font-size: 0.97em;
-            color: #444;
-        }
-        .requirement-unmet {
-            color: #c0392b;
-        }
-        /* --- Login Button --- */
-        .login-btn-area {
-            text-align: center;
-            margin-bottom: 30px;
-        }
+
+        /* Login button styles */
         .login-btn {
-            background: #1877f2;
-            color: #fff;
-            font-size: 1.15em;
-            font-weight: 700;
+            display: block;
+            margin: 0 auto 40px auto;
+            padding: 20px 64px;
+            font-size: 2em;
+            font-weight: 600;
+            color: var(--white);
+            background: var(--login-btn-bg);
             border: none;
-            border-radius: 12px;
-            padding: 14px 40px;
-            box-shadow: 0 4px 24px #1877f244;
-            letter-spacing: 1px;
+            border-radius: 17px;
             cursor: pointer;
-            transition: background 0.2s, color 0.2s, box-shadow 0.2s, transform 0.1s;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+            transition: background 0.15s, transform 0.15s;
+            letter-spacing: 1.2px;
             outline: none;
         }
         .login-btn:hover, .login-btn:focus {
-            background: #1256b3;
-            color: #fff;
-            transform: translateY(-1px) scale(1.04);
-            box-shadow: 0 6px 32px #1877f266;
+            background: var(--login-btn-hover-bg);
+            transform: scale(0.98);
         }
         /* --- Navbar size/base --- */
         .navbar {
@@ -296,48 +147,10 @@
             min-width: 1.35em;
             text-align: center;
         }
-        /* Register form width and centering - HALF SIZE */
-        #register-form {
-            width: 100%;
-            max-width: 170px;
-            margin: 0 auto;
-            font-size: 0.49em;
-        }
-        #register-form .form-title {
-            font-size: 0.54em;
-        }
-        #register-form .form-input,
-        #register-form .form-btn {
-            font-size: 0.49em;
-            padding: 4px;
-        }
-        #register-form .password-requirements {
-            font-size: 0.47em;
-        }
-        #register-form .form-group {
-            margin-bottom: 5px;
-        }
-        #register-form .form-group[style] {
-            max-width: 125px;
-        }
-        #reg-profile-photo, #reg-referral_code {
-            max-width: 125px;
-        }
-        #reg-submit-btn {
-            max-width: 125px;
-            font-size: 0.47em;
-            padding: 5px 0;
-        }
-        #register-form .field-error {
-            font-size: 0.49em;
-        }
         /* Responsive overrides */
         @media (max-width: 900px) {
             .container {
                 max-width: 96vw;
-            }
-            #register-form {
-                max-width: 86vw;
             }
         }
         @media (max-width: 600px) {
@@ -367,9 +180,10 @@
                 font-size: 2.5em;
             }
             .login-btn {
-                font-size: 1em;
-                padding: 12px 15vw;
-                border-radius: 9px;
+                font-size: 1.2em;
+                padding: 13px 34px;
+                border-radius: 13px;
+                margin-bottom: 22px;
             }
             .container {
                 max-width: 99vw;
@@ -380,16 +194,6 @@
                 padding: 6px 8px;
                 height: 36px;
             }
-            #register-form, #login-form {
-                max-width: 98vw;
-                width: 100%;
-            }
-            #register-form .form-group[style], #login-form .form-group[style] {
-                max-width: 98vw;
-            }
-            #register-form .form-btn, #login-form .form-btn {
-                max-width: 98vw;
-            }
         }
         @media (max-width: 500px) {
             .container {
@@ -397,19 +201,13 @@
                 padding: 6px 1vw 12px 1vw;
                 border-radius: 9px;
             }
-            #register-form, #login-form {
-                max-width: 99vw;
-                width: 100%;
-            }
         }
     </style>
 </head>
 <body>
     <div class="header">Global2d3d</div>
     <div class="ad-banner">Ad Banner</div>
-    <div class="login-btn-area">
-        <button class="login-btn" id="main-login-btn">အကောင့်ဝင်ရန် Login</button>
-    </div>
+    <button class="login-btn"><i class="fa-solid fa-right-to-bracket"></i> Login</button>
     <div class="button-row">
         <button class="mode-btn" title="Switch to 2D mode">2D</button>
         <button class="mode-btn" title="Switch to 3D mode">3D</button>
@@ -420,140 +218,218 @@
         <a href="#"><i class="fa-solid fa-circle-question"></i> Help</a>
         <a href="#"><i class="fa-solid fa-user"></i> Profile</a>
     </div>
-    <!-- Login/Register Modal -->
-    <div class="modal-bg" id="login-modal-bg">
-        <div class="container">
-            <button class="close-modal-btn" id="close-login-modal" title="Close">&times;</button>
-            <!-- Tabs for switching forms -->
-            <div class="tab-group">
-                <button type="button" class="tab-btn active" id="tab-login">အ​ကောင့်ဝင်ရန်</button>
-                <button type="button" class="tab-btn" id="tab-register">အ​ကောင့်ဖွင့်ရန်</button>
-            </div>
-            <div class="form-wrapper">
-                <!-- Login Form -->
-                <form id="login-form" autocomplete="off">
-                    <div class="form-title">အ​ကောင့်ဝင်ရန်</div>
-                    <div id="login-success-msg" class="success-msg" style="display:none;"></div>
-                    <div id="login-error-msg" class="error-msg" style="display:none;"></div>
-                    <div class="form-group">
-                        <label class="form-label" for="login-phone">ဖုန်းနံပါတ်</label>
-                        <input class="form-input" type="tel" id="login-phone" name="phone" placeholder="ဖုန်းနံပါတ် (09xxxxxxx)" required>
-                        <div id="login-phone-error" class="field-error" style="display:none;"></div>
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label" for="login-password">စကားဝှက်</label>
-                        <input class="form-input" type="password" id="login-password" name="password" placeholder="စကားဝှက်" required>
-                        <div id="login-password-error" class="field-error" style="display:none;"></div>
-                    </div>
-                    <div class="form-checkbox-group">
-                        <input type="checkbox" id="remember-me" class="form-checkbox">
-                        <label for="remember-me" class="form-checkbox-label">အကောင့်မှတ်ထားရန်</label>
-                    </div>
-                    <button id="login-submit-btn" class="form-btn" type="submit">အ​ကောင့်ဝင်မည်</button>
-                    <a href="#" onclick="alert('ဤလုပ်ဆောင်ချက်သည် လက်ရှိတွင် မရနိုင်သေးပါ။'); return false;" style="display:block;margin-top:7px;text-align:right;color:#1877f2;font-size:0.97em;">စကားဝှက် မေ့နေပါသလား?</a>
-                </form>
-                <!-- Register Form (half size) -->
-                <form id="register-form" style="display:none; max-width:170px; font-size:0.49em;" autocomplete="off">
-                    <div class="form-title" style="font-size:0.54em;">အသစ်အ​ကောင့်ဖွင့်ရန်</div>
-                    <div id="reg-success-msg" class="success-msg" style="display:none;"></div>
-                    <div id="reg-error-msg" class="error-msg" style="display:none;"></div>
-                    <div class="form-group">
-                        <label class="form-label" for="reg-name" style="font-size:0.49em;">အမည်</label>
-                        <input class="form-input" type="text" id="reg-name" name="name" placeholder="အမည်" required style="font-size:0.49em; padding:4px;">
-                        <div id="reg-name-error" class="field-error" style="display:none; font-size:0.49em;"></div>
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label" for="reg-phone" style="font-size:0.49em;">ဖုန်းနံပါတ်</label>
-                        <input class="form-input" type="tel" id="reg-phone" name="phone" placeholder="ဖုန်းနံပါတ် (09xxxxxxx)" required style="font-size:0.49em; padding:4px;">
-                        <div id="reg-phone-error" class="field-error" style="display:none; font-size:0.49em;"></div>
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label" for="reg-password" style="font-size:0.49em;">စကားဝှက်</label>
-                        <input class="form-input" type="password" id="reg-password" name="password" placeholder="စကားဝှက်" required style="font-size:0.49em; padding:4px;">
-                        <div id="reg-password-error" class="field-error" style="display:none; font-size:0.49em;"></div>
-                        <div class="password-requirements" style="font-size:0.47em;">
-                            <div id="length-req" class="password-requirement requirement-unmet">
-                                <i class="fas fa-circle"></i> အနည်းဆုံး စာလုံး ၆ လုံး
-                            </div>
-                            <div id="number-req" class="password-requirement requirement-unmet">
-                                <i class="fas fa-circle"></i> ဂဏန်းတစ်လုံး ပါဝင်ရမည်
-                            </div>
-                            <div id="uppercase-req" class="password-requirement requirement-unmet">
-                                <i class="fas fa-circle"></i> အင်္ဂလိပ်စာ အကြီး တစ်လုံး ပါဝင်လျှင် ပိုကောင်းသည်
-                            </div>
-                        </div>
-                    </div>
-                    <div class="form-group" style="max-width: 125px;">
-                        <label class="form-label" for="reg-profile-photo" style="font-size:0.49em;">Profile Photo <span class="optional-tip" style="font-size:0.48em;">(မတင်လည်းရသည်)</span></label>
-                        <input class="form-input" type="file" id="reg-profile-photo" name="profile_photo" accept="image/*" style="font-size:0.49em; padding:3px;">
-                    </div>
-                    <div class="form-group" style="max-width: 125px;">
-                        <label class="form-label" for="reg-referral_code" style="font-size:0.49em;">Referral Code <span class="optional-tip" style="font-size:0.48em;">(ရှိပါကသာ ထည့်ပါ)</span></label>
-                        <input class="form-input" type="text" id="reg-referral_code" name="referral_code" placeholder="Referral Code (မရှိရင်ကျော်ပါ)" style="font-size:0.49em; padding:3px;">
-                    </div>
-                    <div class="form-checkbox-group">
-                        <input type="checkbox" id="register-remember-me" class="form-checkbox" style="transform: scale(0.7);">
-                        <label for="register-remember-me" class="form-checkbox-label" style="font-size:0.48em;">အကောင့်မှတ်ထားရန်</label>
-                    </div>
-                    <button id="reg-submit-btn" class="form-btn" type="submit" style="max-width: 125px; font-size: 0.47em; padding: 5px 0;">အ​ကောင့်ဖွင့်မည်</button>
-                </form>
-            </div>
-        </div>
-    </div>
+</body>
+</html>
 
-<script src="marlar/account.js"></script>
-    <script>
-        // Show login/register modal
-        document.getElementById('main-login-btn').onclick = function() {
-            document.getElementById('login-modal-bg').classList.add('active');
-        };
-        // Close modal
-        document.getElementById('close-login-modal').onclick = function() {
-            document.getElementById('login-modal-bg').classList.remove('active');
-        };
-        // Tabs logic
-        const tabLogin = document.getElementById('tab-login');
-        const tabRegister = document.getElementById('tab-register');
-        const loginForm = document.getElementById('login-form');
-        const registerForm = document.getElementById('register-form');
-        tabLogin.onclick = function() {
-            tabLogin.classList.add('active');
-            tabRegister.classList.remove('active');
-            loginForm.style.display = '';
-            registerForm.style.display = 'none';
-        };
-        tabRegister.onclick = function() {
-            tabRegister.classList.add('active');
-            tabLogin.classList.remove('active');
-            loginForm.style.display = 'none';
-            registerForm.style.display = '';
-        };
-        // Password requirements demo for registration
-        document.getElementById('reg-password').addEventListener('input', function(e) {
-            const val = e.target.value;
-            document.getElementById('length-req').classList.toggle('requirement-unmet', val.length < 6);
-            document.getElementById('number-req').classList.toggle('requirement-unmet', !(/[0-9]/.test(val)));
-            document.getElementById('uppercase-req').classList.toggle('requirement-unmet', !(/[A-Z]/.test(val)));
-        });
-        // Optional: close modal if click outside modal content
-        document.getElementById('login-modal-bg').onclick = function(e) {
-            if (e.target === this) {
-                this.classList.remove('active');
+
+
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Account Signup / Login</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <!-- Font Awesome CDN for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+    <style>
+        body {
+            font-family: 'Segoe UI', Arial, sans-serif;
+            background: linear-gradient(to bottom, #7ed6a7 0%, #e8a96b 100%);
+            min-height: 100vh;
+            margin: 0;
+            padding: 0;
+        }
+        .container {
+            max-width: 420px;
+            margin: 56px auto 0 auto;
+            background: #fff;
+            border-radius: 20px;
+            box-shadow: 0 6px 24px rgba(0,0,0,0.09);
+            padding: 32px 24px 28px 24px;
+        }
+        .tabs {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 24px;
+        }
+        .tab-btn {
+            flex: 1;
+            text-align: center;
+            padding: 14px 0;
+            font-size: 1.1em;
+            font-weight: 600;
+            cursor: pointer;
+            background: #e8a96b;
+            color: #333;
+            border: none;
+            outline: none;
+            border-radius: 10px 10px 0 0;
+            margin-right: 2px;
+            transition: background 0.18s;
+        }
+        .tab-btn:last-child {
+            margin-right: 0;
+        }
+        .tab-btn.active {
+            background: #d96ce2;
+            color: #fff;
+        }
+        form {
+            display: none;
+            flex-direction: column;
+            gap: 16px;
+        }
+        form.active {
+            display: flex;
+        }
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+        label {
+            font-weight: 500;
+            color: #555;
+        }
+        input[type="text"], input[type="password"], input[type="tel"] {
+            padding: 11px 12px;
+            font-size: 1em;
+            border: 1px solid #ccc;
+            border-radius: 12px;
+            outline: none;
+            transition: border 0.15s;
+        }
+        input[type="text"]:focus, input[type="password"]:focus, input[type="tel"]:focus {
+            border: 1.5px solid #7ed6a7;
+        }
+        .profile-img-upload {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+        .profile-img-preview {
+            width: 62px;
+            height: 62px;
+            border-radius: 50%;
+            background: #e8a96b;
+            object-fit: cover;
+            border: 2px solid #7ed6a7;
+        }
+        .submit-btn {
+            background: #27ae60;
+            color: #fff;
+            border: none;
+            border-radius: 14px;
+            font-size: 1.15em;
+            font-weight: 600;
+            padding: 14px;
+            margin-top: 10px;
+            cursor: pointer;
+            transition: background 0.15s;
+        }
+        .submit-btn:hover, .submit-btn:focus {
+            background: #218c53;
+        }
+        .login-link, .signup-link {
+            text-align: center;
+            margin-top: 14px;
+            font-size: 0.98em;
+        }
+        .login-link a, .signup-link a {
+            color: #d96ce2;
+            text-decoration: underline;
+            font-weight: 500;
+            cursor: pointer;
+        }
+        @media (max-width: 500px) {
+            .container {
+                max-width: 98vw;
+                padding: 19px 7vw 18px 7vw;
             }
-        };
-        // Prevent form submission (for demo, remove if connecting to backend)
-        document.getElementById('login-form').onsubmit = function(e) {
+            .tab-btn {
+                font-size: 1em;
+                padding: 11px 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="tabs">
+            <!-- Login Tab (left) -->
+            <button class="tab-btn active" onclick="switchTab('login')">အကောင့်ဝင် (Login)</button>
+            <!-- Signup Tab (right) -->
+            <button class="tab-btn" onclick="switchTab('signup')">အကောင့်ဖွင့် (Signup)</button>
+        </div>
+        <!-- Login Form -->
+        <form id="login-form" class="active">
+            <div class="form-group">
+                <label for="login-phone"><i class="fa-solid fa-phone"></i> ဖုန်းနံပါတ်</label>
+                <input type="tel" id="login-phone" name="phone" required placeholder="ဖုန်းနံပါတ်ရေးပါ">
+            </div>
+            <div class="form-group">
+                <label for="login-password"><i class="fa-solid fa-lock"></i> စကားဝှက်</label>
+                <input type="password" id="login-password" name="password" required placeholder="စကားဝှက်">
+            </div>
+            <button type="submit" class="submit-btn">Login</button>
+            <div class="signup-link">အကောင့်မရှိသေးဘူးလား? <a onclick="switchTab('signup')">အကောင့်ဖွင့်ပါ</a></div>
+        </form>
+        <!-- Signup Form -->
+        <form id="signup-form" enctype="multipart/form-data">
+            <div class="form-group">
+                <label for="signup-name"><i class="fa-solid fa-user"></i> အမည်</label>
+                <input type="text" id="signup-name" name="name" required placeholder="အမည်ရေးပါ">
+            </div>
+            <div class="form-group">
+                <label for="signup-phone"><i class="fa-solid fa-phone"></i> ဖုန်းနံပါတ်</label>
+                <input type="tel" id="signup-phone" name="phone" required placeholder="ဖုန်းနံပါတ်ရေးပါ">
+            </div>
+            <div class="form-group">
+                <label for="signup-password"><i class="fa-solid fa-lock"></i> စကားဝှက်</label>
+                <input type="password" id="signup-password" name="password" required placeholder="စကားဝှက်">
+            </div>
+            <div class="form-group">
+                <label for="signup-referral"><i class="fa-solid fa-user-plus"></i> Referral Code</label>
+                <input type="text" id="signup-referral" name="referral" placeholder="Referral Code (optional)">
+            </div>
+            <div class="form-group profile-img-upload">
+                <label for="signup-profile-img"><i class="fa-solid fa-image"></i> Profile ပုံ</label>
+                <input type="file" id="signup-profile-img" name="profile_img" accept="image/*" onchange="previewProfileImg(event)">
+                <img id="profile-img-preview" class="profile-img-preview" src="https://via.placeholder.com/62x62?text=Img" alt="Profile Preview">
+            </div>
+            <button type="submit" class="submit-btn">အကောင့်ဖွင့်မည်</button>
+            <div class="login-link">အကောင့်ရှိပြီလား? <a onclick="switchTab('login')">Login</a></div>
+        </form>
+    </div>
+    <script>
+        function switchTab(tab) {
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelectorAll('form').forEach(form => form.classList.remove('active'));
+            if(tab === 'signup') {
+                document.querySelector('.tab-btn:nth-child(2)').classList.add('active');
+                document.getElementById('signup-form').classList.add('active');
+            } else {
+                document.querySelector('.tab-btn:nth-child(1)').classList.add('active');
+                document.getElementById('login-form').classList.add('active');
+            }
+        }
+        function previewProfileImg(event) {
+            const img = document.getElementById('profile-img-preview');
+            if(event.target.files && event.target.files[0]) {
+                img.src = URL.createObjectURL(event.target.files[0]);
+            }
+        }
+        // prevent default form submit for demo
+        document.getElementById('signup-form').onsubmit = function(e){
             e.preventDefault();
-            document.getElementById('login-success-msg').style.display = 'block';
-            document.getElementById('login-success-msg').innerText = "Demo only: Login not implemented.";
-            document.getElementById('login-error-msg').style.display = 'none';
-        };
-        document.getElementById('register-form').onsubmit = function(e) {
+            alert('Signup submitted!');
+        }
+        document.getElementById('login-form').onsubmit = function(e){
             e.preventDefault();
-            document.getElementById('reg-success-msg').style.display = 'block';
-            document.getElementById('reg-success-msg').innerText = "Demo only: Register not implemented.";
-            document.getElementById('reg-error-msg').style.display = 'none';
-        };
+            alert('Login submitted!');
+        }
     </script>
 </body>
 </html>
