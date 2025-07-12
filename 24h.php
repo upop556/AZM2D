@@ -80,6 +80,7 @@ if (!empty($row['mainVALUE'])) {
 }
 
 // --- Hourly slots result (fetch from DB or fill fake data for remaining) ---
+// FIX: Only fake for PAST hours, not for future hours
 function getHourlyResultsWithFake() {
     $pdo = Db::getInstance()->getConnection();
     $results = [];
@@ -97,19 +98,20 @@ function getHourlyResultsWithFake() {
         ];
     }
 
-    // Fill all 24 slots, use DB or fake for remaining future (today)
+    // Fill all 24 slots, use DB or fake for remaining PAST (today)
     for ($h = 0; $h < 24; $h++) {
         $slot_key = 'time' . str_pad($h, 2, '0', STR_PAD_LEFT);
         if (isset($db_results[$slot_key])) {
             $results[$slot_key] = $db_results[$slot_key];
         } else {
-            // If slot is in the future, fill with FAKE data for today only
-            if ($h > $current_hour) {
+            // FAKE only for past hours (current_hour > h)
+            if ($h < $current_hour) {
                 $results[$slot_key] = [
                     'value' => str_pad(mt_rand(0, 99), 2, '0', STR_PAD_LEFT),
                     'updated_at' => $today . ' ' . str_pad($h, 2, '0', STR_PAD_LEFT) . ':00:00'
                 ];
             } else {
+                // For current hour and future hour, show N/A if no real data
                 $results[$slot_key] = [
                     'value' => 'N/A',
                     'updated_at' => '--'
