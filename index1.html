@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Azm2d</title>
+  <title>Global2d3d Game</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <!-- Font Awesome for icons -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
@@ -24,9 +24,9 @@
   <link rel="stylesheet" href="css/header.css">
   <link rel="stylesheet" href="css/wallet-history-icon.css">
   <link rel="stylesheet" href="css/wallet-methods-row.css">
-  <link rel="stylesheet" href="css/ads.css">
-<link rel="stylesheet" href="css/menu-icon-large.css">
+<link rel="stylesheet" href="css/ads.css">
   <style>
+    /* Login button (main page) */
     #main-login-btn-area {
       margin: 28px 0 10px 0;
       text-align: center;
@@ -64,22 +64,6 @@
         border-radius: 8px;
       }
     }
-    .menu-btn .menu-img-icon {
-      width: 32px;
-      height: 32px;
-      vertical-align: middle;
-      margin-right: 8px;
-      object-fit: contain;
-      display: inline-block;
-    }
-    .menu-btn .menu-img-icon img {
-      width: 32px;
-      height: 32px;
-      vertical-align: middle;
-      margin-right: 8px;
-      object-fit: contain;
-      display: inline-block;
-    }
   </style>
 </head>
 <body style="background-image: url('https://amazemm.xyz/images/bg-main.jpg'); background-size: cover; background-repeat: no-repeat; background-position: center center; background-attachment: fixed;">
@@ -87,7 +71,7 @@
   <div class="header" id="main-header">
     <div class="header-title">
       <img src="images/azm-logo.png" alt="Logo" class="header-logo" />
-      AZM2D Game
+      Global2d3d Game
     </div>
     <div class="header-icon">
       <a href="http://bit.ly/45Ovkuk" title="Download App" target="_blank">
@@ -100,43 +84,45 @@
   <div id="main-ui">
     <div class="container">
       <div class="ad-banner">
-        <img id="ad-banner-img" src="" alt="Ad Banner" />
-        <div class="ad-banner-title" id="ad-banner-title"></div>
-        <div class="ad-banner-desc" id="ad-banner-desc"></div>
-        <div id="ad-banner-marquee"></div>
-      </div>
+  <img id="ad-banner-img" src="" alt="Ad Banner" />
+  <div class="ad-banner-title" id="ad-banner-title"></div>
+  <div class="ad-banner-desc" id="ad-banner-desc"></div>
+  <div id="ad-banner-marquee"></div> <!-- Add this line -->
+</div>
       <div class="subtitle">
         <i class="fas fa-wallet"></i> လက်ကျန်ငွေ <span id="user-balance">0</span> ကျပ်
       </div>
+
       <div id="main-login-btn-area"></div>
       <div class="menu-grid">
         <a href="b/2dnumber.php" class="menu-btn">
-          <span class="menu-img-icon"></span>
+          <i class="fas fa-dice-two"></i>
           2D
         </a>
         <a href="https://amazemm.xyz/c/thai-lotto-results.php" class="menu-btn">
-          <span class="menu-img-icon"></span>
+          <i class="fas fa-dice-three"></i>
           3D
         </a>
         <a href="a/game.php" class="menu-btn">
-          <span class="menu-img-icon"></span>
+          <i class="fas fa-gamepad"></i>
           Game
         </a>
         <a href="a/36.php" class="menu-btn">
-          <span class="menu-img-icon"></span>
+          <i class="fas fa-dice-d6"></i>
           36 ကောင်
         </a>
         <a href="a/maung.php" class="menu-btn">
-          <span class="menu-img-icon"></span>
+          <i class="fas fa-horse"></i>
           မောင်း
         </a>
         <a href="a/boardi.php" class="menu-btn">
-          <span class="menu-img-icon"></span>
+          <i class="fas fa-table"></i>
           ဘော်ဒီ
         </a>
       </div>
     </div>
   </div>
+  <!-- ... other sections (wallet, profile, etc) unchanged ... -->
   
    <!-- Wallet Section -->
   <div class="wallet-container" id="wallet-container" style="display:none;">
@@ -286,7 +272,7 @@
       </div>
       <div style="margin-bottom:7px;">
         <span style="color:#1C7D1C;font-weight:bold;">
-          သင့် Referral Link မှတစ်ဆင့် ငွေသွင်းကစားသူတစ်ဦးစီအတွက် <u>ကော်မရှင်ခ ၅%</u> ရရှိမည်။
+          သင့် Referral Link မှတစ်ဆင့် ငွေသွင်းသူတစ်ဦးစီအတွက် <u>ကော်မရှင်ခ ၃%</u> ရရှိမည်။
         </span>
       </div>
       <div id="referral-copy-success" style="display:none;color:green;font-size:0.97em;">Copied!</div>
@@ -631,7 +617,7 @@
 <script src="js/wallet-kpay-wave.js"></script>
 <script src="js/kpay-wave_ok.js"></script>
 <script src="js/kpay-deposit.js"></script>
-<script src="js/menu-icons.js"></script>
+
 
 <script>
   // --- Login button show/hide logic for main page, with auto refresh after login ---
