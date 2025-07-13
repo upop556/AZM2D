@@ -12,51 +12,53 @@
     <div id="main-page">
         <div class="header">Global2d3d</div>
         <div class="ad-banner">Ad Banner</div>
-        <button class="login-btn" id="show-login"><i class="fa-solid fa-right-to-bracket"></i> Login</button>
+        <button class="login-btn" id="show-login" type="button">
+            <i class="fa-solid fa-right-to-bracket"></i> Login
+        </button>
         <div class="button-row">
-            <button class="mode-btn" title="Switch to 2D mode">2D</button>
-            <button class="mode-btn" title="Switch to 3D mode">3D</button>
+            <button class="mode-btn" title="Switch to 2D mode" type="button">2D</button>
+            <button class="mode-btn" title="Switch to 3D mode" type="button">3D</button>
         </div>
-        <div class="navbar" id="main-navbar">
+        <nav class="navbar" id="main-navbar">
             <a href="#" class="active"><i class="fa-solid fa-house"></i> Home</a>
             <a href="#"><i class="fa-solid fa-wallet"></i> Wallet</a>
             <a href="#"><i class="fa-solid fa-circle-question"></i> Help</a>
             <a href="#"><i class="fa-solid fa-user"></i> Profile</a>
-        </div>
+        </nav>
     </div>
     <!-- Login/Signup UI -->
     <div class="login-topbar" id="login-topbar" style="display: none;">Global2d3d</div>
     <div class="login-container" id="login-container">
         <div class="tabs">
-            <button class="tab-btn active" onclick="switchTab('login')">အကောင့်ဝင် (Login)</button>
-            <button class="tab-btn" onclick="switchTab('signup')">အကောင့်ဖွင့် (Signup)</button>
+            <button class="tab-btn active" type="button" onclick="switchTab('login')">အကောင့်ဝင် (Login)</button>
+            <button class="tab-btn" type="button" onclick="switchTab('signup')">အကောင့်ဖွင့် (Signup)</button>
         </div>
         <!-- Login Form -->
-        <form id="login-form" class="active">
+        <form id="login-form" class="active" autocomplete="off">
             <div class="form-group">
                 <label for="login-phone"><i class="fa-solid fa-phone"></i> ဖုန်းနံပါတ်</label>
-                <input type="tel" id="login-phone" name="phone" required placeholder="ဖုန်းနံပါတ်ရေးပါ">
+                <input type="tel" id="login-phone" name="phone" required placeholder="ဖုန်းနံပါတ်ရေးပါ" autocomplete="username">
             </div>
             <div class="form-group">
                 <label for="login-password"><i class="fa-solid fa-lock"></i> စကားဝှက်</label>
-                <input type="password" id="login-password" name="password" required placeholder="စကားဝှက်">
+                <input type="password" id="login-password" name="password" required placeholder="စကားဝှက်" autocomplete="current-password">
             </div>
             <button type="submit" class="submit-btn">Login</button>
-            <div class="signup-link">အကောင့်မရှိသေးဘူးလား? <a onclick="switchTab('signup')">အကောင့်ဖွင့်ပါ</a></div>
+            <div class="signup-link">အကောင့်မရှိသေးဘူးလား? <a href="javascript:void(0);" onclick="switchTab('signup')">အကောင့်ဖွင့်ပါ</a></div>
         </form>
         <!-- Signup Form -->
-        <form id="signup-form" enctype="multipart/form-data">
+        <form id="signup-form" enctype="multipart/form-data" autocomplete="off">
             <div class="form-group">
                 <label for="signup-name"><i class="fa-solid fa-user"></i> အမည်</label>
-                <input type="text" id="signup-name" name="name" required placeholder="အမည်ရေးပါ">
+                <input type="text" id="signup-name" name="name" required placeholder="အမည်ရေးပါ" autocomplete="name">
             </div>
             <div class="form-group">
                 <label for="signup-phone"><i class="fa-solid fa-phone"></i> ဖုန်းနံပါတ်</label>
-                <input type="tel" id="signup-phone" name="phone" required placeholder="ဖုန်းနံပါတ်ရေးပါ">
+                <input type="tel" id="signup-phone" name="phone" required placeholder="ဖုန်းနံပါတ်ရေးပါ" autocomplete="username">
             </div>
             <div class="form-group">
                 <label for="signup-password"><i class="fa-solid fa-lock"></i> စကားဝှက်</label>
-                <input type="password" id="signup-password" name="password" required placeholder="စကားဝှက်">
+                <input type="password" id="signup-password" name="password" required placeholder="စကားဝှက်" autocomplete="new-password">
             </div>
             <div class="form-group">
                 <label for="signup-referral"><i class="fa-solid fa-user-plus"></i> Referral Code</label>
@@ -68,263 +70,19 @@
                 <img id="profile-img-preview" class="profile-img-preview" src="https://via.placeholder.com/62x62?text=Img" alt="Profile Preview">
             </div>
             <button type="submit" class="submit-btn">အကောင့်ဖွင့်မည်</button>
-            <div class="login-link">အကောင့်ရှိပြီလား? <a onclick="switchTab('login')">Login</a></div>
+            <div class="login-link">အကောင့်ရှိပြီလား? <a href="javascript:void(0);" onclick="switchTab('login')">Login</a></div>
         </form>
-        <!-- Login/Navbar (same style as main) -->
-        <div class="login-navbar" id="login-navbar">
+        <nav class="login-navbar" id="login-navbar">
             <a href="#" class="active"><i class="fa-solid fa-house"></i> Home</a>
             <a href="#"><i class="fa-solid fa-wallet"></i> Wallet</a>
             <a href="#"><i class="fa-solid fa-circle-question"></i> Help</a>
             <a href="#"><i class="fa-solid fa-user"></i> Profile</a>
-        </div>
+        </nav>
     </div>
     <script src="marlar/main.js"></script>
-<script src="marlar/account.js"></script>
+    <script src="marlar/account.js"></script>
 </body>
 </html>
 
 
 
-
-
-// Helper: Set cookie (expires in days)
-function setCookie(name, value, days) {
-    let expires = "";
-    if (days) {
-        const d = new Date();
-        d.setTime(d.getTime() + (days*24*60*60*1000));
-        expires = ";expires=" + d.toUTCString();
-    }
-    document.cookie = name + "=" + encodeURIComponent(value) + expires + ";path=/";
-}
-
-// Helper: Get cookie by name
-function getCookie(name) {
-    const cookies = document.cookie.split(';');
-    for(let cookie of cookies) {
-        const [k, v] = cookie.trim().split('=');
-        if (k === name) return decodeURIComponent(v || "");
-    }
-    return null;
-}
-
-// Show Error
-function showError(msg) {
-    alert(msg);
-}
-
-// Login Form Submit
-document.getElementById('login-form').onsubmit = async function(e){
-    e.preventDefault();
-    const phone = document.getElementById('login-phone').value.trim();
-    const password = document.getElementById('login-password').value;
-
-    try {
-        const res = await fetch('/api/account.php', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ action: 'login', phone, password })
-        });
-        if (!res.ok) {
-            showError("Server error: " + res.status);
-            return;
-        }
-        const data = await res.json();
-
-        if (data.success) {
-            setCookie('account_token', data.token, 7);
-            alert("Login success!");
-            location.reload();
-        } else {
-            showError(data.message || "Login failed");
-        }
-    } catch (err) {
-        showError("Network error");
-    }
-};
-
-// Signup Form Submit
-document.getElementById('signup-form').onsubmit = function(e){
-    e.preventDefault();
-    const name = document.getElementById('signup-name').value.trim();
-    const phone = document.getElementById('signup-phone').value.trim();
-    const password = document.getElementById('signup-password').value;
-    const referral = document.getElementById('signup-referral').value.trim();
-    const imgInput = document.getElementById('signup-profile-img');
-    let profile_img = "";
-
-    // If image is selected, read as base64
-    if (imgInput.files && imgInput.files[0]) {
-        const reader = new FileReader();
-        reader.onload = function(evt) {
-            profile_img = evt.target.result;
-            signupSubmit(name, phone, password, referral, profile_img);
-        };
-        reader.onerror = function() {
-            showError("Profile image read failed");
-            signupSubmit(name, phone, password, referral, "");
-        };
-        reader.readAsDataURL(imgInput.files[0]);
-    } else {
-        signupSubmit(name, phone, password, referral, profile_img);
-    }
-};
-
-async function signupSubmit(name, phone, password, referral, profile_img) {
-    try {
-        const res = await fetch('/api/account.php', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ action: 'signup', name, phone, password, referral, profile_img })
-        });
-        if (!res.ok) {
-            showError("Server error: " + res.status);
-            return;
-        }
-        const data = await res.json();
-
-        console.log("Signup response:", data); // Debug
-
-        if (data.success) {
-            setCookie('account_token', data.token, 7);
-            alert("Signup success!");
-            location.reload();
-        } else {
-            showError(data.message || "Signup failed");
-        }
-    } catch (err) {
-        showError("Network error");
-    }
-}
-
-// Get logged-in user info from cookie
-async function getAccountInfo() {
-    const token = getCookie('account_token');
-    if (!token) return null;
-
-    try {
-        const res = await fetch('/api/account.php', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ action: 'getinfo', token })
-        });
-        if (!res.ok) {
-            // Optionally handle server error
-            return null;
-        }
-        const data = await res.json();
-        if (data.success) return data.user;
-        return null;
-    } catch (err) {
-        return null;
-    }
-}
-
-// Example: On page load, check login
-window.addEventListener('DOMContentLoaded', async function() {
-    const user = await getAccountInfo();
-    if (user) {
-        // Example: Show user's name
-        // document.getElementById('profileName').innerText = user.name;
-        // Example: Hide login button if needed
-        // document.getElementById('show-login').style.display = 'none';
-    }
-});
-
-// Profile image preview
-function previewProfileImg(event) {
-    const img = document.getElementById('profile-img-preview');
-    if(event.target.files && event.target.files[0]) {
-        img.src = URL.createObjectURL(event.target.files[0]);
-    }
-}
-
-
-
-
-
-<?php
-ini_set('display_errors', 1);
-error_reporting(E_ALL);
-header('Content-Type: application/json');
-
-// Correct way to include db.php
-require_once '../db.php';
-
-// Get input data
-$input = json_decode(file_get_contents("php://input"), true);
-
-// Debug: log the input for troubleshooting unknown action issues
-// Remove this after debugging
-file_put_contents(__DIR__ . '/debug_input.txt', print_r($input, true));
-
-$action = $input['action'] ?? '';
-
-// Login action
-if ($action == 'login') {
-    $phone = $input['phone'] ?? '';
-    $password = $input['password'] ?? '';
-    $stmt = $pdo->prepare("SELECT * FROM users WHERE phone = ?");
-    $stmt->execute([$phone]);
-    $user = $stmt->fetch();
-    if ($user && password_verify($password, $user['password'])) {
-        $token = bin2hex(random_bytes(32));
-        $pdo->prepare("UPDATE users SET token=? WHERE id=?")->execute([$token, $user['id']]);
-        echo json_encode([
-            "success"=>true,
-            "token"=>$token,
-            "user"=>["id"=>$user['id'], "name"=>$user['name'], "phone"=>$user['phone']]
-        ]);
-    } else {
-        echo json_encode(["success"=>false,"message"=>"ဖုန်းနံပါတ် သို့ စကားဝှက် မှားနေပါတယ်"]);
-    }
-    exit;
-}
-
-// Signup action
-if ($action == 'signup') {
-    $name = $input['name'] ?? '';
-    $phone = $input['phone'] ?? '';
-    $password = $input['password'] ?? '';
-    $referral = $input['referral'] ?? '';
-    $profile_img = $input['profile_img'] ?? '';
-
-    // Check for duplicate phone
-    $stmt = $pdo->prepare("SELECT id FROM users WHERE phone = ?");
-    $stmt->execute([$phone]);
-    if ($stmt->fetch()) {
-        echo json_encode(["success"=>false,"message"=>"ဖုန်းနံပါတ်သည် အသုံးပြုပြီးသား"]);
-        exit;
-    }
-
-    $password_hash = password_hash($password, PASSWORD_DEFAULT);
-    $token = bin2hex(random_bytes(32));
-    $stmt = $pdo->prepare("INSERT INTO users (name, phone, password, referral, profile_img, token) VALUES(?,?,?,?,?,?)");
-    $stmt->execute([$name, $phone, $password_hash, $referral, $profile_img, $token]);
-
-    echo json_encode([
-        "success"=>true,
-        "token"=>$token,
-        "user"=>["id"=>$pdo->lastInsertId(), "name"=>$name, "phone"=>$phone]
-    ]);
-    exit;
-}
-
-// Get info action
-if ($action == 'getinfo') {
-    $token = $input['token'] ?? '';
-    $stmt = $pdo->prepare("SELECT id, name, phone, referral, profile_img FROM users WHERE token=?");
-    $stmt->execute([$token]);
-    $user = $stmt->fetch();
-    if ($user) {
-        echo json_encode(["success"=>true,"user"=>$user]);
-    } else {
-        echo json_encode(["success"=>false,"message"=>"အကောင့်ဝင်ထားခြင်းမရှိပါ"]);
-    }
-    exit;
-}
-
-// Unknown action
-echo json_encode(["success"=>false,"message"=>"Unknown action"]);
-exit;
-?>
