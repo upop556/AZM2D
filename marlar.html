@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="my">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Global2d3d</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div class="header">
+        Global2d3d
+    </div>
+
+    <div class="main-content" id="mainContent">
+        <span class="spacer-header"></span>
+        <div class="adbanner">
+            Adbanner
+        </div>
+
+        <button class="login-btn" onclick="showLoginForm()">Login</button>
+
+        <div class="options-container">
+            <button class="option-btn">2D</button>
+            <button class="option-btn">3D</button>
+        </div>
+    </div>
+
+    <!-- Account/Register/Profile UI (hidden by default) -->
+    <div class="container" id="registerForm" style="display:none;">
+        <h2>အ​ကောင့်ဖွင့် (Register)</h2>
+        <form id="formRegister">
+            <label for="name">အမည်</label>
+            <input type="text" id="name" name="name" required autocomplete="name">
+
+            <label for="phone">ဖုန်းနံပါတ်</label>
+            <input type="tel" id="phone" name="phone" pattern="[0-9]{7,15}" required autocomplete="tel">
+
+            <label for="password">စကားဝှက်</label>
+            <input type="password" id="password" name="password" required autocomplete="new-password">
+
+            <label for="refcode">Referral Code <span style="color:#888;font-weight:normal;font-size:0.96em;">(ရှိရင်ထည့်၊ မရှိရင်ကျော်ပါ)</span></label>
+            <input type="text" id="refcode" name="refcode" autocomplete="off" placeholder="Optional">
+
+            <div class="profile-img">
+                <label for="profileImg">Profile ပုံ</label>
+                <img id="previewImg" src="https://placehold.co/56x56?text=Img" alt="Profile Preview">
+                <input type="file" id="profileImg" name="profileImg" accept="image/*">
+            </div>
+
+            <div class="actions">
+                <button type="submit">အ​ကောင့်ဖွင့်</button>
+            </div>
+        </form>
+        <div class="switch-link" onclick="showLoginForm()">အ​ကောင့်ဝင်ရန်</div>
+    </div>
+
+    <div class="container" id="loginForm" style="display:none;">
+        <h2>အ​ကောင့်ဝင် (Login)</h2>
+        <form id="formLogin">
+            <label for="loginPhone">ဖုန်းနံပါတ်</label>
+            <input type="tel" id="loginPhone" name="loginPhone" pattern="[0-9]{7,15}" required autocomplete="tel">
+
+            <label for="loginPassword">စကားဝှက်</label>
+            <input type="password" id="loginPassword" name="loginPassword" required autocomplete="current-password">
+
+            <div class="actions">
+                <button type="submit">ဝင်မည်</button>
+            </div>
+        </form>
+        <div class="switch-link" onclick="showRegisterForm()">အ​ကောင့်ဖွင့်ရန်</div>
+    </div>
+
+    <div class="container" id="profileView" style="display:none;">
+        <h2>Profile</h2>
+        <div class="profile-view">
+            <img id="profilePicView" src="https://placehold.co/72x72?text=Img" alt="Profile">
+        </div>
+        <div class="profile-detail">
+            <div><span>အမည်:</span> <span id="profileName"></span></div>
+            <div><span>ဖုန်းနံပါတ်:</span> <span id="profilePhone"></span></div>
+            <div><span>Referral Code:</span> <span id="profileRef"></span></div>
+        </div>
+        <div class="actions">
+            <button onclick="logout()">Logout</button>
+        </div>
+    </div>
+
+    <div class="footer">
+        <div class="footer-nav">
+            <a href="#home" onclick="goHome(event)">
+                <svg fill="currentColor" viewBox="0 0 24 24"><path d="M12 3l9 9-1.41 1.41L18 10.83V20a1 1 0 0 1-1 1h-4v-5H11v5H7a1 1 0 0 1-1-1v-9.17l-1.59 1.58L3 12l9-9z"/></svg>
+                Home
+            </a>
+            <a href="#wallet">
+                <svg fill="currentColor" viewBox="0 0 24 24"><path d="M21 7.5V6a2 2 0 0 0-2-2H5a2 2 0 0 0-2-2v1.5A2.5 2.5 0 0 0 2.5 10v8a2 2 0 0 0 2 2h15a2 2 0 0 0 2-2v-8a2.5 2.5 0 0 0-1.5-2.5zM5 4h14a2 2 0 0 1 2 2v1.5a.5.5 0 0 1-.5.5H3.5a.5.5 0 0 1-.5-.5V6a2 2 0 0 1 2-2zm15 14a1 1 0 0 1-1 1H4.5a1 1 0 0 1-1 1v-8a1.5 1.5 0 0 1 1.5-1.5h15A1.5 1.5 0 0 1 21 10v8zm-3-5a1 1 0 1 1-2 0 1 1 0 0 1 2 0z"/></svg>
+                Wallet
+            </a>
+            <a href="#help">
+                <svg fill="currentColor" viewBox="0 0 24 24"><path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm.25 17h-1.5v-1.5h1.5zm1.88-4.12-.9.92A2.62 2.62 0 0 0 12 16.25h-1.5v-1A1.62 1.62 0 0 1 12 13.75a2.25 2.25 0 1 0-2.25-2.25h1.5a.75.75 0 1 1 .75.75A2.62 2.62 0 0 0 9.87 14.88l.9-.92A1.5 1.5 0 0 1 12 10.75a1.5 1.5 0 1 1 1.5 1.5v.75z"/></svg>
+                Help
+            </a>
+            <a href="#profile">
+                <svg fill="currentColor" viewBox="0 0 24 24"><path d="M12 12a5 5 0 1 0-5-5 5 5 0 0 0 5 5zm0 2c-4.33 0-8 2.17-8 5v3h16v-3c0-2.83-3.67-5-8-5z"/></svg>
+                Profile
+            </a>
+        </div>
+    </div>
+    <script src="js/script.js"></script>
+</body>
+</html>
