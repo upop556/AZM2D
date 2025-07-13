@@ -1,5 +1,5 @@
 <?php
-// 2D Number UI (00-99) for 11:00AM (မြန်မာစံတော်ချိန်), mobile UI, brake/limit control, balance in table, R button = reverse selection + balance refresh
+// 2D Number UI (00-99) for any hour slot, mobile UI, brake/limit control, balance in table, R button = reverse selection + balance refresh
 
 ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
@@ -7,7 +7,7 @@ error_reporting(E_ALL);
 
 session_start();
 require_once __DIR__ . '/db.php';
-require_once __DIR__ . '/referral_commission.php'; // <-- Include referral logic
+require_once __DIR__ . '/referral_commission.php';
 
 // --- Check Login ---
 if (empty($_SESSION['user_id'])) {
@@ -16,13 +16,29 @@ if (empty($_SESSION['user_id'])) {
 }
 $current_user = $_SESSION['user_id'] ?? null;
 
-// --- Closed session logic ---
-require_once __DIR__ . '/closed_session.php';
-$closedInfo = getSessionClosedInfo('Asia/Yangon', '11:00:00', '10:55:00');
-$is_betting_closed = $closedInfo['is_betting_closed'];
-$target_date_dt = $closedInfo['target_date'];
-$bet_date = $target_date_dt->format('Y-m-d');
-$display_date_info = $closedInfo['display_date_info'];
+// --- Get hour slot from GET parameter (eg. hour=time00, time23, etc) ---
+$hour_param = $_GET['hour'] ?? '';
+if (!preg_match('/^time([0-9]{2})$/', $hour_param, $m)) {
+    die('Invalid hour parameter!');
+}
+$slot_hour = intval($m[1]);
+$slot_key = $hour_param;
+
+// --- Prepare bet_type and labels for this slot ---
+$bet_type = '2D-' . str_pad($slot_hour, 2, '0', STR_PAD_LEFT);
+function mm_hour_label($hour) {
+    $h = $hour % 12;
+    if ($h == 0) $h = 12;
+    $suffix = ($hour >= 12) ? 'PM' : 'AM';
+    return sprintf('%02d:00 %s', $h, $suffix);
+}
+$bet_hour_label = mm_hour_label($slot_hour);
+
+$now_dt = new DateTime("now", new DateTimeZone("Asia/Yangon"));
+$bet_date = $now_dt->format('Y-m-d');
+
+// --- Betting closed logic for this hour ---
+$is_betting_closed = ($now_dt->format('H') >= $slot_hour);
 
 // --- Get User Balance ---
 function getUserBalance($user_id) {
@@ -42,10 +58,10 @@ while ($row_brakes = $stmt_brakes->fetch(PDO::FETCH_ASSOC)) {
     $brakes[$row_brakes['number']] = (float)$row_brakes['brake_amount'];
 }
 
-// --- Already Bet Totals for Today (for brake progress) ---
+// --- Already Bet Totals for this slot (for brake progress) ---
 $current_totals = [];
 $stmt_current = $pdo->prepare('SELECT number, SUM(amount) as total_bet FROM lottery_bets WHERE bet_type = :type AND bet_date = :bet_date GROUP BY number');
-$stmt_current->execute([':type'=>'2D-1100', ':bet_date' => $bet_date]);
+$stmt_current->execute([':type'=>$bet_type, ':bet_date' => $bet_date]);
 while ($row_current = $stmt_current->fetch(PDO::FETCH_ASSOC)) {
     $current_totals[$row_current['number']] = (float)$row_current['total_bet'];
 }
@@ -78,7 +94,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_bet'])) {
     $bet_amount = (int)($_POST['bet_amount'] ?? 0);
 
     if (empty($selected_numbers)) {
-        header("Location: " . $_SERVER['PHP_SELF']);
+        header("Location: " . $_SERVER['PHP_SELF'] . "?hour=" . $slot_key);
         exit;
     } elseif ($bet_amount < 100) {
         $message = 'အနည်းဆုံး ၁၀၀ ကျပ် ထိုးရပါမည်။';
@@ -103,7 +119,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_bet'])) {
                 $brake_limit = $brakes[$number] ?? -1;
                 if ($brake_limit != -1) {
                     $stmt_num_total = $pdo->prepare('SELECT SUM(amount) FROM lottery_bets WHERE bet_type = :type AND bet_date = :bet_date AND number = :number FOR UPDATE');
-                    $stmt_num_total->execute([':type'=> '2D-1100', ':bet_date' => $bet_date, ':number' => $number]);
+                    $stmt_num_total->execute([':type'=> $bet_type, ':bet_date' => $bet_date, ':number' => $number]);
                     $current_bet_total_for_num = (float)($stmt_num_total->fetchColumn() ?? 0);
 
                     if (($current_bet_total_for_num + $bet_amount) > $brake_limit) {
@@ -118,11 +134,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_bet'])) {
 
             $insert_stmt = $pdo->prepare('INSERT INTO lottery_bets (user_id, bet_type, number, amount, bet_date, created_at) VALUES (:user_id, :bet_type, :number, :amount, :bet_date, NOW())');
             foreach ($selected_numbers as $number) {
-                $insert_stmt->execute([':user_id' => $current_user, ':bet_type' => '2D-1100', ':number' => $number, ':amount' => $bet_amount, ':bet_date' => $bet_date]);
+                $insert_stmt->execute([':user_id' => $current_user, ':bet_type' => $bet_type, ':number' => $number, ':amount' => $bet_amount, ':bet_date' => $bet_date]);
             }
 
             $pdo->commit();
-            header("Location: " . $_SERVER['PHP_SELF'] . "?success=1");
+            header("Location: " . $_SERVER['PHP_SELF'] . "?hour=" . $slot_key . "&success=1");
             exit();
 
         } catch (Exception $e) {
@@ -134,7 +150,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_bet'])) {
 }
 
 if(isset($_GET['success'])) {
-    $message = 'ထိုးပြီးပါပြီ။ သင်၏ ၂လုံးထိုးမှတ်တမ်းကို အောင်မြင်စွာ သိမ်းဆည်းပြီးပါပြီ။';
+    $message = 'ထိုးပြီးပါပြီ။ သင်၏ ၂လုံးထိုးမှတ်တမ်းကို အောင်မြင်စွာ သိမ်းဆည်းပေးပါသည်။';
     $messageType = 'success';
 }
 ?>
@@ -144,12 +160,13 @@ if(isset($_GET['success'])) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0">
-    <title>AZM2D3D - 11:00AM</title>
+    <title>AZM2D3D - <?= htmlspecialchars($bet_hour_label) ?></title>
     <link rel="stylesheet" href="/css/variables.css">
     <link rel="stylesheet" href="/css/layout.css">
     <link rel="stylesheet" href="/css/header.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
-    <style>
+    <!-- (CSS unchanged, omitted for brevity) -->
+        <style>
         body {
             background-image: url('https://amazemm.xyz/images/bg-main.jpg');
             background-size: cover;
@@ -603,11 +620,13 @@ if(isset($_GET['success'])) {
             AZM2D3D GAME
         </div>
         <div class="header-right">
-            <a href="/b/2dnumber.php" class="back-btn"><i class="bi bi-arrow-left"></i> </a>
+            <a href="/e/24hours2d.php" class="back-btn"><i class="bi bi-arrow-left"></i> </a>
         </div>
     </div>
     <div class="container">
-        <div class="time-badge">မြန်မာစံတော်ချိန် - မနက် ၁၁ နာရီ (11:00AM)</div>
+        <div class="time-badge">
+            နာရီ - <?= htmlspecialchars($bet_hour_label) ?> (<?= htmlspecialchars($bet_type) ?>)
+        </div>
         <div class="balance-table-wrap">
             <table class="balance-table" style="width:100%;table-layout:auto;">
                 <tr>
@@ -630,7 +649,9 @@ if(isset($_GET['success'])) {
             <?= htmlspecialchars($message) ?>
         </div>
         <?php endif; ?>
-        <form method="post" id="betFormFinal" style="display:none;"></form>
+        <form method="post" id="betFormFinal" style="display:none;">
+            <input type="hidden" name="hour" value="<?= htmlspecialchars($slot_key) ?>">
+        </form>
         <div class="numbers-title"></div>
         <div class="numbers-grid" id="numbersGrid">
             <?php foreach ($numbers as $num): 
@@ -704,18 +725,15 @@ if(isset($_GET['success'])) {
 <script>
 // --- 2D Number Selection Logic ---
 
-// Clear selection on browser refresh/load
 window.addEventListener('load', function() {
-    sessionStorage.removeItem('selected2d_1100');
+    sessionStorage.removeItem('selected2d_<?= $bet_type ?>');
     selected = {};
     updateGridSelections();
 });
 
-// DOM references
 const numbersGrid = document.getElementById('numbersGrid');
-let selected = JSON.parse(sessionStorage.getItem('selected2d_1100') || '{}');
+let selected = JSON.parse(sessionStorage.getItem('selected2d_<?= $bet_type ?>') || '{}');
 
-// Update grid UI based on selected numbers
 function updateGridSelections() {
     document.querySelectorAll('.number-item').forEach(item => {
         const num = item.getAttribute('data-number');
@@ -730,7 +748,6 @@ function updateGridSelections() {
     });
 }
 
-// Click selection
 numbersGrid.addEventListener('click', function(e) {
     const item = e.target.closest('.number-item');
     if (!item || item.classList.contains('disabled')) return;
@@ -740,11 +757,10 @@ numbersGrid.addEventListener('click', function(e) {
     } else {
         selected[num] = true;
     }
-    sessionStorage.setItem('selected2d_1100', JSON.stringify(selected));
+    sessionStorage.setItem('selected2d_<?= $bet_type ?>', JSON.stringify(selected));
     updateGridSelections();
 });
 
-// Keyboard selection
 numbersGrid.addEventListener('keydown', function(e) {
     if ((e.key === "Enter" || e.key === " ") && e.target.classList.contains('number-item')) {
         e.preventDefault();
@@ -752,9 +768,8 @@ numbersGrid.addEventListener('keydown', function(e) {
     }
 });
 
-// Refresh balance and reverse selection
 document.getElementById('refreshBtn').addEventListener('click', function() {
-    fetch(window.location.pathname + '?get_balance=1')
+    fetch(window.location.pathname + '?hour=<?= $slot_key ?>&get_balance=1')
         .then(r => r.json())
         .then(data => {
             if (typeof data.balance !== 'undefined') {
@@ -772,7 +787,7 @@ document.getElementById('refreshBtn').addEventListener('click', function() {
         }
     });
     selected = newSelected;
-    sessionStorage.setItem('selected2d_1100', JSON.stringify(selected));
+    sessionStorage.setItem('selected2d_<?= $bet_type ?>', JSON.stringify(selected));
     updateGridSelections();
 });
 
@@ -858,6 +873,11 @@ modalSubmit.addEventListener('click', function() {
     amountInput.name = 'bet_amount';
     amountInput.value = amount;
     betFormFinal.appendChild(amountInput);
+    let hourInput = document.createElement('input');
+    hourInput.type = 'hidden';
+    hourInput.name = 'hour';
+    hourInput.value = "<?= htmlspecialchars($slot_key) ?>";
+    betFormFinal.appendChild(hourInput);
     nums.forEach(val => {
         let n = document.createElement('input');
         n.type = 'hidden';
@@ -904,7 +924,7 @@ function doQuickSelect(type, extra) {
     modalQuickError.textContent = '';
     if (type === 'clear') {
         selected = {};
-        sessionStorage.setItem('selected2d_1100', JSON.stringify(selected));
+        sessionStorage.setItem('selected2d_<?= $bet_type ?>', JSON.stringify(selected));
         updateGridSelections();
         modalQuickBg.classList.remove('active');
         return;
@@ -918,7 +938,7 @@ function doQuickSelect(type, extra) {
                     let num = item.getAttribute('data-number');
                     selected[num] = true;
                 });
-                sessionStorage.setItem('selected2d_1100', JSON.stringify(selected));
+                sessionStorage.setItem('selected2d_<?= $bet_type ?>', JSON.stringify(selected));
                 updateGridSelections();
                 modalQuickBg.classList.remove('active');
             })
@@ -944,7 +964,7 @@ function doQuickSelect(type, extra) {
                         selected[num] = true;
                     }
                 });
-                sessionStorage.setItem('selected2d_1100', JSON.stringify(selected));
+                sessionStorage.setItem('selected2d_<?= $bet_type ?>', JSON.stringify(selected));
                 updateGridSelections();
             }
             modalQuickBg.classList.remove('active');
@@ -970,7 +990,6 @@ akhweBtn.addEventListener('click', function() {
     doQuickSelect('akhwe', val);
 });
 
-// Initial update on page load
 updateGridSelections();
 </script>
 </body>
