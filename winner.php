@@ -91,18 +91,28 @@ if ($latestWinnerInfo) {
         $prize_rate = (int)$latestWinnerInfo['prize_rate'];
     }
 
-    // Now, find all users who bet on this winning number for this specific session
-    $stmt = $pdo->prepare("
-        SELECT 
-            u.name, u.phone, u.profile_photo, b.amount
-        FROM bets b
-        JOIN users u ON u.id = b.user_id
-        WHERE b.draw_date = ? AND b.session_time = ? AND b.number = ?
-        ORDER BY b.amount DESC
-        LIMIT 100
-    ");
-    $stmt->execute([$draw_date, $session_time, $winning_number]);
-    $winners = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    // --- Use lottery_bets, match bet_type to session_time ---
+    $bet_type_map = [
+        '11:00:00' => '2D-1100',
+        '12:01:00' => '2D-1201',
+        '15:00:00' => '2D-1500',
+        '16:30:00' => '2D-1630',
+    ];
+    $bet_type = $bet_type_map[$session_time] ?? null;
+
+    if ($bet_type) {
+        $stmt = $pdo->prepare("
+            SELECT 
+                u.name, u.phone, u.profile_photo, lb.amount, lb.is_fake
+            FROM lottery_bets lb
+            JOIN users u ON u.id = lb.user_id
+            WHERE lb.bet_date = ? AND lb.bet_type = ? AND lb.number = ?
+            ORDER BY lb.amount DESC
+            LIMIT 100
+        ");
+        $stmt->execute([$draw_date, $bet_type, $winning_number]);
+        $winners = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
 }
 
 function mask_phone($phone) {
