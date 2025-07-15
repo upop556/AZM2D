@@ -119,7 +119,7 @@ function showTab(tab) {
 }
 
 function loadAdBanner() {
-  fetch('https://amazemm.xyz/api/ad_banner_api.php')
+  fetch('https://global2d.com//api/ad_banner_api.php')
     .then(response => {
       if (!response.ok) throw new Error('Network response was not ok');
       return response.json();
@@ -163,7 +163,7 @@ function loadUserBalance() {
   const phone = AUTH.getPhone();
   if (!token || !phone) return;
   debugLog('Loading user balance', {});
-  fetch('https://amazemm.xyz/api/user.php', {
+  fetch('https://global2d.com/api/user.php', {
     method: 'POST',
     headers: { 
       'Content-Type': 'application/json', 
@@ -202,7 +202,7 @@ async function callProfileApi(actionName, additionalData = {}) {
   const requestData = { action: actionName, ...additionalData };
   debugLog(`API Request: ${actionName}`, requestData);
   try {
-    const response = await fetch('https://amazemm.xyz/api/profile.php', {
+    const response = await fetch('https://global2d.com/api/profile.php', {
       method: 'POST',
       headers: { 
         'Content-Type': 'application/json', 
@@ -399,7 +399,7 @@ function handleLogin(e) {
   submitBtn.classList.add('loading');
   submitBtn.disabled = true;
   debugLog('Login request', { phone, passwordLength: password.length, rememberMe });
-  fetch('https://amazemm.xyz/api/login.php', {
+  fetch('https://global2d.com/api/login.php', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
@@ -494,7 +494,7 @@ function handleRegister(e) {
     password: password,
     agent_code: agentCode
   };
-  fetch('https://amazemm.xyz/api/register.php', {
+  fetch('https://global2d.com/api/register.php', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(registrationData)
@@ -610,7 +610,7 @@ function helpTabHandler() {
       document.querySelectorAll('.navbar a').forEach(el => el.classList.remove('active'));
       navHelp.classList.add('active');
       if (!helpContainer.dataset.loaded) {
-        fetch("https://amazemm.xyz/api/contact_api.php")
+        fetch("https://global2d.com/api/contact_api.php")
           .then(res => res.json())
           .then(data => {
             const list = document.getElementById('contact-list');
