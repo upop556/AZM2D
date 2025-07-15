@@ -140,18 +140,6 @@
     <span class="menu-img-icon"></span>
     Game
   </a>
-  <a href="a/36.php" class="menu-btn">
-    <span class="menu-img-icon"></span>
-    36 ကောင်
-  </a>
-  <a href="a/maung.php" class="menu-btn">
-    <span class="menu-img-icon"></span>
-    မောင်း
-  </a>
-  <a href="a/boardi.php" class="menu-btn">
-    <span class="menu-img-icon"></span>
-    ဘော်ဒီ
-  </a>
 <a href="f/luckydraw.php" class="menu-btn">
     <span class="menu-img-icon"></span>
     ကံစမ်းမဲ
@@ -722,30 +710,6 @@
   }
   if (typeof window.showView === 'function') observeViewChanges();
   else document.addEventListener('DOMContentLoaded', observeViewChanges);
-
-  // --- Disable non-active menu buttons in menu-grid except Game, 2D and 3D ---
-  document.addEventListener('DOMContentLoaded', function() {
-    var btns = document.querySelectorAll('.menu-grid a.menu-btn');
-    btns.forEach(function(btn) {
-      var text = btn.textContent.trim();
-      // Allow 'Game', '2D', and '3D' to be active
-      if (!(text.includes('Game') || text.includes('2D') || text.includes('3D'))) {
-        btn.addEventListener('click', function(e) {
-          e.preventDefault();
-          e.stopImmediatePropagation();
-          return false;
-        });
-        btn.style.opacity = '0.45';
-        btn.style.cursor = 'not-allowed';
-        btn.style.filter = 'grayscale(60%)';
-        btn.setAttribute('tabindex', '-1');
-        btn.setAttribute('aria-disabled', 'true');
-        btn.addEventListener('mouseenter', function(e) {
-          btn.style.textDecoration = 'none';
-        });
-      }
-    });
-  });
 </script>
 
 </body>
