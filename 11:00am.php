@@ -24,6 +24,22 @@ $target_date_dt = $closedInfo['target_date'];
 $bet_date = $target_date_dt->format('Y-m-d');
 $display_date_info = $closedInfo['display_date_info'];
 
+// ---------- Advance Bet Logic (After 5PM, allow bet for tomorrow) ----------
+date_default_timezone_set('Asia/Yangon');
+$now_dt = new DateTime('now', new DateTimeZone('Asia/Yangon'));
+$is_advance_bet = false;
+$advance_cutoff_hour = 17; // 5PM
+
+if ($is_betting_closed) {
+    // If time is after 5PM (17:00), enable advance bet for tomorrow
+    if ((int)$now_dt->format('H') >= $advance_cutoff_hour) {
+        $bet_date = (clone $now_dt)->modify('+1 day')->format('Y-m-d');
+        $is_advance_bet = true;
+        $is_betting_closed = false; // Allow betting for tomorrow
+        $display_date_info = $bet_date . ' (မနက်ဖန်)';
+    }
+}
+
 // --- Get User Balance ---
 function getUserBalance($user_id) {
     $pdo = Db::getInstance()->getConnection();
@@ -42,7 +58,7 @@ while ($row_brakes = $stmt_brakes->fetch(PDO::FETCH_ASSOC)) {
     $brakes[$row_brakes['number']] = (float)$row_brakes['brake_amount'];
 }
 
-// --- Already Bet Totals for Today (for brake progress) ---
+// --- Already Bet Totals for Today or Tomorrow (for brake progress) ---
 $current_totals = [];
 $stmt_current = $pdo->prepare('SELECT number, SUM(amount) as total_bet FROM lottery_bets WHERE bet_type = :type AND bet_date = :bet_date GROUP BY number');
 $stmt_current->execute([':type'=>'2D-1100', ':bet_date' => $bet_date]);
@@ -84,7 +100,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_bet'])) {
         $message = 'အနည်းဆုံး ၁၀၀ ကျပ် ထိုးရပါမည်။';
         $messageType = 'error';
     } elseif ($is_betting_closed) {
-        $message = 'ထိုးချိန် ပြီးသွားပါပြီ။';
+        $message = ($is_advance_bet) ? 'Advance mode error: Betting is still closed.' : 'ထိုးချိန် ပြီးသွားပါပြီ။';
         $messageType = 'error';
     } else {
         $pdo->beginTransaction();
@@ -122,7 +138,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_bet'])) {
             }
 
             $pdo->commit();
-            header("Location: " . $_SERVER['PHP_SELF'] . "?success=1");
+            header("Location: " . $_SERVER['PHP_SELF'] . "?success=1" . ($is_advance_bet ? "&advance=1" : ""));
             exit();
 
         } catch (Exception $e) {
@@ -144,487 +160,502 @@ if(isset($_GET['success'])) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0">
-    <title>AZM2D3D - 11:00AM</title>
+    <title>2D 11:00AM - Bet</title>
     <link rel="stylesheet" href="/css/variables.css">
     <link rel="stylesheet" href="/css/layout.css">
     <link rel="stylesheet" href="/css/header.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     <style>
-        body {
-            background-image: url('https://amazemm.xyz/images/bg-main.jpg');
-            background-size: cover;
-            background-repeat: no-repeat;
-            background-position: center center;
-            background-attachment: fixed;
-            min-height: 100vh;
-            margin: 0;
-            padding: 0;
-        }
-        .header {
-            position: fixed;
-            top: 0; left: 0; right: 0;
-            height: 74px;
-            background: linear-gradient(90deg, #1877f2 60%, #1153a6 120%);
-            color: #fff;
-            z-index: 1100;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 0 10px;
-            border-bottom-left-radius: 14px;
-            border-bottom-right-radius: 14px;
-            box-shadow: 0 6px 32px rgba(24,119,242,0.13), 0 1.5px 0 #e2e7ef;
-        }
-        .header-title {
-            font-family: 'Poppins', 'Noto Sans Myanmar', sans-serif;
-            font-size: 1.17em;
-            font-weight: 700;
-            color: #fff;
-            letter-spacing: 1.5px;
-            text-transform: uppercase;
-            padding-left: 4px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-        .header-logo {
-            height: 36px;
-            width: 36px;
-            border-radius: 12px;
-            box-shadow: 0 2px 8px #0002;
-            background: #fff5;
-            object-fit: contain;
-            margin-right: 10px;
-        }
-        .header-right {
-            display: flex;
-            align-items: center;
-            height: 100%;
-        }
-        .back-btn {
-            display: flex;
-            align-items: center;
-            color: #1976d2;
-            text-decoration: none;
-            padding: 6px 10px;
-            border-radius: 8px;
-            background: #fff;
-            font-size: 0.95em;
-            font-weight: 600;
-            margin-left: 10px;
-            margin-right: 0;
-            box-shadow: 0 2px 8px #1877f218;
-            border: none;
-            transition: background 0.18s;
-        }
-        .back-btn:hover { background: #e3f2fd; }
-        .back-btn i { margin-right: 6px; }
-        .container {
-            max-width: 440px;
-            margin: 0 auto;
-            background: #fff;
-            border-radius: 12px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
-            padding: 18px 3vw 20px 3vw;
-            margin-top: 90px;
-        }
-        .balance-table-wrap {
-            display: flex;
-            justify-content: center;
-            margin-bottom: 22px;
-        }
-        .balance-table {
-            background: var(--primary, #3498db);
-            color: #fff;
-            border-radius: 13px;
-            box-shadow: 0 4px 15px rgba(25, 118, 210, 0.15);
-            font-size: 1.13em;
-            padding: 0;
-            border-collapse: separate;
-            border-spacing: 0;
-            min-width: 240px;
-            max-width: 350px;
-        }
-        .balance-table td {
-            padding: 12px 15px 11px 15px;
-            font-weight: 500;
-            vertical-align: middle;
-        }
-        .balance-table .wallet {
-            font-size: 1.3em;
-            padding-right: 10px;
-            width: 40px;
-        }
-        .balance-table .balance-amount {
-            font-size: 1.18em;
-            font-weight: 700;
-            padding-right: 7px;
-        }
-        .balance-table .refresh-btn {
-            background: #fff;
-            color: var(--primary, #3498db);
-            border: none;
-            border-radius: 6px;
-            font-size: 1em;
-            font-weight: 600;
-            padding: 3px 8px;
-            min-width: 32px;
-            min-height: 32px;
-            margin-left: 10px;
-            cursor: pointer;
-            box-shadow: 0 2px 8px #1877f218;
-            transition: background 0.18s, color 0.18s;
-        }
-        .balance-table .refresh-btn:hover {
-            background: #e3f2fd;
-            color: #1153a6;
-        }
-        .action-btn-group {
-            display: flex;
-            justify-content: center;
-            gap: 12px;
-            margin-bottom: 15px;
-        }
-        .quick-select-btn {
-            background: #e3f2fd;
-            color: #1877f2;
-            border-radius: 7px;
-            border: none;
-            font-weight: 600;
-            padding: 5px 13px;
-            font-size: 1em;
-            cursor: pointer;
-            transition: background 0.18s, color 0.18s;
-        }
-        .quick-select-btn:hover {
-            background: #d0e0fa;
-            color: #1153a6;
-        }
-        .bet-form-btn-table {
-            background: #1877f2;
-            color: #fff;
-            border: none;
-            font-weight: 600;
-            cursor: pointer;
-            transition: background 0.18s;
-            box-shadow: 0 2px 8px #1877f218;
-            line-height: 1.1;
-            min-width: 55px;
-            min-height: 32px;
-            border-radius: 7px;
-            padding: 6px 13px;
-            font-size: 0.98em;
-        }
-        .bet-form-btn-table:hover { background: #1153a6; }
-        .numbers-title {
-            font-size: 1.13em;
-            color: var(--primary, #3498db);
-            font-weight: bold;
-            margin-bottom: 10px;
-            text-align: center;
-            letter-spacing: 1px;
-        }
-        .numbers-grid {
-            display: grid;
-            grid-template-columns: repeat(5, 1fr);
-            grid-template-rows: repeat(20, 1fr);
-            gap: 14px 8px;
-            margin-top: 8px;
-        }
-        .number-item {
-            background: #f4f9ff;
-            color: #1976d2;
-            border: 2px solid #e3f2fd;
-            border-radius: 10px;
-            font-size: 1.15em;
-            font-weight: 700;
-            padding: 12px 0;
-            text-align: center;
-            user-select: none;
-            box-shadow: 0 1px 6px #1877f208;
-            transition: background 0.2s, color 0.2s, box-shadow 0.2s, border 0.2s;
-            cursor: pointer;
-            outline: none;
-            position: relative;
-        }
-        .number-item.selected {
-            background: #1877f2;
-            color: #fff;
-            border: 2px solid #0a67a3;
-            box-shadow: 0 3px 16px #1877f222;
-        }
-        .number-item.disabled {
-            background: #bdc3c7 !important;
-            color: #7f8c8d !important;
-            cursor: not-allowed !important;
-            border: 2px solid #bdc3c7 !important;
-            pointer-events: none;
-            opacity: 0.75;
-        }
-        .number-item:active {
-            background: #1976d2;
-            color: #fff;
-        }
-        .brake-progress-bar {
-            width: 85%;
-            height: 5px;
-            background-color: #e9ecef;
-            border-radius: 3px;
-            margin: 4px auto 0 auto;
-            overflow: hidden;
-        }
-        .brake-progress-fill {
-            height: 100%;
-            border-radius: 3px;
-            transition: width 0.3s ease-in-out;
-        }
-        .brake-progress-fill.fill-low { background-color: #2ecc71; }
-        .brake-progress-fill.fill-medium { background-color: #f39c12; }
-        .brake-progress-fill.fill-high { background-color: #e74c3c; }
-        .time-badge {
-            display: inline-block;
-            background: #f39c12;
-            color: #fff;
-            font-weight: bold;
-            font-size: 0.97em;
-            border-radius: 8px;
-            padding: 4px 16px 3px 16px;
-            margin: 0 auto 18px auto;
-            text-align: center;
-            letter-spacing: 1px;
-            box-shadow: 0 1px 4px #f39c1240;
-        }
-        .modal-confirm-bg {
-            position: fixed;
-            z-index: 20000;
-            left: 0; top: 0; right: 0; bottom: 0;
-            background: rgba(36, 56, 90, 0.18);
-            display: none;
-            align-items: center;
-            justify-content: center;
-        }
-        .modal-confirm-bg.active { display: flex; }
-        .modal-confirm-box {
-            background: #fff;
-            border-radius: 18px;
-            box-shadow: 0 12px 32px #0002;
-            max-width: 94vw;
-            min-width: 270px;
-            width: 96vw;
-            max-width: 410px;
-            padding: 22px 17px 14px 17px;
-            position: relative;
-            animation: showpop .18s cubic-bezier(.43,1.2,.86,1.2);
-        }
-        @keyframes showpop {
-            from { transform: scale(0.97) translateY(18px); opacity: 0.2; }
-            to   { transform: scale(1) translateY(0); opacity: 1; }
-        }
-        .modal-confirm-title {
-            font-weight: bold;
-            font-size: 1.13em;
-            color: #1976d2;
-            margin-bottom: 12px;
-            letter-spacing: .7px;
-        }
-        .modal-confirm-list {
-            max-height: 180px;
-            overflow-y: auto;
-            margin: 10px 0 17px 0;
-            background: #f5f9ff;
-            border-radius: 9px;
-            padding: 9px 8px 7px 8px;
-            font-size: 1.02em;
-        }
-        .modal-confirm-list span {
-            display: inline-block;
-            background: #1877f2;
-            color: #fff;
-            border-radius: 7px;
-            padding: 4px 9px 3px 9px;
-            margin: 2px 4px 2px 0;
-            font-size: 1.02em;
-        }
-        .modal-confirm-label {
-            margin: 9px 0 2px 0;
-            font-weight: 600;
-            font-size: .99em;
-            color: #555;
-        }
-        .modal-confirm-row {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            margin-bottom: 10px;
-        }
-        .modal-confirm-row input[type="number"] {
-            width: 100px;
-            padding: 7px 5px;
-            border: 1px solid #ddd;
-            border-radius: 6px;
-            font-size: 1.09em;
-        }
-        .modal-confirm-edit {
-            color: #1877f2; cursor: pointer; margin-left: 8px; font-size: 0.97em;
-        }
-        .modal-confirm-total {
-            font-weight: bold;
-            color: #1877f2;
-            margin-bottom: 10px;
-        }
-        .modal-confirm-actions {
-            margin-top: 8px;
-            display: flex;
-            justify-content: flex-end;
-            gap: 12px;
-        }
-        .modal-confirm-btn {
-            padding: 7px 19px;
-            border-radius: 8px;
-            font-size: 1.08em;
-            font-weight: 600;
-            border: none;
-            cursor: pointer;
-        }
-        .modal-confirm-btn.confirm {
-            background: #1877f2;
-            color: #fff;
-        }
-        .modal-confirm-btn.cancel {
-            background: #eee;
-            color: #1a222d;
-        }
-        .modal-confirm-close {
-            position: absolute; right: 11px; top: 7px;
-            color: #999; font-size: 1.4em; background: none; border: none; cursor: pointer;
-        }
-        .modal-confirm-close:hover { color: #1976d2;}
-        .modal-quick-bg {
-            position: fixed;
-            z-index: 20100;
-            left: 0; top: 0; right: 0; bottom: 0;
-            background: rgba(36, 56, 90, 0.18);
-            display: none;
-            align-items: center;
-            justify-content: center;
-        }
-        .modal-quick-bg.active { display: flex; }
-        .modal-quick-box {
-            background: #fff;
-            border-radius: 17px;
-            box-shadow: 0 12px 32px #0002;
-            max-width: 98vw;
-            min-width: 230px;
-            width: 94vw;
-            max-width: 360px;
-            padding: 17px 14px 12px 14px;
-            position: relative;
-        }
-        .modal-quick-title {
-            font-weight: bold;
-            font-size: 1.09em;
-            color: #1976d2;
-            margin-bottom: 10px;
-            letter-spacing: .7px;
-        }
-        .modal-quick-btns {
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-            margin-bottom: 7px;
-        }
-        .modal-quick-btn {
-            background: #e3f2fd;
-            color: #1976d2;
-            border: none;
-            border-radius: 8px;
-            font-weight: 600;
-            font-size: 1.09em;
-            padding: 8px 0;
-            cursor: pointer;
-            transition: background 0.18s, color 0.18s;
-        }
-        .modal-quick-btn:hover {
-            background: #1877f2;
-            color: #fff;
-        }
-        .modal-quick-close {
-            position: absolute; right: 9px; top: 7px;
-            color: #999; font-size: 1.25em; background: none; border: none; cursor: pointer;
-        }
-        .modal-quick-close:hover { color: #1976d2;}
-        .modal-quick-form {
-            display: flex;
-            gap: 8px;
-            margin-bottom: 8px;
-        }
-        .modal-quick-form input[type="text"] {
-            flex: 1;
-            font-size: 1em;
-            padding: 5px 10px;
-            border-radius: 7px;
-            border: 1px solid #ccc;
-        }
-        @media (max-width: 600px) {
-            .container { max-width: 100vw; border-radius: 0; padding: 6px 0 10px 0; margin-top: 74px; box-shadow: none; }
-            .balance-table td { padding: 9px 7px 8px 7px; }
-            .numbers-grid { grid-template-columns: repeat(5, 1fr); grid-template-rows: repeat(20, 1fr); gap: 8px 3px; }
-            .number-item { font-size: 1em; padding: 8px 0; border-radius: 6px; }
-            .header { height: 74px; }
-            .header-title { font-size: 1.02em; padding-left: 4px; gap: 8px; }
-            .header-logo { height: 36px; width: 36px; }
-            .back-btn { padding: 5px 10px; font-size: 0.97em; left: 7px; top: 7px; }
-            .time-badge { font-size: 0.93em; padding: 3px 8px 2px 8px;}
-        }
-        @media (max-width: 370px) {
-            .number-item { font-size: 0.93em; }
-        }
-
-.balance-table-wrap {
-    position: sticky;
-    top: 80px; /* header height + margin */
-    z-index: 1200;
-    background: #fff;
-    padding-top: 3px;
+       body {
+    background-image: url('https://global2d.com/images/bg-main.jpg');
+    background-size: cover;
+    background-repeat: no-repeat;
+    background-position: center center;
+    background-attachment: fixed;
+    min-height: 100vh;
+    margin: 0;
+    padding: 0;
 }
+.header {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    height: 64px;
+    background: linear-gradient(90deg, #FFD700 60%, #FFB800 120%);
+    color: #222;
+    z-index: 1100;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 16px;
+    border-bottom-left-radius: 13px;
+    border-bottom-right-radius: 13px;
+    box-shadow: 0 6px 28px #ffd70033, 0 1.5px 0 #e2e7ef;
+}
+.header-title {
+    display: flex;
+    align-items: center;
+    gap: 13px;
+    font-size: 1.3em;
+    font-weight: 700;
+    color: #222;
+    letter-spacing: 1.1px;
+    text-transform: uppercase;
+    padding-left: 2px;
+}
+.header-logo {
+    height: 32px;
+    width: 32px;
+    border-radius: 10px;
+    box-shadow: 0 2px 8px #0002;
+    background: #fff5;
+    object-fit: contain;
+    margin-right: 7px;
+}
+.header-right {
+    display: flex;
+    align-items: center;
+    height: 100%;
+}
+.back-btn {
+    display: flex;
+    align-items: center;
+    color: #fff;
+    text-decoration: none;
+    padding: 6px 16px;
+    border-radius: 8px;
+    background: #1877f2;
+    font-size: 1em;
+    font-weight: 600;
+    margin-left: 10px;
+    margin-right: 0;
+    box-shadow: 0 2px 8px #ffd70033;
+    transition: background 0.18s;
+    border: none;
+}
+.back-btn:hover { background: #1256b3; }
+.back-btn i { margin-right: 7px; }
+/* Sticky balance panel - moved outside container, fixed below header */
+.balance-panel {
+    position: fixed;
+    top: 64px; /* header height */
+    left: 0; right: 0;
+    z-index: 1200;
+    margin: 0 auto;
+    max-width: 440px;
+    background: #FFD700;
+    color: #222;
+    border-radius: 13px;
+    box-shadow: 0 4px 15px #ffd70066;
+    padding: 15px 20px;
+    font-size: 1.13em;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    letter-spacing: 0.02em;
+}
+.container {
+    max-width: 440px;
+    margin: 0 auto;
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    padding: 18px 3vw 20px 3vw;
+    margin-top: 132px; /* header + balance-panel height */
+}
+
+/* Sticky action button group */
 .action-btn-group {
     position: sticky;
-    top: 140px; /* adjust below balance-table */
+    top: 134px; /* header height + balance panel height + margin */
     z-index: 1200;
     background: #fff;
     padding-bottom: 8px;
+    display: flex;
+    justify-content: center;
+    gap: 12px;
+    margin-bottom: 15px;
+}
+
+.balance-panel .bi-wallet2 { font-size: 1.3em; margin-right: 10px; }
+.balance-panel .balance-amount {
+    font-size: 1.18em;
+    font-weight: 700;
+    padding-right: 7px;
+}
+.balance-panel .refresh-btn {
+    background: #fff;
+    color: #FFD700;
+    border-radius: 6px;
+    border: none;
+    font-size: 1em;
+    font-weight: 600;
+    padding: 3px 8px;
+    min-width: 32px;
+    min-height: 32px;
+    margin-left: 10px;
+    cursor: pointer;
+    box-shadow: 0 2px 8px #ffd70018;
+    transition: background 0.18s, color 0.18s;
+}
+.balance-panel .refresh-btn:hover {
+    background: #ffe266;
+    color: #b47b00;
+}
+
+.quick-select-btn {
+    background: #fffbe6;
+    color: #c09000;
+    border-radius: 7px;
+    border: none;
+    font-weight: 600;
+    padding: 5px 13px;
+    font-size: 1em;
+    cursor: pointer;
+    transition: background 0.18s, color 0.18s;
+}
+.quick-select-btn:hover {
+    background: #ffe266;
+    color: #b47b00;
+}
+.bet-form-btn-table {
+    background: #FFD700;
+    color: #222;
+    border: none;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.18s;
+    box-shadow: 0 2px 8px #ffd70018;
+    line-height: 1.1;
+    min-width: 55px;
+    min-height: 32px;
+    border-radius: 7px;
+    padding: 6px 13px;
+    font-size: 0.98em;
+}
+.bet-form-btn-table:hover { background: #FFB800; }
+.numbers-title {
+    font-size: 1.13em;
+    color: #FFD700;
+    font-weight: bold;
+    margin-bottom: 10px;
+    text-align: center;
+    letter-spacing: 1px;
+}
+.numbers-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    grid-template-rows: repeat(20, 1fr);
+    gap: 14px 8px;
+    margin-top: 8px;
+}
+.number-item {
+    background: #fffbe6;
+    color: #c09000;
+    border: 2px solid #ffe266;
+    border-radius: 10px;
+    font-size: 1.15em;
+    font-weight: 700;
+    padding: 12px 0;
+    text-align: center;
+    user-select: none;
+    box-shadow: 0 1px 6px #ffd70008;
+    transition: background 0.2s, color 0.2s, box-shadow 0.2s, border 0.2s;
+    cursor: pointer;
+    outline: none;
+    position: relative;
+}
+.number-item.selected {
+    background: #FFD700;
+    color: #fff;
+    border: 2px solid #c09000;
+    box-shadow: 0 3px 16px #ffd70022;
+}
+.number-item.disabled {
+    background: #bdc3c7 !important;
+    color: #7f8c8d !important;
+    cursor: not-allowed !important;
+    border: 2px solid #bdc3c7 !important;
+    pointer-events: none;
+    opacity: 0.75;
+}
+.number-item:active {
+    background: #FFB800;
+    color: #fff;
+}
+.brake-progress-bar {
+    width: 85%;
+    height: 5px;
+    background-color: #e9ecef;
+    border-radius: 3px;
+    margin: 4px auto 0 auto;
+    overflow: hidden;
+}
+.brake-progress-fill {
+    height: 100%;
+    border-radius: 3px;
+    transition: width 0.3s ease-in-out;
+}
+.brake-progress-fill.fill-low { background-color: #2ecc71; }
+.brake-progress-fill.fill-medium { background-color: #f39c12; }
+.brake-progress-fill.fill-high { background-color: #e74c3c; }
+.time-badge {
+    display: inline-block;
+    background: #f39c12;
+    color: #fff;
+    font-weight: bold;
+    font-size: 0.97em;
+    border-radius: 8px;
+    padding: 4px 16px 3px 16px;
+    margin: 0 auto 18px auto;
+    text-align: center;
+    letter-spacing: 1px;
+    box-shadow: 0 1px 4px #f39c1240;
+}
+.modal-confirm-bg {
+    position: fixed;
+    z-index: 20000;
+    left: 0; top: 0; right: 0; bottom: 0;
+    background: rgba(36, 56, 90, 0.18);
+    display: none;
+    align-items: center;
+    justify-content: center;
+}
+.modal-confirm-bg.active { display: flex; }
+.modal-confirm-box {
+    background: #fff;
+    border-radius: 18px;
+    box-shadow: 0 12px 32px #0002;
+    max-width: 94vw;
+    min-width: 270px;
+    width: 96vw;
+    max-width: 410px;
+    padding: 22px 17px 14px 17px;
+    position: relative;
+    animation: showpop .18s cubic-bezier(.43,1.2,.86,1.2);
+}
+@keyframes showpop {
+    from { transform: scale(0.97) translateY(18px); opacity: 0.2; }
+    to   { transform: scale(1) translateY(0); opacity: 1; }
+}
+.modal-confirm-title {
+    font-weight: bold;
+    font-size: 1.13em;
+    color: #1976d2;
+    margin-bottom: 12px;
+    letter-spacing: .7px;
+}
+.modal-confirm-list {
+    max-height: 180px;
+    overflow-y: auto;
+    margin: 10px 0 17px 0;
+    background: #f5f9ff;
+    border-radius: 9px;
+    padding: 9px 8px 7px 8px;
+    font-size: 1.02em;
+}
+.modal-confirm-list span {
+    display: inline-block;
+    background: #1877f2;
+    color: #fff;
+    border-radius: 7px;
+    padding: 4px 9px 3px 9px;
+    margin: 2px 4px 2px 0;
+    font-size: 1.02em;
+}
+.modal-confirm-label {
+    margin: 9px 0 2px 0;
+    font-weight: 600;
+    font-size: .99em;
+    color: #555;
+}
+.modal-confirm-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 10px;
+}
+.modal-confirm-row input[type="number"] {
+    width: 100px;
+    padding: 7px 5px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    font-size: 1.09em;
+}
+.modal-confirm-edit {
+    color: #1877f2; cursor: pointer; margin-left: 8px; font-size: 0.97em;
+}
+.modal-confirm-total {
+    font-weight: bold;
+    color: #1877f2;
+    margin-bottom: 10px;
+}
+.modal-confirm-actions {
+    margin-top: 8px;
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+}
+.modal-confirm-btn {
+    padding: 7px 19px;
+    border-radius: 8px;
+    font-size: 1.08em;
+    font-weight: 600;
+    border: none;
+    cursor: pointer;
+}
+.modal-confirm-btn.confirm {
+    background: #1877f2;
+    color: #fff;
+}
+.modal-confirm-btn.cancel {
+    background: #eee;
+    color: #1a222d;
+}
+.modal-confirm-close {
+    position: absolute; right: 11px; top: 7px;
+    color: #999; font-size: 1.4em; background: none; border: none; cursor: pointer;
+}
+.modal-confirm-close:hover { color: #1976d2;}
+
+/* --- Quick Select Popup Style --- */
+dialog {
+    border: none;
+    border-radius: 10px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+    padding: 15px;
+    min-width: 140px;
+    width: 90vw;
+    max-width: 340px;
+    text-align: left;
+    box-sizing: border-box;
+    z-index: 21000;
+    margin: auto; /* Added for centering */
+}
+dialog[open] {
+    animation: showpop .18s cubic-bezier(.43,1.2,.86,1.2);
+}
+dialog::backdrop {
+    background: rgba(0, 0, 0, 0.5);
+}
+.popup-header {
+    font-size: 16px;
+    font-weight: bold;
+    margin: 0 0 10px 0;
+    text-align: center;
+}
+.popup-label {
+    font-size: 13px;
+    margin-top: 8px;
+    display: block;
+    color: #333;
+}
+.popup-input {
+    width: 100%;
+    padding: 6px 8px;
+    font-size: 13px;
+    border-radius: 5px;
+    border: 1px solid #ccc;
+    margin-top: 4px;
+    box-sizing: border-box;
+}
+.popup-btn-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin: 12px 0;
+}
+.popup-btn {
+    flex: 1 1 auto;
+    color: white;
+    border: none;
+    padding: 7px 10px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 13px;
+    transition: opacity 0.2s, box-shadow 0.2s;
+}
+.popup-btn.selected {
+    opacity: 0.7;
+    box-shadow: 0 0 0 2px #333 inset;
+}
+.popup-footer {
+    margin-top: 15px;
+    text-align: center;
+    display: flex;
+    gap: 10px;
+}
+.popup-footer button {
+    width: 100%;
+    font-size: 14px;
+    padding: 8px 0;
+}
+#resultText {
+    margin-top: 12px;
+    color: #28a745;
+    font-size: 14px;
+    text-align: left;
+    white-space: pre-line;
+    font-weight: bold;
+    line-height: 1.6;
+}
+/* Button Colors */
+.btn-blue { background: #007bff; }
+.btn-alt { background: #28a745; }
+.btn-orange { background: #fd7e14; }
+.btn-info { background: #17a2b8; }
+.btn-gray { background: #6c757d; }
+.btn-pink { background: #e83e8c; }
+.btn-dark { background: #343a40; }
+.btn-green { background: #20c997; }
+
+@media (max-width: 600px) {
+    .container { max-width: 100vw; border-radius: 0; padding: 6px 0 10px 0; margin-top: 108px; box-shadow: none; }
+    .balance-panel { top: 56px; max-width: 100vw; padding: 12px 10px; font-size: 1em; }
+    .numbers-grid { grid-template-columns: repeat(5, 1fr); grid-template-rows: repeat(20, 1fr); gap: 8px 3px; }
+    .number-item { font-size: 1em; padding: 8px 0; border-radius: 6px; }
+    .header { height: 56px; padding: 0 6px;}
+    .header-title { font-size: 1.02em; }
+    .header-logo { height: 28px; width: 28px; }
+    .back-btn { padding: 5px 10px; font-size: 0.97em; left: 7px; top: 7px; }
+    .time-badge { font-size: 0.93em; padding: 3px 8px 2px 8px;}
+}
+@media (max-width: 400px) {
+    .popup-box { padding: 10px; }
+    .popup-btn { font-size: 12px; padding: 6px 8px; }
+    .popup-label { font-size: 12px; }
+}
+@media (max-width: 370px) {
+    .number-item { font-size: 0.93em; }
 }
     </style>
 </head>
 <body>
     <div class="header">
         <div class="header-title">
-            <img src="/images/azm-logo.png" alt="Logo" class="header-logo" />
-            AZM2D3D GAME
+            <img src="/images/glo-logo.png" alt="Logo" class="header-logo" />
+            2D 11:00AM
         </div>
         <div class="header-right">
-            <a href="/b/2dnumber.php" class="back-btn"><i class="bi bi-arrow-left"></i> </a>
+            <a href="/2dlive/" class="back-btn"><i class="bi bi-arrow-left"></i> နောက်သို့</a>
         </div>
     </div>
+    <!-- Balance panel moved outside container, just below header -->
+    <div class="balance-panel">
+        <i class="bi bi-wallet2"></i>
+        လက်ကျန်ငွေ: <span class="balance-amount" id="Balance"><?= number_format($user_balance) ?></span> ကျပ်
+        <button class="refresh-btn" type="button" id="refreshBtn" title="Refresh balance & reverse">R</button>
+    </div>
     <div class="container">
-        <div class="time-badge">မြန်မာစံတော်ချိန် - မနက် ၁၁ နာရီ (11:00AM)</div>
-        <div class="balance-table-wrap">
-            <table class="balance-table" style="width:100%;table-layout:auto;">
-                <tr>
-                    <td class="wallet"><i class="bi bi-wallet2"></i></td>
-                    <td>
-                        လက်ကျန်ငွေ:
-                        <span class="balance-amount" id="Balance"><?= number_format($user_balance) ?></span>
-                        <span>ကျပ်</span>
-                        <button class="refresh-btn" type="button" id="refreshBtn" title="Refresh balance & reverse">R</button>
-                    </td>
-                </tr>
-            </table>
-        </div>
         <div class="action-btn-group">
-            <button type="button" id="betTableTrigger" class="bet-form-btn-table">ထိုးမည်</button>
-            <button type="button" id="quickSelectTrigger" class="quick-select-btn"><i class="bi bi-lightning-charge"></i> အမြန်ရွေး</button>
+            <button type="button" id="betTableTrigger" class="bet-form-btn-table"><?= $is_advance_bet ? 'မနက်ဖန်အတွက် ထိုးမည်' : 'ထိုးမည်' ?></button>
+            <button type="button" id="showPopupButton" class="quick-select-btn"><i class="bi bi-lightning-charge"></i> အမြန်ရွေး</button>
         </div>
+        <?php if ($is_advance_bet): ?>
+        <div style="color:#e67e22; font-weight:bold; margin-bottom:10px;">
+            မနက်ဖန် (<?= htmlspecialchars($bet_date) ?>) အတွက် ကြိုထိုး mode ဖြစ်သည်။
+        </div>
+        <?php endif; ?>
         <?php if ($message && $messageType != "success"): ?>
         <div class="message <?= htmlspecialchars($messageType) ?>">
             <?= htmlspecialchars($message) ?>
@@ -663,7 +694,7 @@ if(isset($_GET['success'])) {
     <div class="modal-confirm-bg" id="modalConfirmBg">
         <div class="modal-confirm-box">
             <button type="button" class="modal-confirm-close" id="modalConfirmClose" tabindex="0">&times;</button>
-            <div class="modal-confirm-title">ထိုးမည် အတည်ပြုရန်</div>
+            <div class="modal-confirm-title"><?= $is_advance_bet ? 'မနက်ဖန်အတွက် ကြိုထိုး အတည်ပြုရန်' : 'ထိုးမည် အတည်ပြုရန်' ?></div>
             <div class="modal-confirm-label">ရွေးချယ်ထားသော နံပါတ်များ</div>
             <div class="modal-confirm-list" id="modalConfirmNumbers"></div>
             <div class="modal-confirm-row" style="margin-bottom:4px;">
@@ -678,44 +709,56 @@ if(isset($_GET['success'])) {
             </div>
         </div>
     </div>
-    <!-- Modal Popup for Quick Select -->
-    <div class="modal-quick-bg" id="modalQuickBg">
-        <div class="modal-quick-box">
-            <button type="button" class="modal-quick-close" id="modalQuickClose" tabindex="0">&times;</button>
-            <div class="modal-quick-title">အမြန်ရွေး</div>
-            <div class="modal-quick-btns">
-                <button type="button" class="modal-quick-btn" data-type="even">စုံ (Even)</button>
-                <button type="button" class="modal-quick-btn" data-type="odd">မ (Odd)</button>
-                <button type="button" class="modal-quick-btn" data-type="double">အပူး (Double)</button>
-                <button type="button" class="modal-quick-btn" data-type="head_even">စုံထိပ် (Head Even)</button>
-                <button type="button" class="modal-quick-btn" data-type="tail_even">စုံစွန် (Tail Even)</button>
-                <button type="button" class="modal-quick-btn" data-type="power">Power</button>
-                <button type="button" class="modal-quick-btn" data-type="nakha">Nakha</button>
-                <button type="button" class="modal-quick-btn" data-type="all">အကုန် (All)</button>
-                <button type="button" class="modal-quick-btn" data-type="clear">ရှင်း (Clear)</button>
+
+    <!-- Quick Select Popup Modal -->
+    <dialog id="choiceDialog">
+        <h3 class="popup-header">အမြန်ရွေး</h3>
+        <form id="choiceForm" method="dialog">
+            <label class="popup-label" for="topInput">ထိပ်:</label>
+            <input type="text" id="topInput" class="popup-input" placeholder="ဥပမာ 1,2">
+
+            <label class="popup-label" for="backInput">နောက်:</label>
+            <input type="text" id="backInput" class="popup-input" placeholder="ဥပမာ 3,4">
+
+            <label class="popup-label" for="brakeInput">ဘရိတ်:</label>
+            <input type="text" id="brakeInput" class="popup-input" placeholder="ဥပမာ 1,11">
+
+            <label class="popup-label" for="singleInput">တစ်လုံး:</label>
+            <input type="text" id="singleInput" class="popup-input" placeholder="ဥပမာ 1,5">
+
+            <label class="popup-label" for="caseInput">အခွေ:</label>
+            <input type="text" id="caseInput" class="popup-input" placeholder="ဥပမာ 789, 49012, 69034">
+
+            <div class="popup-btn-group" id="choiceBtnGroup">
+                <button type="button" class="popup-btn btn-alt" data-choice="ညီအကို">ညီအကို</button>
+                <button type="button" class="popup-btn btn-orange" data-choice="ပါဝါ">ပါဝါ</button>
+                <button type="button" class="popup-btn btn-info" data-choice="နက္ခ">နက္ခ</button>
+                <button type="button" class="popup-btn btn-gray" data-choice="စုံစုံ">စုံစုံ</button>
+                <button type="button" class="popup-btn btn-pink" data-choice="စုံမ">စုံမ</button>
+                <button type="button" class="popup-btn btn-dark" data-choice="မစုံ">မစုံ</button>
+                <button type="button" class="popup-btn btn-green" data-choice="အပူး">အပူး</button>
             </div>
-            <form class="modal-quick-form" id="modalQuickAkhweForm" autocomplete="off" onsubmit="return false;" style="margin-bottom:0;">
-                <input type="text" id="akhweInput" placeholder="အခွေ eg: 56789" maxlength="6" pattern="[0-9]{5,6}">
-                <button type="button" class="modal-quick-btn" id="akhweBtn" style="padding:6px 13px;font-size:0.98em;">အခွေ</button>
-            </form>
-            <div id="modalQuickError" style="color: #e74c3c; font-size: .97em; margin-top: 3px; min-height: 20px;"></div>
-        </div>
-    </div>
+
+            <div class="popup-footer">
+                <button type="submit" class="popup-btn btn-blue">ရွေးမည်</button>
+                <button type="button" id="closePopupButton" class="popup-btn btn-gray">ပိတ်မည်</button>
+            </div>
+        </form>
+        <div id="resultText"></div>
+    </dialog>
+
 <script>
 // --- 2D Number Selection Logic ---
 
-// Clear selection on browser refresh/load
 window.addEventListener('load', function() {
     sessionStorage.removeItem('selected2d_1100');
     selected = {};
     updateGridSelections();
 });
 
-// DOM references
 const numbersGrid = document.getElementById('numbersGrid');
 let selected = JSON.parse(sessionStorage.getItem('selected2d_1100') || '{}');
 
-// Update grid UI based on selected numbers
 function updateGridSelections() {
     document.querySelectorAll('.number-item').forEach(item => {
         const num = item.getAttribute('data-number');
@@ -728,9 +771,9 @@ function updateGridSelections() {
             item.classList.remove('selected');
         }
     });
+    sessionStorage.setItem('selected2d_1100', JSON.stringify(selected));
 }
 
-// Click selection
 numbersGrid.addEventListener('click', function(e) {
     const item = e.target.closest('.number-item');
     if (!item || item.classList.contains('disabled')) return;
@@ -740,11 +783,9 @@ numbersGrid.addEventListener('click', function(e) {
     } else {
         selected[num] = true;
     }
-    sessionStorage.setItem('selected2d_1100', JSON.stringify(selected));
     updateGridSelections();
 });
 
-// Keyboard selection
 numbersGrid.addEventListener('keydown', function(e) {
     if ((e.key === "Enter" || e.key === " ") && e.target.classList.contains('number-item')) {
         e.preventDefault();
@@ -752,7 +793,6 @@ numbersGrid.addEventListener('keydown', function(e) {
     }
 });
 
-// Refresh balance and reverse selection
 document.getElementById('refreshBtn').addEventListener('click', function() {
     fetch(window.location.pathname + '?get_balance=1')
         .then(r => r.json())
@@ -772,7 +812,6 @@ document.getElementById('refreshBtn').addEventListener('click', function() {
         }
     });
     selected = newSelected;
-    sessionStorage.setItem('selected2d_1100', JSON.stringify(selected));
     updateGridSelections();
 });
 
@@ -878,97 +917,150 @@ window.addEventListener('keydown', function(e) {
     if (modalBg.classList.contains('active') && (e.key === "Escape")) {
         modalBg.classList.remove('active');
     }
-    if (typeof modalQuickBg !== "undefined" && modalQuickBg.classList.contains('active') && (e.key === "Escape")) {
-        modalQuickBg.classList.remove('active');
-    }
 });
 
-// ---- Quick Select Popup Logic ----
-const quickSelectTrigger = document.getElementById('quickSelectTrigger');
-const modalQuickBg = document.getElementById('modalQuickBg');
-const modalQuickClose = document.getElementById('modalQuickClose');
-const modalQuickBtns = document.querySelectorAll('.modal-quick-btn');
-const modalQuickError = document.getElementById('modalQuickError');
-const akhweInput = document.getElementById('akhweInput');
-const akhweBtn = document.getElementById('akhweBtn');
+// --- Quick Select Popup Logic ---
+document.addEventListener('DOMContentLoaded', () => {
+    const dialog = document.getElementById('choiceDialog');
+    const showButton = document.getElementById('showPopupButton');
+    const closeButton = document.getElementById('closePopupButton');
+    const choiceForm = document.getElementById('choiceForm');
+    const choiceBtnGroup = document.getElementById('choiceBtnGroup');
+    const resultText = document.getElementById('resultText');
 
-quickSelectTrigger.addEventListener('click', function() {
-    modalQuickBg.classList.add('active');
-    modalQuickError.textContent = "";
-});
-modalQuickClose.onclick = function() {
-    modalQuickBg.classList.remove('active');
-};
+    const topInput = document.getElementById('topInput');
+    const backInput = document.getElementById('backInput');
+    const brakeInput = document.getElementById('brakeInput');
+    const singleInput = document.getElementById('singleInput');
+    const caseInput = document.getElementById('caseInput');
+    
+    const numberSets = {
+        'ညီအကို': ['01','12','23','34','45','56','67','78','89','90', '10','21','32','43','54','65','76','87','98','09'],
+        'ပါဝါ': ['05','16','27','38','49', '50','61','72','83','94'],
+        'နက္ခ': ['07','18','29','35','46', '70','81','92','53','64'],
+        'စုံစုံ': ['00','22','44','66','88','02','04','06','08','20','24','26','28','40','42','46','48','60','62','64','68','80','82','84','86'],
+        'စုံမ': ['01','03','05','07','09','21','23','25','27','29','41','43','45','47','49','61','63','65','67','69','81','83','85','87','89'],
+        'မစုံ': ['10','12','14','16','18','30','32','34','36','38','50','52','54','56','58','70','72','74','76','78','90','92','94','96','98'],
+        'အပူး': ['00','11','22','33','44','55','66','77','88','99']
+    };
 
-function doQuickSelect(type, extra) {
-    modalQuickError.textContent = '';
-    if (type === 'clear') {
-        selected = {};
-        sessionStorage.setItem('selected2d_1100', JSON.stringify(selected));
-        updateGridSelections();
-        modalQuickBg.classList.remove('active');
-        return;
-    }
-    if (type === 'all') {
-        fetch('/b/quick_select_api.php?type=even')
-            .then(resp => resp.json())
-            .then(_data => {
-                selected = {};
-                document.querySelectorAll('.number-item:not(.disabled)').forEach(item => {
-                    let num = item.getAttribute('data-number');
-                    selected[num] = true;
-                });
-                sessionStorage.setItem('selected2d_1100', JSON.stringify(selected));
-                updateGridSelections();
-                modalQuickBg.classList.remove('active');
-            })
-            .catch(() => {
-                modalQuickError.textContent = "Server error!";
-            });
-        return;
-    }
-    let url = '/b/quick_select_api.php?type=' + encodeURIComponent(type);
-    if (type === 'akhwe' && extra) url += '&akhwe=' + encodeURIComponent(extra);
-    fetch(url)
-        .then(resp => resp.json())
-        .then(data => {
-            if (data.error) {
-                modalQuickError.textContent = data.error;
-                return;
+    const getNumbersFromInput = (input) => {
+        return input.value.trim().split(',').map(s => s.trim().replace(/\D/g, '')).filter(Boolean);
+    };
+
+    showButton.addEventListener('click', () => {
+        choiceForm.reset();
+        resultText.textContent = '';
+        choiceBtnGroup.querySelectorAll('.popup-btn').forEach(btn => btn.classList.remove('selected'));
+        dialog.showModal();
+    });
+
+    closeButton.addEventListener('click', () => dialog.close());
+    
+    choiceBtnGroup.addEventListener('click', (event) => {
+        if (event.target.matches('.popup-btn')) {
+            event.target.classList.toggle('selected');
+        }
+    });
+
+    choiceForm.addEventListener('submit', (event) => {
+        event.preventDefault();
+        
+        let finalNumbers = new Set();
+        let hasFilter = false;
+
+        // Button choices
+        choiceBtnGroup.querySelectorAll('.popup-btn.selected').forEach(btn => {
+            const choice = btn.dataset.choice;
+            if (numberSets[choice]) {
+                numberSets[choice].forEach(num => finalNumbers.add(num));
+                hasFilter = true;
             }
-            if (data.numbers && Array.isArray(data.numbers)) {
-                selected = {};
-                let braked = Array.isArray(data.brake1) ? new Set(data.brake1) : new Set();
-                data.numbers.forEach(num => {
-                    if (!braked.has(num)) {
-                        selected[num] = true;
-                    }
-                });
-                sessionStorage.setItem('selected2d_1100', JSON.stringify(selected));
-                updateGridSelections();
-            }
-            modalQuickBg.classList.remove('active');
-        })
-        .catch(() => {
-            modalQuickError.textContent = "Server error!";
         });
-}
 
-modalQuickBtns.forEach(btn => {
-    btn.addEventListener('click', function() {
-        const type = this.getAttribute('data-type');
-        doQuickSelect(type);
+        // Text input choices
+        const tops = getNumbersFromInput(topInput);
+        if (tops.length > 0) {
+            let tempSet = new Set();
+            for (let i = 0; i <= 9; i++) {
+                tops.forEach(t => tempSet.add(`${t}${i}`.slice(-2)));
+            }
+            if (hasFilter) { finalNumbers = new Set([...finalNumbers].filter(x => tempSet.has(x))); } else { finalNumbers = tempSet; }
+            hasFilter = true;
+        }
+
+        const backs = getNumbersFromInput(backInput);
+        if (backs.length > 0) {
+            let tempSet = new Set();
+            for (let i = 0; i <= 9; i++) {
+                backs.forEach(b => tempSet.add(`${i}${b}`.slice(-2)));
+            }
+            if (hasFilter) { finalNumbers = new Set([...finalNumbers].filter(x => tempSet.has(x))); } else { finalNumbers = tempSet; }
+            hasFilter = true;
+        }
+
+        const brakes = getNumbersFromInput(brakeInput);
+        if (brakes.length > 0) {
+            let tempSet = new Set();
+            for (let i = 0; i <= 99; i++) {
+                const numStr = i.toString().padStart(2, '0');
+                const sum = parseInt(numStr[0]) + parseInt(numStr[1]);
+                if (brakes.includes(sum.toString()) || brakes.includes((sum % 10).toString())) {
+                    tempSet.add(numStr);
+                }
+            }
+            if (hasFilter) { finalNumbers = new Set([...finalNumbers].filter(x => tempSet.has(x))); } else { finalNumbers = tempSet; }
+            hasFilter = true;
+        }
+
+        const singles = getNumbersFromInput(singleInput);
+        if (singles.length > 0) {
+            let tempSet = new Set();
+            for (let i = 0; i <= 99; i++) {
+                const numStr = i.toString().padStart(2, '0');
+                if (singles.some(s => numStr.includes(s))) {
+                    tempSet.add(numStr);
+                }
+            }
+            if (hasFilter) { finalNumbers = new Set([...finalNumbers].filter(x => tempSet.has(x))); } else { finalNumbers = tempSet; }
+            hasFilter = true;
+        }
+        
+        const cases = getNumbersFromInput(caseInput);
+        if(cases.length > 0) {
+            let tempSet = new Set();
+            cases.forEach(c_str => {
+                const digits = c_str.split('');
+                digits.forEach(d1 => {
+                    digits.forEach(d2 => {
+                        tempSet.add(`${d1}${d2}`);
+                    });
+                });
+            });
+            if (hasFilter) { finalNumbers = new Set([...finalNumbers].filter(x => tempSet.has(x))); } else { finalNumbers = tempSet; }
+            hasFilter = true;
+        }
+
+        if (!hasFilter) {
+            resultText.textContent = "အနည်းဆုံး criteria တစ်ခု ရွေးချယ်ပါ";
+            resultText.style.color = 'red';
+            return;
+        }
+
+        selected = {}; // Clear previous selections
+        finalNumbers.forEach(num => {
+            const numStr = num.toString().padStart(2, '0');
+            const item = document.querySelector(`.number-item[data-number="${numStr}"]`);
+            if (item && !item.classList.contains('disabled')) {
+                selected[numStr] = true;
+            }
+        });
+
+        updateGridSelections();
+        dialog.close();
     });
 });
 
-akhweBtn.addEventListener('click', function() {
-    let val = akhweInput.value.trim();
-    if (!/^[0-9]{5,6}$/.test(val)) {
-        modalQuickError.textContent = "အခွေ ဂဏန်း ငါးလုံး သို့မဟုတ် ခြောက်လုံးသာ ထည့်ပါ";
-        return;
-    }
-    doQuickSelect('akhwe', val);
-});
 
 // Initial update on page load
 updateGridSelections();
