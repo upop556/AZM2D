@@ -655,7 +655,7 @@ dialog::backdrop { background: rgba(0, 0, 0, 0.5); }
     <div class="balance-panel">
         <i class="bi bi-wallet2"></i>
         လက်ကျန်ငွေ: <span class="balance-amount" id="Balance"><?= number_format($user_balance) ?></span> ကျပ်
-        <button class="refresh-btn" type="button" id="refreshBtn" title="Reverse Selection & Refresh Balance">R</button>
+        <button class="refresh-btn" type="button" id="refreshBtn" title="Add Reversed Numbers & Refresh Balance">R</button>
     </div>
     <div class="container">
         <?php if ($is_market_closed): ?>
@@ -826,7 +826,7 @@ if(numbersGrid){
 }
 
 // =========================================================================
-// == MODIFIED SECTION: 'R' Button Logic for Reversing Selection ==
+// == MODIFIED SECTION: 'R' Button to ADD reversed numbers ==
 // =========================================================================
 document.getElementById('refreshBtn').addEventListener('click', function() {
     // Part 1: Refresh the balance from the server
@@ -841,31 +841,32 @@ document.getElementById('refreshBtn').addEventListener('click', function() {
             }
         });
         
-    // Part 2: Reverse the selected numbers
-    const newlySelected = {}; // Create a new object for the reversed numbers
+    // Part 2: Add reversed numbers to the current selection
+    
+    // Get a list of the currently selected numbers before we start adding new ones
+    const originalSelection = Object.keys(selected);
 
-    // Loop through each currently selected number
-    Object.keys(selected).forEach(num => {
+    originalSelection.forEach(num => {
         if (num.length === 2) {
-            const reversedNum = num[1] + num[0]; // e.g., '67' becomes '76'
+            const reversedNum = num[1] + num[0]; // e.g., '54' becomes '45'
+
+            // If the number is a double (e.g., '11'), no need to do anything
+            if (num === reversedNum) {
+                return; // Skips to the next number in the loop
+            }
+
             const reversedElement = document.querySelector(`.number-item[data-number="${reversedNum}"]`);
 
             // Check if the reversed number's element exists and is NOT disabled
             if (reversedElement && !reversedElement.classList.contains('disabled')) {
-                newlySelected[reversedNum] = true; // Add the reversed number to our new selection
+                // Add the reversed number to the selection object.
+                // The original number remains selected.
+                selected[reversedNum] = true; 
             }
-            // If the reversed number is disabled, we do nothing, effectively unselecting the original.
-        } else {
-             // If the number is not 2 digits (e.g., '00'), keep it as is.
-             // But since all our numbers are 2 digits, this part is just a fallback.
-             newlySelected[num] = true;
         }
     });
     
-    // Replace the old selection with the new, reversed selection
-    selected = newlySelected;
-    
-    // Update the visual grid to show the new selection
+    // Update the visual grid to show both original and reversed numbers
     updateGridSelections();
 });
 // =========================================================================
