@@ -236,9 +236,6 @@ if(isset($_GET['success'])) {
     $message = 'ထိုးပြီးပါပြီ။ သင်၏ ၂လုံးထိုးမှတ်တမ်းကို အောင်မြင်စွာ သိမ်းဆည်းပြီးပါပြီ။';
     $messageType = 'success';
 }
-
-// Since the rest of the file is HTML and JS, and the changes are within those blocks,
-// I will include the full file content for completeness.
 ?>
 <!DOCTYPE html>
 <html lang="my">
@@ -658,7 +655,7 @@ dialog::backdrop { background: rgba(0, 0, 0, 0.5); }
     <div class="balance-panel">
         <i class="bi bi-wallet2"></i>
         လက်ကျန်ငွေ: <span class="balance-amount" id="Balance"><?= number_format($user_balance) ?></span> ကျပ်
-        <button class="refresh-btn" type="button" id="refreshBtn" title="Refresh balance & reverse">R</button>
+        <button class="refresh-btn" type="button" id="refreshBtn" title="Reverse Selection & Refresh Balance">R</button>
     </div>
     <div class="container">
         <?php if ($is_market_closed): ?>
@@ -778,16 +775,9 @@ dialog::backdrop { background: rgba(0, 0, 0, 0.5); }
 
 <script>
 // --- 2D Number Selection Logic ---
-// Use dynamic session key passed from PHP
 const sessionKey = '<?= $js_session_key ?>';
 
-// The rest of your Javascript should work as is, because it's already well-written
-// to handle the UI elements which are conditionally rendered by PHP.
-// I'm adding the full JS code to ensure everything is included.
-
 window.addEventListener('load', function() {
-    // Clear session storage for this specific time key on new page load
-    // to prevent carrying over selections from a previous visit.
     sessionStorage.removeItem(sessionKey);
     selected = {};
     updateGridSelections();
@@ -798,7 +788,7 @@ let selected = JSON.parse(sessionStorage.getItem(sessionKey) || '{}');
 
 function updateGridSelections() {
     const grid = document.getElementById('numbersGrid');
-    if (!grid) return; // If grid doesn't exist (market closed), do nothing.
+    if (!grid) return;
 
     grid.querySelectorAll('.number-item').forEach(item => {
         const num = item.getAttribute('data-number');
@@ -835,8 +825,11 @@ if(numbersGrid){
     });
 }
 
+// =========================================================================
+// == MODIFIED SECTION: 'R' Button Logic for Reversing Selection ==
+// =========================================================================
 document.getElementById('refreshBtn').addEventListener('click', function() {
-    // Construct URL with the current time parameter for fetching balance
+    // Part 1: Refresh the balance from the server
     const url = new URL(window.location.href);
     url.searchParams.set('get_balance', '1');
 
@@ -848,34 +841,36 @@ document.getElementById('refreshBtn').addEventListener('click', function() {
             }
         });
         
-    let newSelected = {};
+    // Part 2: Reverse the selected numbers
+    const newlySelected = {}; // Create a new object for the reversed numbers
+
+    // Loop through each currently selected number
     Object.keys(selected).forEach(num => {
         if (num.length === 2) {
-            let reversed = num[1] + num[0];
-            // Unselect the original number
-            delete selected[num];
-            // Select the reversed number if it's not disabled
-            const revElem = document.querySelector(`.number-item[data-number="${reversed}"]`);
-            if (revElem && !revElem.classList.contains('disabled')) {
-                newSelected[reversed] = true;
-            } else {
-                 newSelected[num] = true; // if reversed is disabled, keep original
+            const reversedNum = num[1] + num[0]; // e.g., '67' becomes '76'
+            const reversedElement = document.querySelector(`.number-item[data-number="${reversedNum}"]`);
+
+            // Check if the reversed number's element exists and is NOT disabled
+            if (reversedElement && !reversedElement.classList.contains('disabled')) {
+                newlySelected[reversedNum] = true; // Add the reversed number to our new selection
             }
+            // If the reversed number is disabled, we do nothing, effectively unselecting the original.
+        } else {
+             // If the number is not 2 digits (e.g., '00'), keep it as is.
+             // But since all our numbers are 2 digits, this part is just a fallback.
+             newlySelected[num] = true;
         }
     });
     
-    let reversedOnly = {};
-    Object.keys(selected).forEach(num => {
-         let reversed = num[1] + num[0];
-         const revElem = document.querySelector(`.number-item[data-number="${reversed}"]`);
-         if(revElem && !revElem.classList.contains('disabled')) {
-            reversedOnly[reversed] = true;
-         }
-    });
-
-    selected = { ...selected, ...reversedOnly };
+    // Replace the old selection with the new, reversed selection
+    selected = newlySelected;
+    
+    // Update the visual grid to show the new selection
     updateGridSelections();
 });
+// =========================================================================
+// == END OF MODIFIED SECTION ==
+// =========================================================================
 
 
 // ---- Confirm Popup Logic ----
@@ -909,7 +904,7 @@ function updatePrizeAndTotal() {
     let amount = parseInt(modalAmount.value) || 0;
     let total = numCount * amount;
     let prize = amount * 95;
-    modalTotal.textContent = `စုစုပေါင်း: ${numCount} ကွက် × ${amount.toLocaleString()} = ${(total).toLocaleString()} ကျပ်`;
+    modalTotal.textContent = `စုစုပေါင်း: ${numCount.toLocaleString()} ကွက် × ${amount.toLocaleString()} = ${(total).toLocaleString()} ကျပ်`;
     modalPrize.textContent = prize.toLocaleString();
 }
 
