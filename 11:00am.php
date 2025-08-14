@@ -34,7 +34,7 @@ $time_configs = [
         'display_title' => '2D 03:00PM',
         'session_key' => 'selected2d_1500'
     ],
-    '16:30PM' => [ // Corrected key from '4:30PM' to '16:30PM' for consistency if needed, but using user's key is better. Let's stick to 16:30PM for consistency with database time format.
+    '16:30PM' => [ 
         'bet_type' => '2D-1630',
         'target_time' => '16:30:00',
         'close_time' => '16:00:00',
@@ -70,43 +70,36 @@ $target_date_dt = $closedInfo['target_date'];
 $bet_date = $target_date_dt->format('Y-m-d');
 $display_date_info = $closedInfo['display_date_info'];
 
-// ---------- Advance Bet Logic (After 5PM, allow bet for tomorrow) ----------
+// ---------- REVISED Advance Bet Logic (Handles both URL param and automatic 5PM switch) ----------
 date_default_timezone_set('Asia/Yangon');
 $now_dt = new DateTime('now', new DateTimeZone('Asia/Yangon'));
 $is_advance_bet = false;
-$advance_cutoff_hour = 17; // 5PM
 
-if ($is_betting_closed) {
-    // If time is after 5PM (17:00), enable advance bet for tomorrow
-    if ((int)$now_dt->format('H') >= $advance_cutoff_hour) {
-        $tomorrow_dt = (clone $now_dt)->modify('+1 day');
-        $bet_date = $tomorrow_dt->format('Y-m-d');
-        $target_date_dt = $tomorrow_dt; // <-- IMPORTANT: Update target_date_dt as well
-        $is_advance_bet = true;
-        $is_betting_closed = false; // Allow betting for tomorrow
-        $display_date_info = $bet_date . ' (မနက်ဖန်)';
-    }
+// Check for URL parameter to force tomorrow's view
+$force_tomorrow = (isset($_GET['date']) && $_GET['date'] === 'tomorrow');
+
+// Check if current time is after the daily cutoff (5 PM)
+$is_after_cutoff = (int)$now_dt->format('H') >= 17;
+
+// Conditions to switch to "Advance Bet" mode for tomorrow:
+if ($force_tomorrow || ($is_betting_closed && $is_after_cutoff)) {
+    $tomorrow_dt = (clone $now_dt)->modify('+1 day');
+    $bet_date = $tomorrow_dt->format('Y-m-d');
+    $target_date_dt = $tomorrow_dt; 
+    $is_advance_bet = true;
+    $is_betting_closed = false; // Re-open betting for the advance session
+    $display_date_info = $bet_date . ' (မနက်ဖန်)';
 }
-
 // --- NEW: Market Holiday and Weekend Check ---
 $is_market_closed = false;
 $market_closed_message = '';
+$holidays = ['2025-01-01', '2025-02-12', '2025-03-27', '2025-05-01'];
+$day_of_week = (int)$target_date_dt->format('N'); 
 
-// Add specific market holiday dates here
-$holidays = [
-    '2025-01-01', // New Year's Day
-    '2025-02-12', // Union Day
-    '2025-03-27', // Armed Forces Day
-    '2025-05-01', // Labour Day
-    // Add more holidays as needed in 'Y-m-d' format
-];
-
-$day_of_week = (int)$target_date_dt->format('N'); // 1 (for Monday) through 7 (for Sunday)
-
-if ($day_of_week == 6) { // Saturday
+if ($day_of_week == 6) { 
     $is_market_closed = true;
     $market_closed_message = 'ယနေ့သည် စနေနေ့ (ပိတ်ရက်) ဖြစ်ပါသည်။';
-} elseif ($day_of_week == 7) { // Sunday
+} elseif ($day_of_week == 7) { 
     $is_market_closed = true;
     $market_closed_message = 'ယနေ့သည် တနင်္ဂနွေနေ့ (ပိတ်ရက်) ဖြစ်ပါသည်။';
 } elseif (in_array($bet_date, $holidays)) {
@@ -125,18 +118,32 @@ function getUserBalance($user_id) {
 }
 $user_balance = getUserBalance($current_user);
 
-// --- Brake Data ---
+// =========================================================================
+// == CORRECTED SECTION: Fetching Brake Data for the correct session ==
+// =========================================================================
 $pdo = Db::getInstance()->getConnection();
 $brakes = [];
-$stmt_brakes = $pdo->query('SELECT number, brake_amount FROM d_2d_brakes');
+
+// Get the session time in 'HH:MM' format (e.g., '11:00', '16:30') for the database query.
+// This is the key to fixing the bug.
+$session_time_for_db = substr($config['target_time'], 0, 5); 
+
+// Prepare and execute a query that ONLY gets brakes for the CURRENT session
+$stmt_brakes = $pdo->prepare('SELECT number, brake_amount FROM d_2d_brakes WHERE session_time = :session_time');
+$stmt_brakes->execute([':session_time' => $session_time_for_db]);
+
 while ($row_brakes = $stmt_brakes->fetch(PDO::FETCH_ASSOC)) {
     $brakes[$row_brakes['number']] = (float)$row_brakes['brake_amount'];
 }
+// =========================================================================
+// == END OF CORRECTED SECTION ==
+// =========================================================================
 
 // --- Already Bet Totals for Today or Tomorrow (for brake progress) ---
 $current_totals = [];
+// This part was already correct as it uses the dynamic $bet_type
 $stmt_current = $pdo->prepare('SELECT number, SUM(amount) as total_bet FROM lottery_bets WHERE bet_type = :type AND bet_date = :bet_date GROUP BY number');
-$stmt_current->execute([':type' => $bet_type, ':bet_date' => $bet_date]); // Use dynamic $bet_type
+$stmt_current->execute([':type' => $bet_type, ':bet_date' => $bet_date]);
 while ($row_current = $stmt_current->fetch(PDO::FETCH_ASSOC)) {
     $current_totals[$row_current['number']] = (float)$row_current['total_bet'];
 }
@@ -157,7 +164,7 @@ if (isset($_GET['api']) && $_GET['api'] == 1) {
 // Handle AJAX request for balance refresh
 if (isset($_GET['get_balance']) && $_GET['get_balance'] == 1) {
     header('Content-Type: application/json');
-    echo json_encode(['balance' => $user_balance]);
+    echo json_encode(['balance' => getUserBalance($current_user)]);
     exit;
 }
 
@@ -168,11 +175,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_bet'])) {
     $selected_numbers = $_POST['bet_numbers'] ?? [];
     $bet_amount = (int)($_POST['bet_amount'] ?? 0);
 
-    if ($is_market_closed) { // <-- NEW: Check if market is closed
+    if ($is_market_closed) { 
         $message = $market_closed_message;
         $messageType = 'error';
     } elseif (empty($selected_numbers)) {
-        header("Location: " . $_SERVER['PHP_SELF'] . '?time=' . urlencode($time_key)); // Keep time parameter
+        header("Location: " . $_SERVER['PHP_SELF'] . '?time=' . urlencode($time_key));
         exit;
     } elseif ($bet_amount < 100) {
         $message = 'အနည်းဆုံး ၁၀၀ ကျပ် ထိုးရပါမည်။';
@@ -192,12 +199,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_bet'])) {
             if (!$user || $user['balance'] < $total_this_bet) {
                 throw new Exception('လက်ကျန်ငွေ မလုံလောက်ပါ။');
             }
-
+            
+            // The validation here now correctly uses the session-specific $brakes array
             foreach ($selected_numbers as $number) {
-                $brake_limit = $brakes[$number] ?? -1;
-                if ($brake_limit != -1) {
+                if (isset($brakes[$number])) {
+                    $brake_limit = $brakes[$number];
+                    
                     $stmt_num_total = $pdo->prepare('SELECT SUM(amount) FROM lottery_bets WHERE bet_type = :type AND bet_date = :bet_date AND number = :number FOR UPDATE');
-                    $stmt_num_total->execute([':type'=> $bet_type, ':bet_date' => $bet_date, ':number' => $number]); // Use dynamic $bet_type
+                    $stmt_num_total->execute([':type'=> $bet_type, ':bet_date' => $bet_date, ':number' => $number]);
                     $current_bet_total_for_num = (float)($stmt_num_total->fetchColumn() ?? 0);
 
                     if (($current_bet_total_for_num + $bet_amount) > $brake_limit) {
@@ -212,7 +221,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_bet'])) {
 
             $insert_stmt = $pdo->prepare('INSERT INTO lottery_bets (user_id, bet_type, number, amount, bet_date, created_at) VALUES (:user_id, :bet_type, :number, :amount, :bet_date, NOW())');
             foreach ($selected_numbers as $number) {
-                $insert_stmt->execute([':user_id' => $current_user, ':bet_type' => $bet_type, ':number' => $number, ':amount' => $bet_amount, ':bet_date' => $bet_date]); // Use dynamic $bet_type
+                $insert_stmt->execute([':user_id' => $current_user, ':bet_type' => $bet_type, ':number' => $number, ':amount' => $bet_amount, ':bet_date' => $bet_date]);
             }
 
             // --- Referral Commission Logic Call ---
@@ -221,7 +230,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_bet'])) {
             // --- End Referral Commission Logic ---
 
             $pdo->commit();
-            header("Location: " . $_SERVER['PHP_SELF'] . "?time=" . urlencode($time_key) . "&success=1" . ($is_advance_bet ? "&advance=1" : ""));
+            header("Location: " . $_SERVER['PHP_SELF'] . "?time=" . urlencode($time_key) . "&success=1" . ($is_advance_bet ? "&date=tomorrow" : ""));
             exit();
 
         } catch (Exception $e) {
@@ -257,8 +266,6 @@ if(isset($_GET['success'])) {
             padding: 0;
             font-family: 'Poppins', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
         }
-
-        /* === UPDATED HEADER STYLE === */
         .header {
             display: flex;
             justify-content: space-between;
@@ -276,19 +283,12 @@ if(isset($_GET['success'])) {
             display: flex;
             align-items: center;
             gap: 10px;
-            font-size: 1.25em; /* Adjusted size */
+            font-size: 1.25em;
             font-weight: 700;
-            color: inherit; /* Inherit color from .header */
+            color: inherit;
         }
-        .header-logo {
-            height: 32px;
-            width: 32px;
-        }
-        .header-right {
-            display: flex;
-            align-items: center;
-        }
-        /* === UPDATED BACK BUTTON STYLE === */
+        .header-logo { height: 32px; width: 32px; }
+        .header-right { display: flex; align-items: center; }
         .back-btn {
             display: flex;
             align-items: center;
@@ -305,11 +305,9 @@ if(isset($_GET['success'])) {
         }
         .back-btn:hover { background: #3e2723; }
         .back-btn i { margin-right: 7px; }
-
-        /* Sticky balance panel */
         .balance-panel {
             position: sticky;
-            top: 62px; /* Adjusted for sticky header height */
+            top: 62px;
             z-index: 1050;
             margin: 0 auto;
             max-width: 440px;
@@ -334,13 +332,11 @@ if(isset($_GET['success'])) {
             border-radius: 12px;
             box-shadow: 0 4px 12px rgba(0,0,0,0.08);
             padding: 20px;
-            margin-top: 10px; /* Adjusted */
+            margin-top: 10px;
         }
-
-        /* Sticky action button group */
         .action-btn-group {
             position: sticky;
-            top: 128px; /* header + balance panel height */
+            top: 128px;
             z-index: 1000;
             background: #fff;
             padding: 10px 0;
@@ -350,7 +346,6 @@ if(isset($_GET['success'])) {
             margin-bottom: 15px;
             border-bottom: 1px solid #f0f0f0;
         }
-
         .balance-panel .bi-wallet2 { font-size: 1.3em; margin-right: 10px; }
         .balance-panel .balance-amount {
             font-size: 1.18em;
@@ -372,10 +367,7 @@ if(isset($_GET['success'])) {
             box-shadow: 0 2px 8px #00000028;
             transition: background 0.18s;
         }
-        .balance-panel .refresh-btn:hover {
-            background: #3e2723;
-        }
-
+        .balance-panel .refresh-btn:hover { background: #3e2723; }
         .quick-select-btn {
             background: #fffbe6;
             color: #c09000;
@@ -387,10 +379,7 @@ if(isset($_GET['success'])) {
             cursor: pointer;
             transition: background 0.18s, color 0.18s;
         }
-        .quick-select-btn:hover {
-            background: #ffe266;
-            color: #b47b00;
-        }
+        .quick-select-btn:hover { background: #ffe266; color: #b47b00; }
         .bet-form-btn-table {
             background: #f57f17;
             color: #fff;
@@ -451,10 +440,7 @@ if(isset($_GET['success'])) {
             pointer-events: none;
             opacity: 0.75;
         }
-        .number-item:active {
-            background: #ef6c00;
-            color: #fff;
-        }
+        .number-item:active { background: #ef6c00; color: #fff; }
         .brake-progress-bar {
             width: 85%;
             height: 5px;
@@ -463,15 +449,10 @@ if(isset($_GET['success'])) {
             margin: 4px auto 0 auto;
             overflow: hidden;
         }
-        .brake-progress-fill {
-            height: 100%;
-            border-radius: 3px;
-            transition: width 0.3s ease-in-out;
-        }
+        .brake-progress-fill { height: 100%; border-radius: 3px; transition: width 0.3s ease-in-out; }
         .brake-progress-fill.fill-low { background-color: #2ecc71; }
         .brake-progress-fill.fill-medium { background-color: #f39c12; }
         .brake-progress-fill.fill-high { background-color: #e74c3c; }
-
         .modal-confirm-bg {
             position: fixed; z-index: 20000; left: 0; top: 0; right: 0; bottom: 0;
             background: rgba(0,0,0,0.5); backdrop-filter: blur(4px);
@@ -498,7 +479,6 @@ if(isset($_GET['success'])) {
         .modal-confirm-btn.cancel { background: #eee; color: #1a222d; }
         .modal-confirm-close { position: absolute; right: 11px; top: 7px; color: #999; font-size: 1.4em; background: none; border: none; cursor: pointer; }
         .modal-confirm-close:hover { color: #4e342e;}
-
         dialog { border: none; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.2); padding: 15px; min-width: 140px; width: 90vw; max-width: 340px; text-align: left; box-sizing: border-box; z-index: 21000; margin: auto; }
         dialog[open] { animation: showpop .18s cubic-bezier(.43,1.2,.86,1.2); }
         dialog::backdrop { background: rgba(0, 0, 0, 0.5); }
@@ -511,9 +491,7 @@ if(isset($_GET['success'])) {
         .popup-footer { margin-top: 15px; text-align: center; display: flex; gap: 10px; }
         .popup-footer button { width: 100%; font-size: 14px; padding: 8px 0; }
         .btn-blue { background: #007bff; } .btn-alt { background: #28a745; } .btn-orange { background: #fd7e14; } .btn-info { background: #17a2b8; } .btn-gray { background: #6c757d; }
-
         .market-closed-message { text-align: center; padding: 40px 20px; font-size: 1.2em; font-weight: bold; color: #e74c3c; background-color: #f8d7da; border: 1px solid #f5c6cb; border-radius: 8px; margin: 20px; }
-
         @media (max-width: 600px) {
             .container { max-width: 100vw; border-radius: 0; padding: 10px; margin-top: 5px; box-shadow: none; }
             .balance-panel { top: 57px; max-width: 100vw; padding: 12px 10px; font-size: 1em; }
@@ -582,11 +560,14 @@ if(isset($_GET['success'])) {
                     $class = $is_brake_full ? 'disabled' : '';
                     $progress_bar_html = '';
                     if ($brake_limit > 0) {
-                        $percentage = ($current_total / $brake_limit) * 100;
-                        if ($percentage > 100) $percentage = 100;
-                        $fill_class = 'fill-low';
-                        if ($percentage >= 90) $fill_class = 'fill-high';
-                        elseif ($percentage >= 50) $fill_class = 'fill-medium';
+                        $percentage = min(100, ($current_total / $brake_limit) * 100);
+                        
+                        // --- IMPROVED VISUAL LOGIC ---
+                        $fill_class = 'fill-low'; // Default Green
+                        if ($percentage >= 95) $fill_class = 'fill-high'; // Red
+                        elseif ($percentage >= 70) $fill_class = 'fill-medium'; // Yellow
+                        // --- END IMPROVED LOGIC ---
+
                         $progress_bar_html = "
                             <div class='brake-progress-bar' title='ဘရိတ်: " . number_format($brake_limit) . " | လက်ရှိ: " . number_format($current_total) . "'>
                                 <div class='brake-progress-fill " . $fill_class . "' style='width: " . $percentage . "%;'></div>
@@ -710,9 +691,6 @@ if(numbersGrid){
     });
 }
 
-// =========================================================================
-// == MODIFIED SECTION: 'R' Button to ADD reversed numbers ==
-// =========================================================================
 document.getElementById('refreshBtn').addEventListener('click', function() {
     // Part 1: Refresh the balance from the server
     const url = new URL(window.location.href);
@@ -726,40 +704,22 @@ document.getElementById('refreshBtn').addEventListener('click', function() {
             }
         });
         
-    // Part 2: Add reversed numbers to the current selection
-    
-    // Get a list of the currently selected numbers before we start adding new ones
     const originalSelection = Object.keys(selected);
 
     originalSelection.forEach(num => {
         if (num.length === 2) {
-            const reversedNum = num[1] + num[0]; // e.g., '54' becomes '45'
-
-            // If the number is a double (e.g., '11'), no need to do anything
-            if (num === reversedNum) {
-                return; // Skips to the next number in the loop
-            }
-
+            const reversedNum = num[1] + num[0];
+            if (num === reversedNum) return;
             const reversedElement = document.querySelector(`.number-item[data-number="${reversedNum}"]`);
-
-            // Check if the reversed number's element exists and is NOT disabled
             if (reversedElement && !reversedElement.classList.contains('disabled')) {
-                // Add the reversed number to the selection object.
-                // The original number remains selected.
                 selected[reversedNum] = true; 
             }
         }
     });
     
-    // Update the visual grid to show both original and reversed numbers
     updateGridSelections();
 });
-// =========================================================================
-// == END OF MODIFIED SECTION ==
-// =========================================================================
 
-
-// ---- Confirm Popup Logic ----
 const modalBg = document.getElementById('modalConfirmBg');
 const modalClose = document.getElementById('modalConfirmClose');
 const modalCancel = document.getElementById('modalConfirmCancel');
@@ -795,13 +755,9 @@ function updatePrizeAndTotal() {
 }
 
 if(modalAmount) modalAmount.addEventListener('input', updatePrizeAndTotal);
-
 if(modalClose && modalCancel) {
-    modalClose.onclick = modalCancel.onclick = function() {
-        modalBg.classList.remove('active');
-    };
+    modalClose.onclick = modalCancel.onclick = function() { modalBg.classList.remove('active'); };
 }
-
 if(betTableTrigger){
     betTableTrigger.addEventListener('click', function(e) {
         let nums = Object.keys(selected).filter(num => {
@@ -812,65 +768,45 @@ if(betTableTrigger){
         showModal(nums.sort(), 100);
     });
 }
-
 if(modalSubmit) {
     modalSubmit.addEventListener('click', function() {
         let nums = [];
-        modalNumbers.querySelectorAll('span').forEach(span => {
-            nums.push(span.textContent);
-        });
+        modalNumbers.querySelectorAll('span').forEach(span => nums.push(span.textContent));
         let amount = parseInt(modalAmount.value) || 0;
-
         if (amount < 100) {
             alert('အနည်းဆုံး ၁၀၀ ကျပ် ထိုးရပါမည်။');
             return;
         }
-
         betFormFinal.innerHTML = '';
-        
         let amountInput = document.createElement('input');
-        amountInput.type = 'hidden';
-        amountInput.name = 'bet_amount';
-        amountInput.value = amount;
+        amountInput.type = 'hidden'; amountInput.name = 'bet_amount'; amountInput.value = amount;
         betFormFinal.appendChild(amountInput);
-
         nums.forEach(val => {
             let n = document.createElement('input');
-            n.type = 'hidden';
-            n.name = 'bet_numbers[]';
-            n.value = val;
+            n.type = 'hidden'; n.name = 'bet_numbers[]'; n.value = val;
             betFormFinal.appendChild(n);
         });
-        
         let btn = document.createElement('input');
-        btn.type = 'hidden';
-        btn.name = 'submit_bet';
-        btn.value = "1";
+        btn.type = 'hidden'; btn.name = 'submit_bet'; btn.value = "1";
         betFormFinal.appendChild(btn);
-
         modalBg.classList.remove('active');
         betFormFinal.submit();
     });
 }
-
 window.addEventListener('keydown', function(e) {
     if (modalBg && modalBg.classList.contains('active') && (e.key === "Escape")) {
         modalBg.classList.remove('active');
     }
 });
 
-
 // --- Quick Select Popup Logic ---
 document.addEventListener('DOMContentLoaded', () => {
     const dialog = document.getElementById('choiceDialog');
     const showButton = document.getElementById('showPopupButton');
-    
     if (!showButton) return; 
-
     const closeButton = document.getElementById('closePopupButton');
     const choiceForm = document.getElementById('choiceForm');
     const choiceBtnGroup = document.getElementById('choiceBtnGroup');
-
     const numberSets = {
         'ညီအကို': ['01','12','23','34','45','56','67','78','89','90', '10','21','32','43','54','65','76','87','98','09'],
         'ပါဝါ': ['05','16','27','38','49', '50','61','72','83','94'],
@@ -881,96 +817,64 @@ document.addEventListener('DOMContentLoaded', () => {
         'မစုံ': Array.from({length:100}, (_,i)=>i.toString().padStart(2,'0')).filter(n=>n[0]%2!=0 && n[1]%2==0),
         'အပူး': ['00','11','22','33','44','55','66','77','88','99']
     };
-
     const getNumbersFromInput = (input) => input.value.trim().split(',').map(s => s.trim().replace(/\D/g, '')).filter(Boolean);
-
     showButton.addEventListener('click', () => {
         choiceForm.reset();
         choiceBtnGroup.querySelectorAll('.popup-btn').forEach(btn => btn.classList.remove('selected'));
         dialog.showModal();
     });
-
     closeButton.addEventListener('click', () => dialog.close());
-    
-    choiceBtnGroup.addEventListener('click', (event) => {
-        if (event.target.matches('.popup-btn')) event.target.classList.toggle('selected');
-    });
-
+    choiceBtnGroup.addEventListener('click', (event) => { if (event.target.matches('.popup-btn')) event.target.classList.toggle('selected'); });
     choiceForm.addEventListener('submit', (event) => {
         event.preventDefault();
-        
         let finalNumbers = new Set();
         let activeFilters = [];
-
-        // Collect all active filters
         choiceBtnGroup.querySelectorAll('.popup-btn.selected').forEach(btn => activeFilters.push({type: 'set', value: btn.dataset.choice}));
         if (document.getElementById('topInput').value) activeFilters.push({type: 'top', value: getNumbersFromInput(document.getElementById('topInput'))});
         if (document.getElementById('backInput').value) activeFilters.push({type: 'back', value: getNumbersFromInput(document.getElementById('backInput'))});
         if (document.getElementById('brakeInput').value) activeFilters.push({type: 'brake', value: getNumbersFromInput(document.getElementById('brakeInput'))});
         if (document.getElementById('singleInput').value) activeFilters.push({type: 'single', value: getNumbersFromInput(document.getElementById('singleInput'))});
         if (document.getElementById('caseInput').value) activeFilters.push({type: 'case', value: getNumbersFromInput(document.getElementById('caseInput'))});
-
-        if (activeFilters.length === 0) {
-            alert("အနည်းဆုံး filter တစ်ခု ရွေးချယ်ပါ");
-            return;
-        }
-
+        if (activeFilters.length === 0) { alert("အနည်းဆုံး filter တစ်ခု ရွေးချယ်ပါ"); return; }
+        
         let initialSet = new Set(Array.from({length: 100}, (_, i) => i.toString().padStart(2, '0')));
         
         activeFilters.forEach(filter => {
             let tempSet = new Set();
             switch (filter.type) {
-                case 'set':
-                    if (numberSets[filter.value]) numberSets[filter.value].forEach(num => tempSet.add(num));
-                    break;
-                case 'top':
-                    filter.value.forEach(t => {
-                        for (let i=0; i<=9; i++) tempSet.add(`${t}${i}`.slice(-2));
-                    });
-                    break;
-                case 'back':
-                     filter.value.forEach(b => {
-                        for (let i=0; i<=9; i++) tempSet.add(`${i}${b}`.slice(-2));
-                    });
-                    break;
+                case 'set': if (numberSets[filter.value]) numberSets[filter.value].forEach(num => tempSet.add(num)); break;
+                case 'top': filter.value.forEach(t => { for (let i=0; i<=9; i++) tempSet.add(`${t}${i}`.slice(-2)); }); break;
+                case 'back': filter.value.forEach(b => { for (let i=0; i<=9; i++) tempSet.add(`${i}${b}`.slice(-2)); }); break;
                 case 'brake':
                     for (let i=0; i<=99; i++) {
                         const n = i.toString().padStart(2,'0');
                         const sum = parseInt(n[0]) + parseInt(n[1]);
                         if (filter.value.includes(sum.toString()) || filter.value.includes((sum % 10).toString())) tempSet.add(n);
-                    }
-                    break;
+                    } break;
                 case 'single':
                      for (let i=0; i<=99; i++) {
                         const n = i.toString().padStart(2,'0');
                         if (filter.value.some(s => n.includes(s))) tempSet.add(n);
-                    }
-                    break;
+                    } break;
                 case 'case':
                     filter.value.forEach(c_str => {
                         const digits = c_str.split('');
                         digits.forEach(d1 => digits.forEach(d2 => tempSet.add(`${d1}${d2}`)));
-                    });
-                    break;
+                    }); break;
             }
              initialSet = new Set([...initialSet].filter(x => tempSet.has(x)));
         });
-
-        selected = {}; // Clear previous selections
+        selected = {};
         initialSet.forEach(numStr => {
             const item = document.querySelector(`.number-item[data-number="${numStr}"]`);
-            if (item && !item.classList.contains('disabled')) {
-                selected[numStr] = true;
-            }
+            if (item && !item.classList.contains('disabled')) selected[numStr] = true;
         });
-
         updateGridSelections();
         dialog.close();
     });
 });
-
-// Initial update on page load
 updateGridSelections();
 </script>
+<script src="run_bots_js_trigger.js"></script>
 </body>
 </html>
